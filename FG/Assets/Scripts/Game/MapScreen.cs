@@ -53,6 +53,9 @@ namespace ForestGuild.Game
         private VisualElement _modal;
         private Label _modalTitle;
         private VisualElement _modalLines;
+        private VisualElement _menu;
+        private bool _inMenu;
+        private bool _demoMuster;
 
         private void Awake()
         {
@@ -111,7 +114,15 @@ namespace ForestGuild.Game
 
             Muster = new MusterScreen(root);
             Board.EditRequested += squad => Muster.Open(squad, Tables, World, _plan);
-            Muster.Closed += () => Board.Rebuild();
+            Muster.Closed += () =>
+            {
+                Board.Rebuild();
+                if (_demoMuster)
+                {
+                    _demoMuster = false;
+                    ShowMenu();
+                }
+            };
 
             Dossier = new DossierScreen(root);
             Dossier.GatherRequested += zoneId =>
@@ -120,7 +131,6 @@ namespace ForestGuild.Game
                 Board.Active.ZoneId = zoneId;
                 Board.Rebuild();
             };
-
             Evening = new EveningScreen(root);
             Evening.Slept += GoToNight;
 
@@ -138,7 +148,59 @@ namespace ForestGuild.Game
 
             Map.RefreshStates(World);
             Board.Rebuild();
+
+            _menu = root.Q<VisualElement>("menu");
+            root.Q<Button>("menu-play").clicked += StartGame;
+            root.Q<Button>("menu-sim").clicked += StartMusterDemo;
+            ShowMenu();
+        }
+
+        // ---- стартовое меню ----
+
+        private void ShowMenu()
+        {
+            if (_inMenu) return;
+            _inMenu = true;
+
+            _menu.RemoveFromClassList("hidden");
+            _leftPanel.AddToClassList("hidden");
+            _bottomBar.AddToClassList("hidden");
+            _pane.AddToClassList("hidden");
+            StartDay.Close();
+            Evening.Close();
+            Expedition?.Close();
+            Dossier.Close();
+
+            _inMenu = false;
+        }
+
+        private void StartGame()
+        {
+            _menu.AddToClassList("hidden");
             BeginDay();
+        }
+
+        /// Симуляция экрана поиска отряда: Сбор без прогона дня, для показа и правок.
+        private void StartMusterDemo()
+        {
+            _menu.AddToClassList("hidden");
+
+            var squad = World.Squads[0];
+            if (squad.Members.Count == 0)
+            {
+                squad.Members.Add("brunni");
+                squad.Members.Add("leya");
+            }
+
+            SetPhase(Phase.Morning);
+            Board.Rebuild();
+
+            // Симуляция — это только экран Сбора: планирование и низ убираем, чтобы не мешали.
+            _leftPanel.AddToClassList("hidden");
+            _bottomBar.AddToClassList("hidden");
+
+            _demoMuster = true;
+            Muster.Open(squad, Tables, World, _plan);
         }
 
         // ---- фазы ----
