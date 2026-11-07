@@ -254,7 +254,7 @@ internal static class Program
 
             return one.Slots == 5                      // 4 + «Крепкий»
                 && one.WorkHours == 8
-                && three.Warnings.Count >= 2;          // сверх двух + зона не разведана
+                && three.Warnings.Count >= 1;          // втроём шумно
         });
 
         checks.Check("loot goes to store and reports delta", () =>

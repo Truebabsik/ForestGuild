@@ -66,11 +66,6 @@ namespace ForestGuild.Core.Sim
                 briefing.Warnings.Add("На тварей без храброго охотника не ходят");
             }
 
-            if (!world.Zones.TryGetValue(zoneId, out var state) || !state.Scouted)
-            {
-                briefing.Warnings.Add("Состав зоны неизвестен — считаем по худшему");
-            }
-
             if (briefing.WorkHours == 0)
             {
                 briefing.Warnings.Add("До места и обратно — весь день, работать некогда");
