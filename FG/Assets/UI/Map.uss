@@ -1,0 +1,185 @@
+.root {
+    flex-grow: 1;
+    background-color: rgb(20, 22, 20);
+}
+
+.map {
+    position: absolute;
+    left: 250px;
+    right: 330px;
+    top: 0;
+    bottom: 96px;
+    background-image: url("project://database/Assets/UI/Art/map_bg.jpg");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.panel {
+    position: absolute;
+    top: 0;
+    bottom: 96px;
+    padding: 14px;
+    background-color: rgb(34, 36, 32);
+    border-color: rgb(150, 128, 88);
+    border-width: 2px;
+    border-left-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
+
+.panel.left {
+    left: 0;
+    width: 250px;
+}
+
+.panel.right {
+    right: 0;
+    width: 330px;
+    border-left-width: 2px;
+    border-right-width: 0;
+}
+
+.panel-title {
+    color: rgb(226, 208, 170);
+    font-size: 17px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.zone-info {
+    color: rgb(196, 196, 184);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.roster {
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+.roster .unity-button {
+    height: 34px;
+    margin-bottom: 4px;
+    font-size: 12px;
+    background-color: rgb(48, 50, 44);
+    color: rgb(214, 208, 190);
+    border-width: 1px;
+    border-color: rgb(90, 84, 70);
+    -unity-text-align: middle-left;
+    padding-left: 8px;
+    white-space: nowrap;
+}
+
+.roster .unity-button.selected {
+    background-color: rgb(92, 74, 40);
+    border-color: rgb(226, 190, 110);
+    color: rgb(245, 232, 200);
+}
+
+.bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 96px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: rgb(34, 36, 32);
+    border-top-width: 2px;
+    border-color: rgb(150, 128, 88);
+}
+
+.day-label {
+    color: rgb(226, 208, 170);
+    font-size: 22px;
+    -unity-font-style: bold;
+}
+
+.action {
+    height: 40px;
+    padding-left: 16px;
+    padding-right: 16px;
+    font-size: 14px;
+    color: rgb(240, 230, 205);
+    background-color: rgb(62, 64, 54);
+    border-width: 2px;
+    border-color: rgb(150, 128, 88);
+}
+
+.action.primary {
+    background-color: rgb(150, 96, 40);
+    border-color: rgb(226, 190, 110);
+}
+
+.zone-node {
+    position: absolute;
+    width: 104px;
+    height: 104px;
+    border-radius: 52px;
+    background-color: rgb(44, 48, 40);
+    border-width: 3px;
+    border-color: rgb(150, 128, 88);
+    justify-content: center;
+    align-items: center;
+    padding: 6px;
+}
+
+.zone-node.selected {
+    border-color: rgb(240, 190, 90);
+    border-width: 4px;
+}
+
+.zone-node .zone-node-name {
+    color: rgb(228, 214, 180);
+    font-size: 12px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.zone-node .zone-node-state {
+    color: rgb(180, 150, 110);
+    font-size: 11px;
+    -unity-text-align: middle-center;
+}
+
+.zone-node.danger {
+    background-color: rgb(58, 40, 34);
+    border-color: rgb(168, 96, 60);
+}
+
+.report {
+    position: absolute;
+    left: 270px;
+    right: 350px;
+    top: 20px;
+    bottom: 140px;
+    background-color: rgb(16, 18, 16);
+    border-width: 2px;
+    border-color: rgb(150, 128, 88);
+    padding: 16px;
+}
+
+.report-close {
+    width: 170px;
+    align-self: flex-start;
+}
+
+.report-lines {
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+.report-lines .unity-label {
+    color: rgb(206, 206, 192);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 3px;
+}
+
+.hidden {
+    display: none;
+}

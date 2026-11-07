@@ -62,7 +62,7 @@ tools/
 |---|---|
 | `tuning.csv` | `id; value; note` — 30 глобальных чисел: шанс встречи, слоты, часы, опыт до гнезда, прочность частокола |
 | `items.csv` | `id; name; category; slots; value; tags` — `material`, `consumable`, `weapon`, `armor`, `tool`, `trophy` |
-| `zones.csv` | `id; name; depth; travel_hours; crystals_per_day; forage_per_day; neighbours; env_rule` |
+| `zones.csv` | `id; name; depth; travel_hours; crystals_per_day; forage_per_day; neighbours; env_rule; map_x; map_y` — координаты карты нормализованы 0..1 |
 | `zone_resources.csv` | `zone_id; item_id; abundance` |
 | `beasts.csv` | `id; name; strength; speed; food_need; nest_capable` |
 | `zone_beasts.csv` | `zone_id; beast_id; weight; initial_count` |
@@ -113,3 +113,17 @@ tools/
 ## 9. Что дальше
 
 Порядок работы: загрузчик и валидатор → чистое ядро суток и леса → консольный прогон → сцена и UI → отряды. Сцена подключается последней, потому что до неё всё проверяется тестами без редактора.
+
+## 10. Шаг 1: что уже работает
+
+Проект Unity живёт в `FG/`, документация — в корне репозитория.
+
+| Что | Где | Чем проверено |
+|---|---|---|
+| 14 CSV-справочников | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
+| Загрузчик с валидацией внешних ключей | `FG/Assets/Scripts/Core/Data/` | проверки «сломанный сосед», «неизвестный предмет», «чужая schema_version» |
+| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `ExpeditionSim`, `DayFlow` | `FG/Assets/Scripts/Core/Sim/` | 12 проверок в `tools/sim`, ядро без `UnityEngine` |
+| Карта, ростер, панель зоны, отчёт | `FG/Assets/UI/`, `FG/Assets/Scripts/Game/` | скриншоты `docs/images/ui/step1/` |
+| Сцена | `FG/Assets/Scenes/Main.unity` | Play Mode, день 1 → отчёт → день 2 |
+
+Сборка сцены — скриптом `FG/AgentScripts/BuildScene.cs` через `unity command script run` (файл вне `Assets/`, поэтому не тянет импорт). Ссылку `PanelSettings` пришлось ставить через `SerializedObject`: сеттер `UIDocument.panelSettings` в скриптовой сборке сцены не сериализовался (`m_PanelSettings: {fileID: 0}`), из-за чего экран был чёрным.

@@ -1,73 +1,75 @@
-# ForestGuild — шаг 1: каркас, карта, первый день
+> Статус: **выполнен**. Сделаны задачи 1–9, задача 10 (этот отчёт) — esult.md. Отклонения: паузы вылазки, туши и раненые вынесены в шаг 2 (см. result.md).
 
-> **Для агентов:** ОБЯЗАТЕЛЬНЫЙ ПОД-НАВЫК: `subagent-driven-development` (рекомендуется) или `executing-plans` — исполнять этот план задача за задачей. Шаги отмечены чекбоксами (`- [ ]`).
+# ForestGuild вЂ” С€Р°Рі 1: РєР°СЂРєР°СЃ, РєР°СЂС‚Р°, РїРµСЂРІС‹Р№ РґРµРЅСЊ
 
-**Цель:** играбельный первый день: карта леса из `zones.csv`, ростер из `roster.csv`, назначение отрядов, кнопка «конец дня» → авторезолв вылазки по часам → ночная жизнь леса → отчёт.
+> **Р”Р»СЏ Р°РіРµРЅС‚РѕРІ:** РћР‘РЇР—РђРўР•Р›Р¬РќР«Р™ РџРћР”-РќРђР’Р«Рљ: `subagent-driven-development` (СЂРµРєРѕРјРµРЅРґСѓРµС‚СЃСЏ) РёР»Рё `executing-plans` вЂ” РёСЃРїРѕР»РЅСЏС‚СЊ СЌС‚РѕС‚ РїР»Р°РЅ Р·Р°РґР°С‡Р° Р·Р° Р·Р°РґР°С‡РµР№. РЁР°РіРё РѕС‚РјРµС‡РµРЅС‹ С‡РµРєР±РѕРєСЃР°РјРё (`- [ ]`).
 
-**Архитектура:** данные в CSV (`Assets/StreamingAssets/Data`), чистое ядро без `UnityEngine` (`Assets/Scripts/Core`), UI Toolkit поверх (`Assets/Scripts/Game` + UXML/USS), консольный прогон `tools/sim` подключает те же файлы ядра через `<Compile Include>`.
+**Р¦РµР»СЊ:** РёРіСЂР°Р±РµР»СЊРЅС‹Р№ РїРµСЂРІС‹Р№ РґРµРЅСЊ: РєР°СЂС‚Р° Р»РµСЃР° РёР· `zones.csv`, СЂРѕСЃС‚РµСЂ РёР· `roster.csv`, РЅР°Р·РЅР°С‡РµРЅРёРµ РѕС‚СЂСЏРґРѕРІ, РєРЅРѕРїРєР° В«РєРѕРЅРµС† РґРЅСЏВ» в†’ Р°РІС‚РѕСЂРµР·РѕР»РІ РІС‹Р»Р°Р·РєРё РїРѕ С‡Р°СЃР°Рј в†’ РЅРѕС‡РЅР°СЏ Р¶РёР·РЅСЊ Р»РµСЃР° в†’ РѕС‚С‡С‘С‚.
 
-**Стек:** Unity 6000.6.6f1, URP (шаблон `com.unity.template.universal-2d`), UI Toolkit, .NET 10 консоль.
+**РђСЂС…РёС‚РµРєС‚СѓСЂР°:** РґР°РЅРЅС‹Рµ РІ CSV (`Assets/StreamingAssets/Data`), С‡РёСЃС‚РѕРµ СЏРґСЂРѕ Р±РµР· `UnityEngine` (`Assets/Scripts/Core`), UI Toolkit РїРѕРІРµСЂС… (`Assets/Scripts/Game` + UXML/USS), РєРѕРЅСЃРѕР»СЊРЅС‹Р№ РїСЂРѕРіРѕРЅ `tools/sim` РїРѕРґРєР»СЋС‡Р°РµС‚ С‚Рµ Р¶Рµ С„Р°Р№Р»С‹ СЏРґСЂР° С‡РµСЂРµР· `<Compile Include>`.
 
-**Спека:** `docs/design.md`, `docs/architecture.md`, `docs/decisions.md` (ADR-0001, ADR-0002).
+**РЎС‚РµРє:** Unity 6000.6.6f1, URP (С€Р°Р±Р»РѕРЅ `com.unity.template.universal-2d`), UI Toolkit, .NET 10 РєРѕРЅСЃРѕР»СЊ.
+
+**РЎРїРµРєР°:** `docs/design.md`, `docs/architecture.md`, `docs/decisions.md` (ADR-0001, ADR-0002).
 
 ## Global Constraints
 
-- Unity **6000.6.6f1**, URP. Новый проект в `F:\WORK\ForestGuild` (репозиторий уже существует — проект создаётся во временной папке и переносится сюда).
-- Сцена меняется **только через живой редактор** (`unity_status` → `unity_command`/`unity_eval`), не правкой `.unity` на диске.
-- `Assets/Scripts/Core/**` **не содержит** `using UnityEngine`. Проверяется тестом.
-- `asmdef` не заводить, весь код — `Assembly-CSharp`.
-- `id` в таблицах — ASCII `snake_case`; русские названия — в колонке `name`.
-- CSV: UTF-8, `;`, десятичная точка; `#` — комментарий; списки — `a:1|b:2` (единственная мини-грамматика).
-- Валидация таблиц падает (`DataException` с `файл:строка:колонка`), а не подставляет дефолты.
-- Ядро детерминировано: случайность только через переданный `Rng(seed)`; никаких `DateTime.Now`, `UnityEngine.Random`.
-- В шаге 1 **нет пауз** в вылазке и нет туши/разделки — это шаг 2. Нет балансовых прогонов на 21 день.
-- Деньги/караван/станции в шаге 1 не работают; таблицы станций и рецептов существуют ради проверки формата.
+- Unity **6000.6.6f1**, URP. РќРѕРІС‹Р№ РїСЂРѕРµРєС‚ РІ `F:\WORK\ForestGuild` (СЂРµРїРѕР·РёС‚РѕСЂРёР№ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚ вЂ” РїСЂРѕРµРєС‚ СЃРѕР·РґР°С‘С‚СЃСЏ РІРѕ РІСЂРµРјРµРЅРЅРѕР№ РїР°РїРєРµ Рё РїРµСЂРµРЅРѕСЃРёС‚СЃСЏ СЃСЋРґР°).
+- РЎС†РµРЅР° РјРµРЅСЏРµС‚СЃСЏ **С‚РѕР»СЊРєРѕ С‡РµСЂРµР· Р¶РёРІРѕР№ СЂРµРґР°РєС‚РѕСЂ** (`unity_status` в†’ `unity_command`/`unity_eval`), РЅРµ РїСЂР°РІРєРѕР№ `.unity` РЅР° РґРёСЃРєРµ.
+- `Assets/Scripts/Core/**` **РЅРµ СЃРѕРґРµСЂР¶РёС‚** `using UnityEngine`. РџСЂРѕРІРµСЂСЏРµС‚СЃСЏ С‚РµСЃС‚РѕРј.
+- `asmdef` РЅРµ Р·Р°РІРѕРґРёС‚СЊ, РІРµСЃСЊ РєРѕРґ вЂ” `Assembly-CSharp`.
+- `id` РІ С‚Р°Р±Р»РёС†Р°С… вЂ” ASCII `snake_case`; СЂСѓСЃСЃРєРёРµ РЅР°Р·РІР°РЅРёСЏ вЂ” РІ РєРѕР»РѕРЅРєРµ `name`.
+- CSV: UTF-8, `;`, РґРµСЃСЏС‚РёС‡РЅР°СЏ С‚РѕС‡РєР°; `#` вЂ” РєРѕРјРјРµРЅС‚Р°СЂРёР№; СЃРїРёСЃРєРё вЂ” `a:1|b:2` (РµРґРёРЅСЃС‚РІРµРЅРЅР°СЏ РјРёРЅРё-РіСЂР°РјРјР°С‚РёРєР°).
+- Р’Р°Р»РёРґР°С†РёСЏ С‚Р°Р±Р»РёС† РїР°РґР°РµС‚ (`DataException` СЃ `С„Р°Р№Р»:СЃС‚СЂРѕРєР°:РєРѕР»РѕРЅРєР°`), Р° РЅРµ РїРѕРґСЃС‚Р°РІР»СЏРµС‚ РґРµС„РѕР»С‚С‹.
+- РЇРґСЂРѕ РґРµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРѕ: СЃР»СѓС‡Р°Р№РЅРѕСЃС‚СЊ С‚РѕР»СЊРєРѕ С‡РµСЂРµР· РїРµСЂРµРґР°РЅРЅС‹Р№ `Rng(seed)`; РЅРёРєР°РєРёС… `DateTime.Now`, `UnityEngine.Random`.
+- Р’ С€Р°РіРµ 1 **РЅРµС‚ РїР°СѓР·** РІ РІС‹Р»Р°Р·РєРµ Рё РЅРµС‚ С‚СѓС€Рё/СЂР°Р·РґРµР»РєРё вЂ” СЌС‚Рѕ С€Р°Рі 2. РќРµС‚ Р±Р°Р»Р°РЅСЃРѕРІС‹С… РїСЂРѕРіРѕРЅРѕРІ РЅР° 21 РґРµРЅСЊ.
+- Р”РµРЅСЊРіРё/РєР°СЂР°РІР°РЅ/СЃС‚Р°РЅС†РёРё РІ С€Р°РіРµ 1 РЅРµ СЂР°Р±РѕС‚Р°СЋС‚; С‚Р°Р±Р»РёС†С‹ СЃС‚Р°РЅС†РёР№ Рё СЂРµС†РµРїС‚РѕРІ СЃСѓС‰РµСЃС‚РІСѓСЋС‚ СЂР°РґРё РїСЂРѕРІРµСЂРєРё С„РѕСЂРјР°С‚Р°.
 
-## Поправка от 2026-11-07: Unity-проект живёт в `FG/`
+## РџРѕРїСЂР°РІРєР° РѕС‚ 2026-11-07: Unity-РїСЂРѕРµРєС‚ Р¶РёРІС‘С‚ РІ `FG/`
 
-После задачи 1 проект перенесён в подпапку: корень репозитория — `F:\WORK\ForestGuild`, Unity — `F:\WORK\ForestGuild\FG`.
+РџРѕСЃР»Рµ Р·Р°РґР°С‡Рё 1 РїСЂРѕРµРєС‚ РїРµСЂРµРЅРµСЃС‘РЅ РІ РїРѕРґРїР°РїРєСѓ: РєРѕСЂРµРЅСЊ СЂРµРїРѕР·РёС‚РѕСЂРёСЏ вЂ” `F:\WORK\ForestGuild`, Unity вЂ” `F:\WORK\ForestGuild\FG`.
 
-- Все пути вида `Assets/...`, `Packages/...`, `ProjectSettings/...` читаются как `FG/Assets/...` и т.д.
-- `unity open` / `unity pipeline install` / `unity_command projectPath` — с `F:\WORK\ForestGuild\FG`.
-- В `tools/sim/ForestGuild.Sim.csproj` путь к ядру: `..\..\FG\Assets\Scripts\Core\**\*.cs`.
-- `DataDir()` в `Program.cs` ищет `FG\Assets\StreamingAssets\Data` — в хелпере заменить `"Assets"` на `"FG", "Assets"`.
-- `Application.streamingAssetsPath` в Unity уже указывает внутрь `FG`, менять код `MapScreen` не нужно.
+- Р’СЃРµ РїСѓС‚Рё РІРёРґР° `Assets/...`, `Packages/...`, `ProjectSettings/...` С‡РёС‚Р°СЋС‚СЃСЏ РєР°Рє `FG/Assets/...` Рё С‚.Рґ.
+- `unity open` / `unity pipeline install` / `unity_command projectPath` вЂ” СЃ `F:\WORK\ForestGuild\FG`.
+- Р’ `tools/sim/ForestGuild.Sim.csproj` РїСѓС‚СЊ Рє СЏРґСЂСѓ: `..\..\FG\Assets\Scripts\Core\**\*.cs`.
+- `DataDir()` РІ `Program.cs` РёС‰РµС‚ `FG\Assets\StreamingAssets\Data` вЂ” РІ С…РµР»РїРµСЂРµ Р·Р°РјРµРЅРёС‚СЊ `"Assets"` РЅР° `"FG", "Assets"`.
+- `Application.streamingAssetsPath` РІ Unity СѓР¶Рµ СѓРєР°Р·С‹РІР°РµС‚ РІРЅСѓС‚СЂСЊ `FG`, РјРµРЅСЏС‚СЊ РєРѕРґ `MapScreen` РЅРµ РЅСѓР¶РЅРѕ.
 
-## Структура файлов
+## РЎС‚СЂСѓРєС‚СѓСЂР° С„Р°Р№Р»РѕРІ
 
 ```
 Assets/
-  StreamingAssets/Data/            # 11 CSV (задача 3)
-  Scripts/Core/Data/               # DataException, CsvReader, Table<T>, табличные типы, DataLoader
+  StreamingAssets/Data/            # 11 CSV (Р·Р°РґР°С‡Р° 3)
+  Scripts/Core/Data/               # DataException, CsvReader, Table<T>, С‚Р°Р±Р»РёС‡РЅС‹Рµ С‚РёРїС‹, DataLoader
   Scripts/Core/Sim/                # Rng, World, NightSim, ExpeditionSim, DayPlan
   Scripts/Game/                    # MapScreen, MapController, RosterPanel, ExpeditionRunner, DayFlow
-  UI/Map.uxml, UI/Map.uss          # интерфейс карты
-  Scenes/Main.unity                # создаётся живым редактором
+  UI/Map.uxml, UI/Map.uss          # РёРЅС‚РµСЂС„РµР№СЃ РєР°СЂС‚С‹
+  Scenes/Main.unity                # СЃРѕР·РґР°С‘С‚СЃСЏ Р¶РёРІС‹Рј СЂРµРґР°РєС‚РѕСЂРѕРј
 tools/sim/                         # ForestGuild.Sim.csproj, Program.cs
-docs/current/2026-11-07-ui-slice/  # этот план
+docs/current/2026-11-07-ui-slice/  # СЌС‚РѕС‚ РїР»Р°РЅ
 ```
 
 ---
 
-### Task 1: Проект Unity и перенос в репозиторий
+### Task 1: РџСЂРѕРµРєС‚ Unity Рё РїРµСЂРµРЅРѕСЃ РІ СЂРµРїРѕР·РёС‚РѕСЂРёР№
 
 **Files:**
-- Create: `F:\WORK\_fg_tmp\ForestGuild\` (временный проект)
-- Modify: `F:\WORK\ForestGuild\` (перенос `Assets/`, `Packages/`, `ProjectSettings/`)
+- Create: `F:\WORK\_fg_tmp\ForestGuild\` (РІСЂРµРјРµРЅРЅС‹Р№ РїСЂРѕРµРєС‚)
+- Modify: `F:\WORK\ForestGuild\` (РїРµСЂРµРЅРѕСЃ `Assets/`, `Packages/`, `ProjectSettings/`)
 - Modify: `.gitignore`
 
 **Interfaces:**
-- Produces: проект Unity в корне репозитория; `Assets/`, `Packages/`, `ProjectSettings/`, `Assets/StreamingAssets/Data/`.
+- Produces: РїСЂРѕРµРєС‚ Unity РІ РєРѕСЂРЅРµ СЂРµРїРѕР·РёС‚РѕСЂРёСЏ; `Assets/`, `Packages/`, `ProjectSettings/`, `Assets/StreamingAssets/Data/`.
 
-- [ ] **Step 1: Создать проект во временной папке**
+- [ ] **Step 1: РЎРѕР·РґР°С‚СЊ РїСЂРѕРµРєС‚ РІРѕ РІСЂРµРјРµРЅРЅРѕР№ РїР°РїРєРµ**
 
 ```powershell
 unity projects create ForestGuild --path F:\WORK\_fg_tmp --editor-version 6000.6.6f1 --template com.unity.template.universal-2d --with-pipeline --no-cloud --non-interactive
 ```
 
-Ожидание: код 0, `F:\WORK\_fg_tmp\ForestGuild\ProjectSettings\ProjectVersion.txt` содержит `6000.6.6f1`.
+РћР¶РёРґР°РЅРёРµ: РєРѕРґ 0, `F:\WORK\_fg_tmp\ForestGuild\ProjectSettings\ProjectVersion.txt` СЃРѕРґРµСЂР¶РёС‚ `6000.6.6f1`.
 
-- [ ] **Step 2: Перенести содержимое в репозиторий**
+- [ ] **Step 2: РџРµСЂРµРЅРµСЃС‚Рё СЃРѕРґРµСЂР¶РёРјРѕРµ РІ СЂРµРїРѕР·РёС‚РѕСЂРёР№**
 
 ```powershell
 $src="F:\WORK\_fg_tmp\ForestGuild"; $dst="F:\WORK\ForestGuild"
@@ -75,84 +77,84 @@ foreach ($d in @("Assets","Packages","ProjectSettings")) { Copy-Item "$src\$d" $
 Remove-Item "F:\WORK\_fg_tmp" -Recurse -Force
 ```
 
-- [ ] **Step 3: Проверить, что проект на месте**
+- [ ] **Step 3: РџСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ РїСЂРѕРµРєС‚ РЅР° РјРµСЃС‚Рµ**
 
 Run: `Test-Path F:\WORK\ForestGuild\ProjectSettings\ProjectVersion.txt; Get-ChildItem F:\WORK\ForestGuild\Assets -Name`
-Ожидание: `True`, в `Assets` есть `Scenes`, `Settings` (или пусто), нет ошибок.
+РћР¶РёРґР°РЅРёРµ: `True`, РІ `Assets` РµСЃС‚СЊ `Scenes`, `Settings` (РёР»Рё РїСѓСЃС‚Рѕ), РЅРµС‚ РѕС€РёР±РѕРє.
 
-- [ ] **Step 4: Дополнить `.gitignore`**
+- [ ] **Step 4: Р”РѕРїРѕР»РЅРёС‚СЊ `.gitignore`**
 
-Добавить в конец `.gitignore`:
+Р”РѕР±Р°РІРёС‚СЊ РІ РєРѕРЅРµС† `.gitignore`:
 
 ```text
 *.meta.tmp
 /[Aa]ssets/[Ss]treamingAssets/Data/*.tmp
 ```
 
-- [ ] **Step 5: Коммит**
+- [ ] **Step 5: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat: проект Unity 6000.6.6f1 (URP 2D, UI Toolkit)"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat: РїСЂРѕРµРєС‚ Unity 6000.6.6f1 (URP 2D, UI Toolkit)"
 ```
 
 ---
 
-### Task 2: Поднять редактор и убедиться, что он тикает
+### Task 2: РџРѕРґРЅСЏС‚СЊ СЂРµРґР°РєС‚РѕСЂ Рё СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РѕРЅ С‚РёРєР°РµС‚
 
-**Files:** нет (только состояние редактора).
+**Files:** РЅРµС‚ (С‚РѕР»СЊРєРѕ СЃРѕСЃС‚РѕСЏРЅРёРµ СЂРµРґР°РєС‚РѕСЂР°).
 
 **Interfaces:**
-- Consumes: проект из задачи 1.
-- Produces: запущенный редактор с пакетом Pipeline, автотик включён, `unity_status` возвращает `state: ready`.
+- Consumes: РїСЂРѕРµРєС‚ РёР· Р·Р°РґР°С‡Рё 1.
+- Produces: Р·Р°РїСѓС‰РµРЅРЅС‹Р№ СЂРµРґР°РєС‚РѕСЂ СЃ РїР°РєРµС‚РѕРј Pipeline, Р°РІС‚РѕС‚РёРє РІРєР»СЋС‡С‘РЅ, `unity_status` РІРѕР·РІСЂР°С‰Р°РµС‚ `state: ready`.
 
-- [ ] **Step 1: Прочитать скилл**
+- [ ] **Step 1: РџСЂРѕС‡РёС‚Р°С‚СЊ СЃРєРёР»Р»**
 
-Прочитать `.dsh/skills/unity-pipeline/SKILL.md` целиком (правило 11 из `AGENTS.md`). Без него `recompile` и тесты висят.
+РџСЂРѕС‡РёС‚Р°С‚СЊ `.dsh/skills/unity-pipeline/SKILL.md` С†РµР»РёРєРѕРј (РїСЂР°РІРёР»Рѕ 11 РёР· `AGENTS.md`). Р‘РµР· РЅРµРіРѕ `recompile` Рё С‚РµСЃС‚С‹ РІРёСЃСЏС‚.
 
-- [ ] **Step 2: Открыть проект**
+- [ ] **Step 2: РћС‚РєСЂС‹С‚СЊ РїСЂРѕРµРєС‚**
 
 ```powershell
 unity open F:\WORK\ForestGuild --args -automated
 ```
 
-- [x] **Step 3: Установить пакет Pipeline и включить автотик** (сделано 2026-11-07)
+- [x] **Step 3: РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РїР°РєРµС‚ Pipeline Рё РІРєР»СЋС‡РёС‚СЊ Р°РІС‚РѕС‚РёРє** (СЃРґРµР»Р°РЅРѕ 2026-11-07)
 
-Установка — через CLI:
+РЈСЃС‚Р°РЅРѕРІРєР° вЂ” С‡РµСЂРµР· CLI:
 
 ```powershell
 unity pipeline install --project-path F:\WORK\ForestGuild\FG
 ```
 
-Автотик — через MCP-инструменты. **Фактическое имя команды — `set_auto_tick`, параметр — `--enabled`** (прежнее `set_autotick --enable` переименовано, CLI об этом сообщает при ошибке):
+РђРІС‚РѕС‚РёРє вЂ” С‡РµСЂРµР· MCP-РёРЅСЃС‚СЂСѓРјРµРЅС‚С‹. **Р¤Р°РєС‚РёС‡РµСЃРєРѕРµ РёРјСЏ РєРѕРјР°РЅРґС‹ вЂ” `set_auto_tick`, РїР°СЂР°РјРµС‚СЂ вЂ” `--enabled`** (РїСЂРµР¶РЅРµРµ `set_autotick --enable` РїРµСЂРµРёРјРµРЅРѕРІР°РЅРѕ, CLI РѕР± СЌС‚РѕРј СЃРѕРѕР±С‰Р°РµС‚ РїСЂРё РѕС€РёР±РєРµ):
 
 ```
 unity_command(command: "set_auto_tick", args: ["--enabled", "true"])
 ```
 
-Ответ: `"Auto-tick already enabled (interval updated to 16ms)"`.
+РћС‚РІРµС‚: `"Auto-tick already enabled (interval updated to 16ms)"`.
 
-- [ ] **Step 4: Проверить состояние**
+- [ ] **Step 4: РџСЂРѕРІРµСЂРёС‚СЊ СЃРѕСЃС‚РѕСЏРЅРёРµ**
 
-`unity_status` → `success: true`, `state: "ready"`. Если `STATUS_NO_INSTANCES` — подождать и повторить, не перезапуская редактор.
+`unity_status` в†’ `success: true`, `state: "ready"`. Р•СЃР»Рё `STATUS_NO_INSTANCES` вЂ” РїРѕРґРѕР¶РґР°С‚СЊ Рё РїРѕРІС‚РѕСЂРёС‚СЊ, РЅРµ РїРµСЂРµР·Р°РїСѓСЃРєР°СЏ СЂРµРґР°РєС‚РѕСЂ.
 
-- [ ] **Step 5: Зафиксировать факт в плане**
+- [ ] **Step 5: Р—Р°С„РёРєСЃРёСЂРѕРІР°С‚СЊ С„Р°РєС‚ РІ РїР»Р°РЅРµ**
 
-Дописать в конец файла: `- [x] Редактор запущен, автотик включён (<дата>)`.
+Р”РѕРїРёСЃР°С‚СЊ РІ РєРѕРЅРµС† С„Р°Р№Р»Р°: `- [x] Р РµРґР°РєС‚РѕСЂ Р·Р°РїСѓС‰РµРЅ, Р°РІС‚РѕС‚РёРє РІРєР»СЋС‡С‘РЅ (<РґР°С‚Р°>)`.
 
 ---
 
-### Task 3: Консольный harness `tools/sim` c ядром
+### Task 3: РљРѕРЅСЃРѕР»СЊРЅС‹Р№ harness `tools/sim` c СЏРґСЂРѕРј
 
 **Files:**
 - Create: `tools/sim/ForestGuild.Sim.csproj`
 - Create: `tools/sim/Program.cs`
 - Create: `tools/sim/CheckRunner.cs`
-- Modify: `.gitignore` (добавить `tools/sim/bin/`, `tools/sim/obj/`)
+- Modify: `.gitignore` (РґРѕР±Р°РІРёС‚СЊ `tools/sim/bin/`, `tools/sim/obj/`)
 
 **Interfaces:**
-- Produces: `ForestGuild.Core` код компилируется в .NET; `dotnet run --project tools/sim -- --selfcheck` возвращает 0 при успехе и 1 при провале.
+- Produces: `ForestGuild.Core` РєРѕРґ РєРѕРјРїРёР»РёСЂСѓРµС‚СЃСЏ РІ .NET; `dotnet run --project tools/sim -- --selfcheck` РІРѕР·РІСЂР°С‰Р°РµС‚ 0 РїСЂРё СѓСЃРїРµС…Рµ Рё 1 РїСЂРё РїСЂРѕРІР°Р»Рµ.
 
-- [ ] **Step 1: Создать csproj, подключающий ядро**
+- [ ] **Step 1: РЎРѕР·РґР°С‚СЊ csproj, РїРѕРґРєР»СЋС‡Р°СЋС‰РёР№ СЏРґСЂРѕ**
 
 `tools/sim/ForestGuild.Sim.csproj`:
 
@@ -172,9 +174,9 @@ unity_command(command: "set_auto_tick", args: ["--enabled", "true"])
 </Project>
 ```
 
-`LangVersion 9` — как в Unity 6, чтобы код не скомпилировался в консоли и не упал потом в редакторе.
+`LangVersion 9` вЂ” РєР°Рє РІ Unity 6, С‡С‚РѕР±С‹ РєРѕРґ РЅРµ СЃРєРѕРјРїРёР»РёСЂРѕРІР°Р»СЃСЏ РІ РєРѕРЅСЃРѕР»Рё Рё РЅРµ СѓРїР°Р» РїРѕС‚РѕРј РІ СЂРµРґР°РєС‚РѕСЂРµ.
 
-- [ ] **Step 2: Написать падающий selfcheck**
+- [ ] **Step 2: РќР°РїРёСЃР°С‚СЊ РїР°РґР°СЋС‰РёР№ selfcheck**
 
 `tools/sim/Program.cs`:
 
@@ -210,34 +212,34 @@ internal sealed class CheckRunner
     private readonly List<string> _failed = new List<string>();
     public void Check(string name, Func<bool> body)
     {
-        try { if (!body()) _failed.Add(name + ": вернул false"); }
+        try { if (!body()) _failed.Add(name + ": РІРµСЂРЅСѓР» false"); }
         catch (Exception e) { _failed.Add(name + ": " + e.GetType().Name + " " + e.Message); }
         Console.WriteLine((_failed.Count == 0 ? "ok   " : "FAIL ") + name);
     }
     public bool Report()
     {
-        if (_failed.Count == 0) { Console.WriteLine("все проверки прошли"); return true; }
-        foreach (var f in _failed) Console.WriteLine("  ✗ " + f);
+        if (_failed.Count == 0) { Console.WriteLine("РІСЃРµ РїСЂРѕРІРµСЂРєРё РїСЂРѕС€Р»Рё"); return true; }
+        foreach (var f in _failed) Console.WriteLine("  вњ— " + f);
         return false;
     }
 }
 ```
 
-Добавить `<Compile Include="CheckRunner.cs" />` в csproj.
+Р”РѕР±Р°РІРёС‚СЊ `<Compile Include="CheckRunner.cs" />` РІ csproj.
 
-- [ ] **Step 3: Запустить — убедиться, что падает**
+- [ ] **Step 3: Р—Р°РїСѓСЃС‚РёС‚СЊ вЂ” СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РїР°РґР°РµС‚**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: ошибка компиляции `The type or namespace name 'Rng' could not be found`.
+РћР¶РёРґР°РЅРёРµ: РѕС€РёР±РєР° РєРѕРјРїРёР»СЏС†РёРё `The type or namespace name 'Rng' could not be found`.
 
-- [ ] **Step 4: Написать минимальный `Rng`**
+- [ ] **Step 4: РќР°РїРёСЃР°С‚СЊ РјРёРЅРёРјР°Р»СЊРЅС‹Р№ `Rng`**
 
 `Assets/Scripts/Core/Sim/Rng.cs`:
 
 ```csharp
 namespace ForestGuild.Core.Sim
 {
-    /// Детерминированный генератор: один и тот же сид — одна и та же игра.
+    /// Р”РµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅС‹Р№ РіРµРЅРµСЂР°С‚РѕСЂ: РѕРґРёРЅ Рё С‚РѕС‚ Р¶Рµ СЃРёРґ вЂ” РѕРґРЅР° Рё С‚Р° Р¶Рµ РёРіСЂР°.
     public sealed class Rng
     {
         private ulong _state;
@@ -255,20 +257,20 @@ namespace ForestGuild.Core.Sim
 }
 ```
 
-- [ ] **Step 5: Запустить — убедиться, что проходит**
+- [ ] **Step 5: Р—Р°РїСѓСЃС‚РёС‚СЊ вЂ” СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РїСЂРѕС…РѕРґРёС‚**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: `ok   rng is deterministic`, `все проверки прошли`, код 0.
+РћР¶РёРґР°РЅРёРµ: `ok   rng is deterministic`, `РІСЃРµ РїСЂРѕРІРµСЂРєРё РїСЂРѕС€Р»Рё`, РєРѕРґ 0.
 
-- [ ] **Step 6: Коммит**
+- [ ] **Step 6: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(sim): консольный harness и детерминированный Rng"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(sim): РєРѕРЅСЃРѕР»СЊРЅС‹Р№ harness Рё РґРµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅС‹Р№ Rng"
 ```
 
 ---
 
-### Task 4: CSV-справочники MVP
+### Task 4: CSV-СЃРїСЂР°РІРѕС‡РЅРёРєРё MVP
 
 **Files:**
 - Create: `Assets/StreamingAssets/Data/tuning.csv`
@@ -287,58 +289,58 @@ cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(sim): консольны
 - Create: `Assets/StreamingAssets/Data/recipe_quality.csv`
 
 **Interfaces:**
-- Produces: 14 файлов с заголовками, которые ожидает `DataLoader` (задача 5). Колонки — ровно как ниже.
+- Produces: 14 С„Р°Р№Р»РѕРІ СЃ Р·Р°РіРѕР»РѕРІРєР°РјРё, РєРѕС‚РѕСЂС‹Рµ РѕР¶РёРґР°РµС‚ `DataLoader` (Р·Р°РґР°С‡Р° 5). РљРѕР»РѕРЅРєРё вЂ” СЂРѕРІРЅРѕ РєР°Рє РЅРёР¶Рµ.
 
 - [ ] **Step 1: `tuning.csv`**
 
 ```csv
 id;value;note
-schema_version;1;версия схемы таблиц
-hours_per_day;6;рабочих часов в сутках
-slots_per_person;4;слотов груза на человека
-stamina_per_person;4;выносливости на человека
-encounter_per_hour;0.25;шанс встречи за час на единицу плотности
-find_base;0.12;база шанса находки
-find_per_skill;0.06;прибавка за уровень навыка
-xp_to_nest;5;опыта до гнезда
-nest_beasts_cap;2;тварей в гнезде максимум
-nest_spawn_days;2;дней на одну тварь в гнезде
-migration_per_night;1;миграций в зону за ночь
-heart_influx_days;3;дней между притоком из сердца
-crystal_life_days;2;дней жизни кристалла на земле
-palisade_hp;10;прочность частокола
-wave_day;21;день первой волны
-xp_per_day;1;опыта за день работы
-xp_per_fight;1;бонус опыта за бой
-xp_per_depth;1;бонус опыта за пояс
-level_xp;10|30|70|150;опыта на переходы 1-2,2-3,3-4,4-5
+schema_version;1;РІРµСЂСЃРёСЏ СЃС…РµРјС‹ С‚Р°Р±Р»РёС†
+hours_per_day;6;СЂР°Р±РѕС‡РёС… С‡Р°СЃРѕРІ РІ СЃСѓС‚РєР°С…
+slots_per_person;4;СЃР»РѕС‚РѕРІ РіСЂСѓР·Р° РЅР° С‡РµР»РѕРІРµРєР°
+stamina_per_person;4;РІС‹РЅРѕСЃР»РёРІРѕСЃС‚Рё РЅР° С‡РµР»РѕРІРµРєР°
+encounter_per_hour;0.25;С€Р°РЅСЃ РІСЃС‚СЂРµС‡Рё Р·Р° С‡Р°СЃ РЅР° РµРґРёРЅРёС†Сѓ РїР»РѕС‚РЅРѕСЃС‚Рё
+find_base;0.12;Р±Р°Р·Р° С€Р°РЅСЃР° РЅР°С…РѕРґРєРё
+find_per_skill;0.06;РїСЂРёР±Р°РІРєР° Р·Р° СѓСЂРѕРІРµРЅСЊ РЅР°РІС‹РєР°
+xp_to_nest;5;РѕРїС‹С‚Р° РґРѕ РіРЅРµР·РґР°
+nest_beasts_cap;2;С‚РІР°СЂРµР№ РІ РіРЅРµР·РґРµ РјР°РєСЃРёРјСѓРј
+nest_spawn_days;2;РґРЅРµР№ РЅР° РѕРґРЅСѓ С‚РІР°СЂСЊ РІ РіРЅРµР·РґРµ
+migration_per_night;1;РјРёРіСЂР°С†РёР№ РІ Р·РѕРЅСѓ Р·Р° РЅРѕС‡СЊ
+heart_influx_days;3;РґРЅРµР№ РјРµР¶РґСѓ РїСЂРёС‚РѕРєРѕРј РёР· СЃРµСЂРґС†Р°
+crystal_life_days;2;РґРЅРµР№ Р¶РёР·РЅРё РєСЂРёСЃС‚Р°Р»Р»Р° РЅР° Р·РµРјР»Рµ
+palisade_hp;10;РїСЂРѕС‡РЅРѕСЃС‚СЊ С‡Р°СЃС‚РѕРєРѕР»Р°
+wave_day;21;РґРµРЅСЊ РїРµСЂРІРѕР№ РІРѕР»РЅС‹
+xp_per_day;1;РѕРїС‹С‚Р° Р·Р° РґРµРЅСЊ СЂР°Р±РѕС‚С‹
+xp_per_fight;1;Р±РѕРЅСѓСЃ РѕРїС‹С‚Р° Р·Р° Р±РѕР№
+xp_per_depth;1;Р±РѕРЅСѓСЃ РѕРїС‹С‚Р° Р·Р° РїРѕСЏСЃ
+level_xp;10|30|70|150;РѕРїС‹С‚Р° РЅР° РїРµСЂРµС…РѕРґС‹ 1-2,2-3,3-4,4-5
 ```
 
 - [ ] **Step 2: `items.csv`**
 
 ```csv
 id;name;category;slots;value;tags
-herb_fire_leaf;Огненная крапива;material;0.5;3;fire
-herb_ash_lichen;Пепельный лишай;material;0.5;4;
-herb_glass_stem;Стеклянница;material;0.5;3;
-ore_obsidian;Обсидиановая руда;material;2;8;heavy
-sulfur_nodule;Серный натёк;material;1;5;fire
-crystal_fire;Кристалл огня;material;1;25;crystal
-moss_common;Обычный мох;material;0.5;1;
-bone_plate;Костяная пластина;trophy;1;12;bone
-hide_rough;Грубая шкура;trophy;1;6;hide
+herb_fire_leaf;РћРіРЅРµРЅРЅР°СЏ РєСЂР°РїРёРІР°;material;0.5;3;fire
+herb_ash_lichen;РџРµРїРµР»СЊРЅС‹Р№ Р»РёС€Р°Р№;material;0.5;4;
+herb_glass_stem;РЎС‚РµРєР»СЏРЅРЅРёС†Р°;material;0.5;3;
+ore_obsidian;РћР±СЃРёРґРёР°РЅРѕРІР°СЏ СЂСѓРґР°;material;2;8;heavy
+sulfur_nodule;РЎРµСЂРЅС‹Р№ РЅР°С‚С‘Рє;material;1;5;fire
+crystal_fire;РљСЂРёСЃС‚Р°Р»Р» РѕРіРЅСЏ;material;1;25;crystal
+moss_common;РћР±С‹С‡РЅС‹Р№ РјРѕС…;material;0.5;1;
+bone_plate;РљРѕСЃС‚СЏРЅР°СЏ РїР»Р°СЃС‚РёРЅР°;trophy;1;12;bone
+hide_rough;Р“СЂСѓР±Р°СЏ С€РєСѓСЂР°;trophy;1;6;hide
 ```
 
 - [ ] **Step 3: `zones.csv` + `zone_resources.csv`**
 
 ```csv
 id;name;depth;travel_hours;crystals_per_day;forage_per_day;neighbours;env_rule;map_x;map_y
-verge_meadow;Опушка;edge;1;1;2;verge_springs|verge_thicket;none;0.50;0.52
-verge_springs;Вулканические ключи;edge;1.5;1;2;verge_meadow|verge_marsh|belt_stone;heat;0.28;0.38
-verge_marsh;Топь;edge;1.5;1;2;verge_springs|verge_thicket;mud;0.16;0.62
-verge_thicket;Чаща;edge;1;1;2;verge_meadow|verge_marsh|belt_stone;thicket;0.74;0.40
-belt_stone;Каменный лог;belt;3;2;3;verge_springs|verge_thicket|heart_root;none;0.58;0.20
-heart_root;Сердце леса;heart;6;4;4;belt_stone;none;0.86;0.08
+verge_meadow;РћРїСѓС€РєР°;edge;1;1;2;verge_springs|verge_thicket;none;0.50;0.52
+verge_springs;Р’СѓР»РєР°РЅРёС‡РµСЃРєРёРµ РєР»СЋС‡Рё;edge;1.5;1;2;verge_meadow|verge_marsh|belt_stone;heat;0.28;0.38
+verge_marsh;РўРѕРїСЊ;edge;1.5;1;2;verge_springs|verge_thicket;mud;0.16;0.62
+verge_thicket;Р§Р°С‰Р°;edge;1;1;2;verge_meadow|verge_marsh|belt_stone;thicket;0.74;0.40
+belt_stone;РљР°РјРµРЅРЅС‹Р№ Р»РѕРі;belt;3;2;3;verge_springs|verge_thicket|heart_root;none;0.58;0.20
+heart_root;РЎРµСЂРґС†Рµ Р»РµСЃР°;heart;6;4;4;belt_stone;none;0.86;0.08
 ```
 
 ```csv
@@ -362,9 +364,9 @@ belt_stone;crystal_fire;1
 
 ```csv
 id;name;strength;speed;food_need;nest_capable
-beast_spark;Искромёт;2;3;1;1
-beast_bone;Костяной бегун;3;2;1;1
-beast_ash;Пепельный вор;1;4;1;0
+beast_spark;РСЃРєСЂРѕРјС‘С‚;2;3;1;1
+beast_bone;РљРѕСЃС‚СЏРЅРѕР№ Р±РµРіСѓРЅ;3;2;1;1
+beast_ash;РџРµРїРµР»СЊРЅС‹Р№ РІРѕСЂ;1;4;1;0
 ```
 
 ```csv
@@ -391,49 +393,49 @@ beast_ash;crystal_fire;0.6;0
 
 ```csv
 id;name;kind;max_level
-gathering;Собирательство;field;5
-hunting;Охота;field;5
-butchering;Разделка;field;5
-smithing;Кузнечное дело;craft;5
-alchemy;Алхимия;craft;5
-tanning;Кожевенное дело;craft;5
+gathering;РЎРѕР±РёСЂР°С‚РµР»СЊСЃС‚РІРѕ;field;5
+hunting;РћС…РѕС‚Р°;field;5
+butchering;Р Р°Р·РґРµР»РєР°;field;5
+smithing;РљСѓР·РЅРµС‡РЅРѕРµ РґРµР»Рѕ;craft;5
+alchemy;РђР»С…РёРјРёСЏ;craft;5
+tanning;РљРѕР¶РµРІРµРЅРЅРѕРµ РґРµР»Рѕ;craft;5
 ```
 
 ```csv
 id;name;fight_bonus;find_bonus;butcher_bonus;carry_bonus
-brave;Храбрый;1;0;0;0
-keen;Зоркий;0;0.05;0;0
-steady;Твёрдая рука;0;0;1;0
-strong;Крепкий;0;0;0;1
-patient;Терпеливый;0;0.03;1;0
+brave;РҐСЂР°Р±СЂС‹Р№;1;0;0;0
+keen;Р—РѕСЂРєРёР№;0;0.05;0;0
+steady;РўРІС‘СЂРґР°СЏ СЂСѓРєР°;0;0;1;0
+strong;РљСЂРµРїРєРёР№;0;0;0;1
+patient;РўРµСЂРїРµР»РёРІС‹Р№;0;0.03;1;0
 ```
 
 ```csv
 id;name;skills_allowed;requires_trait;start_skills
-gatherer;Сборщик;gathering|butchering;patient;gathering:2|butchering:1
-hunter;Охотник;hunting|butchering;brave;hunting:2|butchering:1
+gatherer;РЎР±РѕСЂС‰РёРє;gathering|butchering;patient;gathering:2|butchering:1
+hunter;РћС…РѕС‚РЅРёРє;hunting|butchering;brave;hunting:2|butchering:1
 ```
 
 ```csv
 id;name;profession;traits;skills_override
-brunni;Брунни;hunter;brave|strong;hunting:4|butchering:3
-skadi;Скади;hunter;brave;hunting:3|butchering:2
-hilda;Хильда;hunter;brave|keen;hunting:2|butchering:2
-orn;Орн;hunter;strong;hunting:2|butchering:1
-leya;Лея;gatherer;keen|patient;gathering:3|butchering:2
-tove;Тове;gatherer;patient;gathering:2|butchering:2
-run;Рун;gatherer;steady;gathering:2|butchering:1
-valda;Вальда;gatherer;patient;gathering:1|butchering:0
+brunni;Р‘СЂСѓРЅРЅРё;hunter;brave|strong;hunting:4|butchering:3
+skadi;РЎРєР°РґРё;hunter;brave;hunting:3|butchering:2
+hilda;РҐРёР»СЊРґР°;hunter;brave|keen;hunting:2|butchering:2
+orn;РћСЂРЅ;hunter;strong;hunting:2|butchering:1
+leya;Р›РµСЏ;gatherer;keen|patient;gathering:3|butchering:2
+tove;РўРѕРІРµ;gatherer;patient;gathering:2|butchering:2
+run;Р СѓРЅ;gatherer;steady;gathering:2|butchering:1
+valda;Р’Р°Р»СЊРґР°;gatherer;patient;gathering:1|butchering:0
 ```
 
-Внимание: **id — только ASCII** (`run`, `valda`), русские имена — в колонке `name`.
+Р’РЅРёРјР°РЅРёРµ: **id вЂ” С‚РѕР»СЊРєРѕ ASCII** (`run`, `valda`), СЂСѓСЃСЃРєРёРµ РёРјРµРЅР° вЂ” РІ РєРѕР»РѕРЅРєРµ `name`.
 
 - [ ] **Step 6: `stations.csv`, `recipes.csv`, `recipe_quality.csv`**
 
 ```csv
 id;name;skill_id;people_slots
-smithy;Кузня;smithing;1
-workshop;Мастерская;alchemy;1
+smithy;РљСѓР·РЅСЏ;smithing;1
+workshop;РњР°СЃС‚РµСЂСЃРєР°СЏ;alchemy;1
 ```
 
 ```csv
@@ -449,43 +451,43 @@ knife_obsidian;4;bone_plate;2;0.5
 salve_ash;1;moss_common;1;1.0
 ```
 
-- [ ] **Step 7: Проверить, что файлы читаются и валидны по форме**
+- [ ] **Step 7: РџСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ С„Р°Р№Р»С‹ С‡РёС‚Р°СЋС‚СЃСЏ Рё РІР°Р»РёРґРЅС‹ РїРѕ С„РѕСЂРјРµ**
 
 ```powershell
 Get-ChildItem F:\WORK\ForestGuild\Assets\StreamingAssets\Data\*.csv |
-  ForEach-Object { "{0}: {1} строк" -f $_.Name, ((Get-Content $_.FullName).Count) }
+  ForEach-Object { "{0}: {1} СЃС‚СЂРѕРє" -f $_.Name, ((Get-Content $_.FullName).Count) }
 ```
 
-Ожидание: 14 файлов, у каждого минимум 2 строки, нет пустых.
+РћР¶РёРґР°РЅРёРµ: 14 С„Р°Р№Р»РѕРІ, Сѓ РєР°Р¶РґРѕРіРѕ РјРёРЅРёРјСѓРј 2 СЃС‚СЂРѕРєРё, РЅРµС‚ РїСѓСЃС‚С‹С….
 
-- [ ] **Step 8: Коммит**
+- [ ] **Step 8: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(data): 14 CSV-справочника MVP"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(data): 14 CSV-СЃРїСЂР°РІРѕС‡РЅРёРєР° MVP"
 ```
 
 ---
 
-### Task 5: Загрузчик и валидатор таблиц
+### Task 5: Р—Р°РіСЂСѓР·С‡РёРє Рё РІР°Р»РёРґР°С‚РѕСЂ С‚Р°Р±Р»РёС†
 
 **Files:**
 - Create: `Assets/Scripts/Core/Data/DataException.cs`
 - Create: `Assets/Scripts/Core/Data/CsvReader.cs`
 - Create: `Assets/Scripts/Core/Data/Table.cs`
-- Create: `Assets/Scripts/Core/Data/Rows.cs` (типы строк)
+- Create: `Assets/Scripts/Core/Data/Rows.cs` (С‚РёРїС‹ СЃС‚СЂРѕРє)
 - Create: `Assets/Scripts/Core/Data/DataLoader.cs`
-- Modify: `tools/sim/Program.cs` (добавить проверки загрузки реальных таблиц)
+- Modify: `tools/sim/Program.cs` (РґРѕР±Р°РІРёС‚СЊ РїСЂРѕРІРµСЂРєРё Р·Р°РіСЂСѓР·РєРё СЂРµР°Р»СЊРЅС‹С… С‚Р°Р±Р»РёС†)
 
 **Interfaces:**
 - Produces:
-  - `Tables DataLoader.Load(string dataDir)` — читает все 14 файлов, валидирует, бросает `DataException`.
+  - `Tables DataLoader.Load(string dataDir)` вЂ” С‡РёС‚Р°РµС‚ РІСЃРµ 14 С„Р°Р№Р»РѕРІ, РІР°Р»РёРґРёСЂСѓРµС‚, Р±СЂРѕСЃР°РµС‚ `DataException`.
   - `Table<T>.Get(string id)`, `.All`, `.TryGet(string, out T)`.
   - `Tables.Tuning`, `Tables.Zones`, `Tables.Items`, `Tables.ZoneResources`, `Tables.Beasts`, `Tables.ZoneBeasts`, `Tables.Drops`, `Tables.Skills`, `Tables.Traits`, `Tables.Professions`, `Tables.Roster`, `Tables.Stations`, `Tables.Recipes`, `Tables.RecipeQuality`.
   - `Tuning.GetFloat(string key)`, `GetInt(string key)`, `GetIntList(string key)`.
 
-- [ ] **Step 1: Написать падающую проверку**
+- [ ] **Step 1: РќР°РїРёСЃР°С‚СЊ РїР°РґР°СЋС‰СѓСЋ РїСЂРѕРІРµСЂРєСѓ**
 
-В `Program.cs` перед `var ok = failures.Report();` добавить:
+Р’ `Program.cs` РїРµСЂРµРґ `var ok = failures.Report();` РґРѕР±Р°РІРёС‚СЊ:
 
 ```csharp
 failures.Check("tables load", () =>
@@ -495,13 +497,13 @@ failures.Check("tables load", () =>
 });
 failures.Check("unknown zone in neighbours fails", () =>
 {
-    var dir = CopyDataWithMutation("zones.csv", "verge_meadow;Опушка;edge;1;1;2;nowhere;none;0.5;0.52");
+    var dir = CopyDataWithMutation("zones.csv", "verge_meadow;РћРїСѓС€РєР°;edge;1;1;2;nowhere;none;0.5;0.52");
     try { ForestGuild.Core.Data.DataLoader.Load(dir); return false; }
     catch (ForestGuild.Core.Data.DataException) { return true; }
 });
 ```
 
-и хелперы в конце `Program`:
+Рё С…РµР»РїРµСЂС‹ РІ РєРѕРЅС†Рµ `Program`:
 
 ```csharp
 private static string DataDir()
@@ -523,14 +525,14 @@ private static string CopyDataWithMutation(string file, string replacementLine)
 }
 ```
 
-(`using System.IO; using System.Linq; using System.Collections.Generic;` — добавить.)
+(`using System.IO; using System.Linq; using System.Collections.Generic;` вЂ” РґРѕР±Р°РІРёС‚СЊ.)
 
-- [ ] **Step 2: Запустить — убедиться, что падает**
+- [ ] **Step 2: Р—Р°РїСѓСЃС‚РёС‚СЊ вЂ” СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РїР°РґР°РµС‚**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: `FAIL tables load ... 'DataLoader' could not be found` (ошибка компиляции).
+РћР¶РёРґР°РЅРёРµ: `FAIL tables load ... 'DataLoader' could not be found` (РѕС€РёР±РєР° РєРѕРјРїРёР»СЏС†РёРё).
 
-- [ ] **Step 3: Написать `DataException`, `CsvReader`, `Table<T>`**
+- [ ] **Step 3: РќР°РїРёСЃР°С‚СЊ `DataException`, `CsvReader`, `Table<T>`**
 
 `DataException.cs`:
 
@@ -556,7 +558,7 @@ using System.Text;
 
 namespace ForestGuild.Core.Data
 {
-    /// Читает CSV: ';', UTF-8, '#' — комментарий, первая непустая строка — заголовок.
+    /// Р§РёС‚Р°РµС‚ CSV: ';', UTF-8, '#' вЂ” РєРѕРјРјРµРЅС‚Р°СЂРёР№, РїРµСЂРІР°СЏ РЅРµРїСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° вЂ” Р·Р°РіРѕР»РѕРІРѕРє.
     public static class CsvReader
     {
         public static List<Dictionary<string, string>> Read(string path)
@@ -577,12 +579,12 @@ namespace ForestGuild.Core.Data
                 }
                 if (cells.Length != header.Length)
                     throw new DataException(Path.GetFileName(path) + ":" + (i + 1),
-                        "колонок " + cells.Length + ", ожидалось " + header.Length);
+                        "РєРѕР»РѕРЅРѕРє " + cells.Length + ", РѕР¶РёРґР°Р»РѕСЃСЊ " + header.Length);
                 var row = new Dictionary<string, string>(StringComparer.Ordinal);
                 for (var c = 0; c < header.Length; c++) row[header[c]] = cells[c].Trim();
                 rows.Add(row);
             }
-            if (header == null) throw new DataException(Path.GetFileName(path), "нет заголовка");
+            if (header == null) throw new DataException(Path.GetFileName(path), "РЅРµС‚ Р·Р°РіРѕР»РѕРІРєР°");
             return rows;
         }
     }
@@ -610,14 +612,14 @@ namespace ForestGuild.Core.Data
             for (var i = 0; i < all.Count; i++)
             {
                 var id = idOf(all[i]);
-                if (_byId.ContainsKey(id)) throw new DataException("table", "дубликат id: " + id);
+                if (_byId.ContainsKey(id)) throw new DataException("table", "РґСѓР±Р»РёРєР°С‚ id: " + id);
                 _byId.Add(id, all[i]);
             }
         }
 
         public T Get(string id)
         {
-            if (!_byId.TryGetValue(id, out var value)) throw new DataException("table", "нет id: " + id);
+            if (!_byId.TryGetValue(id, out var value)) throw new DataException("table", "РЅРµС‚ id: " + id);
             return value;
         }
 
@@ -626,9 +628,9 @@ namespace ForestGuild.Core.Data
 }
 ```
 
-- [ ] **Step 4: Написать типы строк**
+- [ ] **Step 4: РќР°РїРёСЃР°С‚СЊ С‚РёРїС‹ СЃС‚СЂРѕРє**
 
-`Rows.cs` — все типы публичные, поля-свойства только для чтения:
+`Rows.cs` вЂ” РІСЃРµ С‚РёРїС‹ РїСѓР±Р»РёС‡РЅС‹Рµ, РїРѕР»СЏ-СЃРІРѕР№СЃС‚РІР° С‚РѕР»СЊРєРѕ РґР»СЏ С‡С‚РµРЅРёСЏ:
 
 ```csharp
 using System.Collections.Generic;
@@ -689,7 +691,7 @@ namespace ForestGuild.Core.Data
 }
 ```
 
-- [ ] **Step 5: Написать `DataLoader`**
+- [ ] **Step 5: РќР°РїРёСЃР°С‚СЊ `DataLoader`**
 
 ```csharp
 using System;
@@ -726,7 +728,7 @@ namespace ForestGuild.Core.Data
             var t = new Tables();
             t.Tuning = ReadTuning(Path.Combine(dir, "tuning.csv"));
             if (t.Tuning.GetInt("schema_version") != SchemaVersion)
-                throw new DataException("tuning.csv", "schema_version " + t.Tuning.GetInt("schema_version") + ", ожидалось " + SchemaVersion);
+                throw new DataException("tuning.csv", "schema_version " + t.Tuning.GetInt("schema_version") + ", РѕР¶РёРґР°Р»РѕСЃСЊ " + SchemaVersion);
 
             t.Items = Read(dir, "items.csv", (r, p) => new Item
             {
@@ -809,7 +811,7 @@ namespace ForestGuild.Core.Data
             foreach (var z in t.Zones.All)
                 foreach (var nb in z.Neighbours)
                     if (!t.Zones.TryGet(nb, out _))
-                        throw new DataException("zones.csv", "зона " + z.Id + " ссылается на неизвестного соседа " + nb);
+                        throw new DataException("zones.csv", "Р·РѕРЅР° " + z.Id + " СЃСЃС‹Р»Р°РµС‚СЃСЏ РЅР° РЅРµРёР·РІРµСЃС‚РЅРѕРіРѕ СЃРѕСЃРµРґР° " + nb);
 
             return t;
         }
@@ -830,7 +832,7 @@ namespace ForestGuild.Core.Data
             {
                 var parts = pair.Split(':');
                 if (parts.Length != 2)
-                    throw new DataException("table", "ожидалось id:число, получено " + pair);
+                    throw new DataException("table", "РѕР¶РёРґР°Р»РѕСЃСЊ id:С‡РёСЃР»Рѕ, РїРѕР»СѓС‡РµРЅРѕ " + pair);
                 result[parts[0].Trim()] = int.Parse(parts[1].Trim(),
                     System.Globalization.CultureInfo.InvariantCulture);
             }
@@ -850,27 +852,27 @@ namespace ForestGuild.Core.Data
 }
 ```
 
-Хелперы `Get`, `I`, `F`, `SplitList` (список `a|b`, пары `a:1|b:2`):
+РҐРµР»РїРµСЂС‹ `Get`, `I`, `F`, `SplitList` (СЃРїРёСЃРѕРє `a|b`, РїР°СЂС‹ `a:1|b:2`):
 
 ```csharp
 private static string Get(Dictionary<string, string> r, string path, string col)
 {
     if (!r.TryGetValue(col, out var v) || string.IsNullOrEmpty(v))
-        throw new DataException(Path.GetFileName(path), "пустая колонка " + col + " в строке " + string.Join(";", r.Values));
+        throw new DataException(Path.GetFileName(path), "РїСѓСЃС‚Р°СЏ РєРѕР»РѕРЅРєР° " + col + " РІ СЃС‚СЂРѕРєРµ " + string.Join(";", r.Values));
     return v;
 }
 private static int I(Dictionary<string, string> r, string path, string col)
 {
     if (!int.TryParse(Get(r, path, col), System.Globalization.NumberStyles.Integer,
         System.Globalization.CultureInfo.InvariantCulture, out var v))
-        throw new DataException(Path.GetFileName(path), "не число: " + col + "=" + Get(r, path, col));
+        throw new DataException(Path.GetFileName(path), "РЅРµ С‡РёСЃР»Рѕ: " + col + "=" + Get(r, path, col));
     return v;
 }
 private static float F(Dictionary<string, string> r, string path, string col)
 {
     if (!float.TryParse(Get(r, path, col), System.Globalization.NumberStyles.Float,
         System.Globalization.CultureInfo.InvariantCulture, out var v))
-        throw new DataException(Path.GetFileName(path), "не число: " + col + "=" + Get(r, path, col));
+        throw new DataException(Path.GetFileName(path), "РЅРµ С‡РёСЃР»Рѕ: " + col + "=" + Get(r, path, col));
     return v;
 }
 private static string[] SplitList(string value) =>
@@ -884,16 +886,16 @@ public sealed class Tuning
 {
     private readonly Dictionary<string, string> _raw;
     public Tuning(Dictionary<string, string> raw) { _raw = raw; }
-    public string Get(string key) => _raw.TryGetValue(key, out var v) ? v : throw new DataException("tuning.csv", "нет ключа " + key);
+    public string Get(string key) => _raw.TryGetValue(key, out var v) ? v : throw new DataException("tuning.csv", "РЅРµС‚ РєР»СЋС‡Р° " + key);
     public int GetInt(string key) => int.Parse(Get(key), System.Globalization.CultureInfo.InvariantCulture);
     public float GetFloat(string key) => float.Parse(Get(key), System.Globalization.CultureInfo.InvariantCulture);
     public int[] GetIntList(string key) => Get(key).Split('|').Select(s => int.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
 }
 ```
 
-- [ ] **Step 6: Добавить проверки внешних ключей**
+- [ ] **Step 6: Р”РѕР±Р°РІРёС‚СЊ РїСЂРѕРІРµСЂРєРё РІРЅРµС€РЅРёС… РєР»СЋС‡РµР№**
 
-В `Load`, после чтения всех таблиц:
+Р’ `Load`, РїРѕСЃР»Рµ С‡С‚РµРЅРёСЏ РІСЃРµС… С‚Р°Р±Р»РёС†:
 
 ```csharp
 RequireRefs(t.ZoneResources.All.Select(x => x.ZoneId), t.Zones, "zone_resources.csv", "zone_id");
@@ -910,48 +912,48 @@ RequireRefs(t.Recipes.All.Select(x => x.Station), t.Stations, "recipes.csv", "st
 RequireRefs(t.Recipes.All.Select(x => x.SkillId), t.Skills, "recipes.csv", "skill_id");
 ```
 
-`RequireRefs` — обобщённая, без `dynamic`:
+`RequireRefs` вЂ” РѕР±РѕР±С‰С‘РЅРЅР°СЏ, Р±РµР· `dynamic`:
 
 ```csharp
 private static void RequireRefs<T>(IEnumerable<string> ids, Table<T> table, string file, string col)
 {
     foreach (var id in ids)
         if (!table.TryGet(id, out _))
-            throw new DataException(file, "неизвестная ссылка " + col + "=" + id);
+            throw new DataException(file, "РЅРµРёР·РІРµСЃС‚РЅР°СЏ СЃСЃС‹Р»РєР° " + col + "=" + id);
 }
 ```
 
-- [ ] **Step 7: Запустить проверки**
+- [ ] **Step 7: Р—Р°РїСѓСЃС‚РёС‚СЊ РїСЂРѕРІРµСЂРєРё**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: `ok   tables load`, `ok   unknown zone in neighbours fails`, код 0.
+РћР¶РёРґР°РЅРёРµ: `ok   tables load`, `ok   unknown zone in neighbours fails`, РєРѕРґ 0.
 
-- [ ] **Step 8: Коммит**
+- [ ] **Step 8: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): загрузчик CSV с валидацией внешних ключей"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): Р·Р°РіСЂСѓР·С‡РёРє CSV СЃ РІР°Р»РёРґР°С†РёРµР№ РІРЅРµС€РЅРёС… РєР»СЋС‡РµР№"
 ```
 
 ---
 
-### Task 6: Мир и ночная симуляция
+### Task 6: РњРёСЂ Рё РЅРѕС‡РЅР°СЏ СЃРёРјСѓР»СЏС†РёСЏ
 
 **Files:**
 - Create: `Assets/Scripts/Core/Sim/World.cs`
 - Create: `Assets/Scripts/Core/Sim/NightSim.cs`
-- Modify: `tools/sim/Program.cs` (проверки правил ночи)
+- Modify: `tools/sim/Program.cs` (РїСЂРѕРІРµСЂРєРё РїСЂР°РІРёР» РЅРѕС‡Рё)
 
 **Interfaces:**
 - Produces:
-  - `World World.Create(Tables tables)` — зоны из `zone_beasts.initial_count`, кристаллы 0, корм 0, `NestXp 0`, `Day 1`.
-  - `ZoneState` с полями `ZoneId`, `Beasts` (`Dictionary<string,int>`), `Crystals`, `Forage`, `NestXp`, `Nest` (`NestState`), `Scouted`.
+  - `World World.Create(Tables tables)` вЂ” Р·РѕРЅС‹ РёР· `zone_beasts.initial_count`, РєСЂРёСЃС‚Р°Р»Р»С‹ 0, РєРѕСЂРј 0, `NestXp 0`, `Day 1`.
+  - `ZoneState` СЃ РїРѕР»СЏРјРё `ZoneId`, `Beasts` (`Dictionary<string,int>`), `Crystals`, `Forage`, `NestXp`, `Nest` (`NestState`), `Scouted`.
   - `NestState { bool Exists; int Beasts; int DaysSinceSpawn; }`
-  - `NightReport NightSim.AdvanceNight(World world, Tables tables, Rng rng)` — обновляет мир, возвращает `NightReport` со `List<NightEvent>` и `List<string> Lines`.
+  - `NightReport NightSim.AdvanceNight(World world, Tables tables, Rng rng)` вЂ” РѕР±РЅРѕРІР»СЏРµС‚ РјРёСЂ, РІРѕР·РІСЂР°С‰Р°РµС‚ `NightReport` СЃРѕ `List<NightEvent>` Рё `List<string> Lines`.
   - `World.BeastCount(string zoneId)`.
 
-- [ ] **Step 1: Написать падающие проверки**
+- [ ] **Step 1: РќР°РїРёСЃР°С‚СЊ РїР°РґР°СЋС‰РёРµ РїСЂРѕРІРµСЂРєРё**
 
-В `Program.cs`:
+Р’ `Program.cs`:
 
 ```csharp
 failures.Check("night feeds beasts from forage", () =>
@@ -979,19 +981,19 @@ failures.Check("crystals eaten give nest xp", () =>
     var w = World.Create(t);
     var z = w.Zones["verge_meadow"];
     z.Beasts["beast_spark"] = 1;
-    NightSim.AdvanceNight(w, t, new Rng(1));   // корм есть, кристалл цел
+    NightSim.AdvanceNight(w, t, new Rng(1));   // РєРѕСЂРј РµСЃС‚СЊ, РєСЂРёСЃС‚Р°Р»Р» С†РµР»
     z.Forage = 0; z.Crystals = 3;
-    NightSim.AdvanceNight(w, t, new Rng(1));   // корм кончился — ест кристалл
+    NightSim.AdvanceNight(w, t, new Rng(1));   // РєРѕСЂРј РєРѕРЅС‡РёР»СЃСЏ вЂ” РµСЃС‚ РєСЂРёСЃС‚Р°Р»Р»
     return z.NestXp > 0;
 });
 ```
 
-- [ ] **Step 2: Запустить — убедиться, что падает**
+- [ ] **Step 2: Р—Р°РїСѓСЃС‚РёС‚СЊ вЂ” СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РїР°РґР°РµС‚**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: ошибка компиляции `'World' could not be found`.
+РћР¶РёРґР°РЅРёРµ: РѕС€РёР±РєР° РєРѕРјРїРёР»СЏС†РёРё `'World' could not be found`.
 
-- [ ] **Step 3: Написать `World`**
+- [ ] **Step 3: РќР°РїРёСЃР°С‚СЊ `World`**
 
 ```csharp
 using System;
@@ -1039,7 +1041,7 @@ namespace ForestGuild.Core.Sim
 }
 ```
 
-- [ ] **Step 4: Написать `NightSim`**
+- [ ] **Step 4: РќР°РїРёСЃР°С‚СЊ `NightSim`**
 
 ```csharp
 using System;
@@ -1062,7 +1064,7 @@ namespace ForestGuild.Core.Sim
             var report = new NightReport();
             var t = tables.Tuning;
 
-            // 1. Приход еды.
+            // 1. РџСЂРёС…РѕРґ РµРґС‹.
             foreach (var z in world.Zones.Values)
             {
                 var def = tables.Zones.Get(z.ZoneId);
@@ -1070,7 +1072,7 @@ namespace ForestGuild.Core.Sim
                 z.Crystals += def.CrystalsPerDay;
             }
 
-            // 2. Кормление: корм → труп → кристалл (трупов в шаге 1 нет).
+            // 2. РљРѕСЂРјР»РµРЅРёРµ: РєРѕСЂРј в†’ С‚СЂСѓРї в†’ РєСЂРёСЃС‚Р°Р»Р» (С‚СЂСѓРїРѕРІ РІ С€Р°РіРµ 1 РЅРµС‚).
             var hungry = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (var z in world.Zones.Values)
             {
@@ -1088,7 +1090,7 @@ namespace ForestGuild.Core.Sim
                 if (starved > 0) hungry[z.ZoneId] = starved;
             }
 
-            // 3. Миграция голодных наружу, не больше migration_per_night на зону.
+            // 3. РњРёРіСЂР°С†РёСЏ РіРѕР»РѕРґРЅС‹С… РЅР°СЂСѓР¶Сѓ, РЅРµ Р±РѕР»СЊС€Рµ migration_per_night РЅР° Р·РѕРЅСѓ.
             var limit = t.GetInt("migration_per_night");
             foreach (var pair in hungry)
             {
@@ -1097,20 +1099,20 @@ namespace ForestGuild.Core.Sim
                 if (outward == null) continue;
                 var move = Math.Min(Math.Min(pair.Value, limit), world.BeastCount(pair.Key));
                 for (var i = 0; i < move; i++) MoveOneBeast(world, pair.Key, outward);
-                if (move > 0) report.Add($"{tables.Zones.Get(pair.Key).Name}: {move} твар. уходит в {tables.Zones.Get(outward).Name}");
+                if (move > 0) report.Add($"{tables.Zones.Get(pair.Key).Name}: {move} С‚РІР°СЂ. СѓС…РѕРґРёС‚ РІ {tables.Zones.Get(outward).Name}");
             }
 
-            // 4. Гнездо из опыта.
+            // 4. Р“РЅРµР·РґРѕ РёР· РѕРїС‹С‚Р°.
             var xpToNest = t.GetInt("xp_to_nest");
             foreach (var z in world.Zones.Values)
             {
                 if (z.Nest.Exists || z.NestXp < xpToNest) continue;
                 z.NestXp -= xpToNest;
                 z.Nest.Exists = true; z.Nest.Beasts = 0; z.Nest.DaysSinceSpawn = 0;
-                report.Add($"{tables.Zones.Get(z.ZoneId).Name}: появилось гнездо");
+                report.Add($"{tables.Zones.Get(z.ZoneId).Name}: РїРѕСЏРІРёР»РѕСЃСЊ РіРЅРµР·РґРѕ");
             }
 
-            // 5. Гнездо плодит.
+            // 5. Р“РЅРµР·РґРѕ РїР»РѕРґРёС‚.
             var spawnDays = t.GetInt("nest_spawn_days");
             var cap = t.GetInt("nest_beasts_cap");
             foreach (var z in world.Zones.Values)
@@ -1125,12 +1127,12 @@ namespace ForestGuild.Core.Sim
                     {
                         z.Beasts.TryGetValue(nestBeast.BeastId, out var c);
                         z.Beasts[nestBeast.BeastId] = c + 1;
-                        report.Add($"{tables.Zones.Get(z.ZoneId).Name}: гнездо растит тварь");
+                        report.Add($"{tables.Zones.Get(z.ZoneId).Name}: РіРЅРµР·РґРѕ СЂР°СЃС‚РёС‚ С‚РІР°СЂСЊ");
                     }
                 }
             }
 
-            // 6. Кристаллы, которые никто не взял, впитываются.
+            // 6. РљСЂРёСЃС‚Р°Р»Р»С‹, РєРѕС‚РѕСЂС‹Рµ РЅРёРєС‚Рѕ РЅРµ РІР·СЏР», РІРїРёС‚С‹РІР°СЋС‚СЃСЏ.
             var life = t.GetInt("crystal_life_days");
             foreach (var z in world.Zones.Values)
             {
@@ -1140,7 +1142,7 @@ namespace ForestGuild.Core.Sim
             }
 
             world.Day++;
-            report.Add($"Наступил день {world.Day}");
+            report.Add($"РќР°СЃС‚СѓРїРёР» РґРµРЅСЊ {world.Day}");
             return report;
         }
 
@@ -1156,8 +1158,8 @@ namespace ForestGuild.Core.Sim
             dst.Beasts[id] = c + 1;
         }
 
-        /// Голодная тварь идёт наружу: к деревне. Рёбра берём из zones.csv,
-        /// «наружу» = зона с меньшей глубиной; окраина смотрит на деревню.
+        /// Р“РѕР»РѕРґРЅР°СЏ С‚РІР°СЂСЊ РёРґС‘С‚ РЅР°СЂСѓР¶Сѓ: Рє РґРµСЂРµРІРЅРµ. Р С‘Р±СЂР° Р±РµСЂС‘Рј РёР· zones.csv,
+        /// В«РЅР°СЂСѓР¶СѓВ» = Р·РѕРЅР° СЃ РјРµРЅСЊС€РµР№ РіР»СѓР±РёРЅРѕР№; РѕРєСЂР°РёРЅР° СЃРјРѕС‚СЂРёС‚ РЅР° РґРµСЂРµРІРЅСЋ.
         private static string OutwardNeighbour(Tables tables, string zoneId)
         {
             var z = tables.Zones.Get(zoneId);
@@ -1175,20 +1177,20 @@ namespace ForestGuild.Core.Sim
 }
 ```
 
-- [ ] **Step 5: Запустить проверки**
+- [ ] **Step 5: Р—Р°РїСѓСЃС‚РёС‚СЊ РїСЂРѕРІРµСЂРєРё**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: три проверки ночи и предыдущие — `ok`, код 0.
+РћР¶РёРґР°РЅРёРµ: С‚СЂРё РїСЂРѕРІРµСЂРєРё РЅРѕС‡Рё Рё РїСЂРµРґС‹РґСѓС‰РёРµ вЂ” `ok`, РєРѕРґ 0.
 
-- [ ] **Step 6: Коммит**
+- [ ] **Step 6: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): мир и ночная симуляция леса"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): РјРёСЂ Рё РЅРѕС‡РЅР°СЏ СЃРёРјСѓР»СЏС†РёСЏ Р»РµСЃР°"
 ```
 
 ---
 
-### Task 7: Ядро — назначения и авторезолв вылазки
+### Task 7: РЇРґСЂРѕ вЂ” РЅР°Р·РЅР°С‡РµРЅРёСЏ Рё Р°РІС‚РѕСЂРµР·РѕР»РІ РІС‹Р»Р°Р·РєРё
 
 **Files:**
 - Create: `Assets/Scripts/Core/Sim/DayPlan.cs`
@@ -1201,9 +1203,9 @@ cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): мир и ноч�
   - `PartyAssignment { string ZoneId; List<string> PersonIds; Behavior Behavior; }`, `enum Behavior { Gather, Avoid, Clean }`
   - `ExpeditionResult { string ZoneId; List<KeyValuePair<string,int>> Found; int HoursUsed; int Stamina; bool Encountered; bool Wounded; List<string> Log; }`
   - `ExpeditionSim.Resolve(World world, Tables tables, PartyAssignment party, Rng rng)`
-  - `Person.SkillLevel(Person p, string skillId)` (в `Data/People.cs`).
+  - `Person.SkillLevel(Person p, string skillId)` (РІ `Data/People.cs`).
 
-- [ ] **Step 1: Написать падающую проверку**
+- [ ] **Step 1: РќР°РїРёСЃР°С‚СЊ РїР°РґР°СЋС‰СѓСЋ РїСЂРѕРІРµСЂРєСѓ**
 
 ```csharp
 failures.Check("expedition finds resources", () =>
@@ -1231,12 +1233,12 @@ private static PartyAssignment Party(string zone, params string[] people)
 }
 ```
 
-- [ ] **Step 2: Запустить — убедиться, что падает**
+- [ ] **Step 2: Р—Р°РїСѓСЃС‚РёС‚СЊ вЂ” СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РїР°РґР°РµС‚**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: `'PartyAssignment' could not be found`.
+РћР¶РёРґР°РЅРёРµ: `'PartyAssignment' could not be found`.
 
-- [ ] **Step 3: Написать `DayPlan` и навыки человека**
+- [ ] **Step 3: РќР°РїРёСЃР°С‚СЊ `DayPlan` Рё РЅР°РІС‹РєРё С‡РµР»РѕРІРµРєР°**
 
 ```csharp
 using System.Collections.Generic;
@@ -1275,7 +1277,7 @@ namespace ForestGuild.Core.Sim
 }
 ```
 
-- [ ] **Step 4: Написать `ExpeditionSim`**
+- [ ] **Step 4: РќР°РїРёСЃР°С‚СЊ `ExpeditionSim`**
 
 ```csharp
 using System;
@@ -1307,7 +1309,7 @@ namespace ForestGuild.Core.Sim
 
             var budget = t.GetInt("hours_per_day");
             var workHours = Math.Max(0, budget - (int)Math.Ceiling(zone.TravelHours * 2));
-            if (workHours <= 0) { result.Log.Add("Дорога съедает весь день: отряд не дошёл"); return result; }
+            if (workHours <= 0) { result.Log.Add("Р”РѕСЂРѕРіР° СЃСЉРµРґР°РµС‚ РІРµСЃСЊ РґРµРЅСЊ: РѕС‚СЂСЏРґ РЅРµ РґРѕС€С‘Р»"); return result; }
 
             var density = Density(world, zoneState);
             var intensity = party.Behavior == Behavior.Avoid ? 0.5 : party.Behavior == Behavior.Clean ? 2.5 : 1.0;
@@ -1320,9 +1322,9 @@ namespace ForestGuild.Core.Sim
             for (var hour = 1; hour <= workHours; hour++)
             {
                 result.HoursUsed = hour;
-                if (result.Stamina <= 0) { result.Log.Add($"{zone.Name}: отряд выбился из сил"); break; }
+                if (result.Stamina <= 0) { result.Log.Add($"{zone.Name}: РѕС‚СЂСЏРґ РІС‹Р±РёР»СЃСЏ РёР· СЃРёР»"); break; }
 
-                // Находки.
+                // РќР°С…РѕРґРєРё.
                 foreach (var personId in party.PersonIds)
                 {
                     var person = tables.Roster.Get(personId);
@@ -1333,20 +1335,20 @@ namespace ForestGuild.Core.Sim
                     var pick = PickResource(tables, zone.Id, rng);
                     if (pick == null) continue;
                     var item = tables.Items.Get(pick);
-                    if (free < item.Slots) { result.Log.Add($"{person.Name}: мешок полон, {item.Name} брошено"); continue; }
+                    if (free < item.Slots) { result.Log.Add($"{person.Name}: РјРµС€РѕРє РїРѕР»РѕРЅ, {item.Name} Р±СЂРѕС€РµРЅРѕ"); continue; }
                     free -= item.Slots;
                     AddFound(result, pick);
                 }
 
-                // Встреча.
+                // Р’СЃС‚СЂРµС‡Р°.
                 var encounter = t.GetFloat("encounter_per_hour") * density * intensity;
                 if (!rng.Chance(encounter)) continue;
                 result.Encountered = true;
                 result.Stamina -= 1;
-                if (rng.Chance(0.5)) { result.Log.Add($"{zone.Name}: тварь рядом, отряд отошёл"); continue; }
-                if (rng.Chance(0.5)) { result.Log.Add($"{zone.Name}: бой — победа, туша брошена"); continue; }
+                if (rng.Chance(0.5)) { result.Log.Add($"{zone.Name}: С‚РІР°СЂСЊ СЂСЏРґРѕРј, РѕС‚СЂСЏРґ РѕС‚РѕС€С‘Р»"); continue; }
+                if (rng.Chance(0.5)) { result.Log.Add($"{zone.Name}: Р±РѕР№ вЂ” РїРѕР±РµРґР°, С‚СѓС€Р° Р±СЂРѕС€РµРЅР°"); continue; }
                 result.Wounded = true;
-                result.Log.Add($"{zone.Name}: бой — ранение, отряд возвращается");
+                result.Log.Add($"{zone.Name}: Р±РѕР№ вЂ” СЂР°РЅРµРЅРёРµ, РѕС‚СЂСЏРґ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ");
                 break;
             }
 
@@ -1387,20 +1389,20 @@ namespace ForestGuild.Core.Sim
 }
 ```
 
-- [ ] **Step 5: Запустить проверки**
+- [ ] **Step 5: Р—Р°РїСѓСЃС‚РёС‚СЊ РїСЂРѕРІРµСЂРєРё**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: все проверки `ok`, код 0.
+РћР¶РёРґР°РЅРёРµ: РІСЃРµ РїСЂРѕРІРµСЂРєРё `ok`, РєРѕРґ 0.
 
-- [ ] **Step 6: Коммит**
+- [ ] **Step 6: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): назначения и авторезолв вылазки по часам"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): РЅР°Р·РЅР°С‡РµРЅРёСЏ Рё Р°РІС‚РѕСЂРµР·РѕР»РІ РІС‹Р»Р°Р·РєРё РїРѕ С‡Р°СЃР°Рј"
 ```
 
 ---
 
-### Task 8: Сцена, UIDocument и карта леса
+### Task 8: РЎС†РµРЅР°, UIDocument Рё РєР°СЂС‚Р° Р»РµСЃР°
 
 **Files:**
 - Create: `Assets/UI/Map.uxml`
@@ -1409,13 +1411,13 @@ cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): назначен�
 - Create: `Assets/Scripts/Game/MapController.cs`
 - Create: `Assets/Scripts/Game/ZoneNodeView.cs`
 - Create: `Assets/Scripts/Game/EdgeLine.cs`
-- Create: `Assets/Scenes/Main.unity` (живой редактор)
+- Create: `Assets/Scenes/Main.unity` (Р¶РёРІРѕР№ СЂРµРґР°РєС‚РѕСЂ)
 
 **Interfaces:**
 - Consumes: `Tables`, `World`, `World.Create`.
-- Produces: сцена `Main` с узлами зон и связями; `MapScreen.Tables`, `MapScreen.World` доступны другим компонентам.
+- Produces: СЃС†РµРЅР° `Main` СЃ СѓР·Р»Р°РјРё Р·РѕРЅ Рё СЃРІСЏР·СЏРјРё; `MapScreen.Tables`, `MapScreen.World` РґРѕСЃС‚СѓРїРЅС‹ РґСЂСѓРіРёРј РєРѕРјРїРѕРЅРµРЅС‚Р°Рј.
 
-- [ ] **Step 1: Написать `Map.uxml`**
+- [ ] **Step 1: РќР°РїРёСЃР°С‚СЊ `Map.uxml`**
 
 ```xml
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:u="UnityEditor.UIElements">
@@ -1423,25 +1425,25 @@ cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): назначен�
   <ui:VisualElement name="root" class="root">
     <ui:VisualElement name="map" class="map" />
     <ui:VisualElement name="left-panel" class="panel left">
-      <ui:Label text="ЖИТЕЛИ" class="panel-title" />
+      <ui:Label text="Р–РРўР•Р›Р" class="panel-title" />
       <ui:ScrollView name="roster" class="roster" />
-      <ui:Button name="send-button" text="В ЛЕС" class="action" />
+      <ui:Button name="send-button" text="Р’ Р›Р•РЎ" class="action" />
     </ui:VisualElement>
     <ui:VisualElement name="right-panel" class="panel right">
-      <ui:Label name="zone-name" text="—" class="panel-title" />
+      <ui:Label name="zone-name" text="вЂ”" class="panel-title" />
       <ui:Label name="zone-info" text="" class="zone-info" />
       <ui:Label name="zone-beasts" text="" class="zone-info" />
     </ui:VisualElement>
     <ui:VisualElement name="bottom-bar" class="bottom">
-      <ui:Label name="day-label" text="День 1" class="day-label" />
-      <ui:Button name="end-day" text="КОНЕЦ ДНЯ" class="action primary" />
+      <ui:Label name="day-label" text="Р”РµРЅСЊ 1" class="day-label" />
+      <ui:Button name="end-day" text="РљРћРќР•Р¦ Р”РќРЇ" class="action primary" />
     </ui:VisualElement>
     <ui:VisualElement name="report" class="report hidden" />
   </ui:VisualElement>
 </ui:UXML>
 ```
 
-- [ ] **Step 2: Написать `Map.uss`**
+- [ ] **Step 2: РќР°РїРёСЃР°С‚СЊ `Map.uss`**
 
 ```css
 .root { flex-grow: 1; background-color: rgb(24, 26, 24); }
@@ -1468,9 +1470,9 @@ cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(core): назначен�
           background-color: rgb(20, 22, 20); border-width: 2px; border-color: rgb(196, 170, 120); padding: 16px; }
 ```
 
-- [ ] **Step 3: Написать `EdgeLine` и `ZoneNodeView`**
+- [ ] **Step 3: РќР°РїРёСЃР°С‚СЊ `EdgeLine` Рё `ZoneNodeView`**
 
-`EdgeLine.cs` — линия между узлами:
+`EdgeLine.cs` вЂ” Р»РёРЅРёСЏ РјРµР¶РґСѓ СѓР·Р»Р°РјРё:
 
 ```csharp
 using UnityEngine;
@@ -1478,7 +1480,7 @@ using UnityEngine.UIElements;
 
 namespace ForestGuild.Game
 {
-    /// Линия связи зон: два узла в координатах карты.
+    /// Р›РёРЅРёСЏ СЃРІСЏР·Рё Р·РѕРЅ: РґРІР° СѓР·Р»Р° РІ РєРѕРѕСЂРґРёРЅР°С‚Р°С… РєР°СЂС‚С‹.
     public sealed class EdgeLine : VisualElement
     {
         public Vector2 A;
@@ -1530,7 +1532,7 @@ namespace ForestGuild.Game
 }
 ```
 
-- [ ] **Step 4: Написать `MapController` — построение карты из таблиц**
+- [ ] **Step 4: РќР°РїРёСЃР°С‚СЊ `MapController` вЂ” РїРѕСЃС‚СЂРѕРµРЅРёРµ РєР°СЂС‚С‹ РёР· С‚Р°Р±Р»РёС†**
 
 ```csharp
 using System.Collections.Generic;
@@ -1539,7 +1541,7 @@ using UnityEngine.UIElements;
 
 namespace ForestGuild.Game
 {
-    /// Строит карту: узлы по map_x/map_y, рёбра по neighbours. Координаты нормализованы.
+    /// РЎС‚СЂРѕРёС‚ РєР°СЂС‚Сѓ: СѓР·Р»С‹ РїРѕ map_x/map_y, СЂС‘Р±СЂР° РїРѕ neighbours. РљРѕРѕСЂРґРёРЅР°С‚С‹ РЅРѕСЂРјР°Р»РёР·РѕРІР°РЅС‹.
     public sealed class MapController
     {
         private readonly VisualElement _map;
@@ -1566,7 +1568,7 @@ namespace ForestGuild.Game
             foreach (var z in tables.Zones.All)
                 foreach (var nb in z.Neighbours)
                 {
-                    if (string.CompareOrdinal(z.Id, nb) >= 0) continue; // ребро один раз
+                    if (string.CompareOrdinal(z.Id, nb) >= 0) continue; // СЂРµР±СЂРѕ РѕРґРёРЅ СЂР°Р·
                     var line = new EdgeLine();
                     _edges.Add(line);
                     _map.Insert(0, line);
@@ -1610,7 +1612,7 @@ namespace ForestGuild.Game
 }
 ```
 
-- [ ] **Step 5: Написать `MapScreen`**
+- [ ] **Step 5: РќР°РїРёСЃР°С‚СЊ `MapScreen`**
 
 ```csharp
 using ForestGuild.Core.Data;
@@ -1649,7 +1651,7 @@ namespace ForestGuild.Game
             _zoneBeasts = root.Q<Label>("zone-beasts");
             _dayLabel = root.Q<Label>("day-label");
             _report = root.Q<VisualElement>("report");
-            _dayLabel.text = "День " + World.Day;
+            _dayLabel.text = "Р”РµРЅСЊ " + World.Day;
         }
 
         private void ShowZone(string zoneId)
@@ -1657,21 +1659,21 @@ namespace ForestGuild.Game
             var zone = Tables.Zones.Get(zoneId);
             var state = World.Zones[zoneId];
             _zoneName.text = zone.Name;
-            _zoneInfo.text = $"Глубина: {zone.Depth}, дорога {zone.TravelHours:0.#} ч\n" +
-                             $"Кристаллы: {state.Crystals}, корм: {state.Forage}";
+            _zoneInfo.text = $"Р“Р»СѓР±РёРЅР°: {zone.Depth}, РґРѕСЂРѕРіР° {zone.TravelHours:0.#} С‡\n" +
+                             $"РљСЂРёСЃС‚Р°Р»Р»С‹: {state.Crystals}, РєРѕСЂРј: {state.Forage}";
             _zoneBeasts.text = state.Beasts.Count == 0
-                ? "Тварей не видно"
+                ? "РўРІР°СЂРµР№ РЅРµ РІРёРґРЅРѕ"
                 : string.Join("\n", state.Beasts.Select(kv => $"{Tables.Beasts.Get(kv.Key).Name}: {kv.Value}"));
         }
     }
 }
 ```
 
-(`using System.Linq;` добавить.)
+(`using System.Linq;` РґРѕР±Р°РІРёС‚СЊ.)
 
-- [ ] **Step 6: Создать сцену живым редактором**
+- [ ] **Step 6: РЎРѕР·РґР°С‚СЊ СЃС†РµРЅСѓ Р¶РёРІС‹Рј СЂРµРґР°РєС‚РѕСЂРѕРј**
 
-Через `unity_eval` (однострочник не подойдёт — использовать `run_script` из `unity-pipeline`, файл вне `Assets/`):
+Р§РµСЂРµР· `unity_eval` (РѕРґРЅРѕСЃС‚СЂРѕС‡РЅРёРє РЅРµ РїРѕРґРѕР№РґС‘С‚ вЂ” РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ `run_script` РёР· `unity-pipeline`, С„Р°Р№Р» РІРЅРµ `Assets/`):
 
 ```csharp
 using UnityEditor;
@@ -1708,34 +1710,34 @@ public static class CreateMainScene
 }
 ```
 
-Ожидание: `Assets/Scenes/Main.unity` существует, в консоли редактора нет ошибок.
+РћР¶РёРґР°РЅРёРµ: `Assets/Scenes/Main.unity` СЃСѓС‰РµСЃС‚РІСѓРµС‚, РІ РєРѕРЅСЃРѕР»Рё СЂРµРґР°РєС‚РѕСЂР° РЅРµС‚ РѕС€РёР±РѕРє.
 
-- [ ] **Step 7: Проверить визуально**
+- [ ] **Step 7: РџСЂРѕРІРµСЂРёС‚СЊ РІРёР·СѓР°Р»СЊРЅРѕ**
 
-Открыть `Main`, войти в Play Mode, сделать скриншот через `unity_command screenshot` (или `look`), убедиться: видны 6 узлов, связи, панели, «День 1».
+РћС‚РєСЂС‹С‚СЊ `Main`, РІРѕР№С‚Рё РІ Play Mode, СЃРґРµР»Р°С‚СЊ СЃРєСЂРёРЅС€РѕС‚ С‡РµСЂРµР· `unity_command screenshot` (РёР»Рё `look`), СѓР±РµРґРёС‚СЊСЃСЏ: РІРёРґРЅС‹ 6 СѓР·Р»РѕРІ, СЃРІСЏР·Рё, РїР°РЅРµР»Рё, В«Р”РµРЅСЊ 1В».
 
-- [ ] **Step 8: Коммит**
+- [ ] **Step 8: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(ui): карта леса из таблиц (UI Toolkit, узлы и связи)"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(ui): РєР°СЂС‚Р° Р»РµСЃР° РёР· С‚Р°Р±Р»РёС† (UI Toolkit, СѓР·Р»С‹ Рё СЃРІСЏР·Рё)"
 ```
 
 ---
 
-### Task 9: Ростер, назначение отрядов и конец дня
+### Task 9: Р РѕСЃС‚РµСЂ, РЅР°Р·РЅР°С‡РµРЅРёРµ РѕС‚СЂСЏРґРѕРІ Рё РєРѕРЅРµС† РґРЅСЏ
 
 **Files:**
-- Modify: `Assets/UI/Map.uxml` (кнопка «сформировать отряд» в узле зоны)
+- Modify: `Assets/UI/Map.uxml` (РєРЅРѕРїРєР° В«СЃС„РѕСЂРјРёСЂРѕРІР°С‚СЊ РѕС‚СЂСЏРґВ» РІ СѓР·Р»Рµ Р·РѕРЅС‹)
 - Create: `Assets/Scripts/Game/RosterPanel.cs`
 - Create: `Assets/Scripts/Game/DayFlow.cs`
 
 **Interfaces:**
 - Consumes: `MapScreen.Tables`, `MapScreen.World`, `DayPlan`, `ExpeditionSim`, `NightSim`.
-- Produces: рабочий день 1: отряд отправлен, «КОНЕЦ ДНЯ» → отчёт.
+- Produces: СЂР°Р±РѕС‡РёР№ РґРµРЅСЊ 1: РѕС‚СЂСЏРґ РѕС‚РїСЂР°РІР»РµРЅ, В«РљРћРќР•Р¦ Р”РќРЇВ» в†’ РѕС‚С‡С‘С‚.
 
-- [ ] **Step 1: Написать падающую проверку в ядре**
+- [ ] **Step 1: РќР°РїРёСЃР°С‚СЊ РїР°РґР°СЋС‰СѓСЋ РїСЂРѕРІРµСЂРєСѓ РІ СЏРґСЂРµ**
 
-В `Program.cs`:
+Р’ `Program.cs`:
 
 ```csharp
 failures.Check("day plan sends people to zone", () =>
@@ -1752,12 +1754,12 @@ failures.Check("day plan sends people to zone", () =>
 });
 ```
 
-- [ ] **Step 2: Запустить — убедиться, что падает**
+- [ ] **Step 2: Р—Р°РїСѓСЃС‚РёС‚СЊ вЂ” СѓР±РµРґРёС‚СЊСЃСЏ, С‡С‚Рѕ РїР°РґР°РµС‚**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: `'DayFlow' could not be found`.
+РћР¶РёРґР°РЅРёРµ: `'DayFlow' could not be found`.
 
-- [ ] **Step 3: Написать `DayFlow` в ядре (не в `Game/`)**
+- [ ] **Step 3: РќР°РїРёСЃР°С‚СЊ `DayFlow` РІ СЏРґСЂРµ (РЅРµ РІ `Game/`)**
 
 `Assets/Scripts/Core/Sim/DayFlow.cs`:
 
@@ -1775,7 +1777,7 @@ namespace ForestGuild.Core.Sim
         public List<string> Lines = new List<string>();
     }
 
-    /// Один день: вылазки → ночь. Это единственное место, где день «идёт».
+    /// РћРґРёРЅ РґРµРЅСЊ: РІС‹Р»Р°Р·РєРё в†’ РЅРѕС‡СЊ. Р­С‚Рѕ РµРґРёРЅСЃС‚РІРµРЅРЅРѕРµ РјРµСЃС‚Рѕ, РіРґРµ РґРµРЅСЊ В«РёРґС‘С‚В».
     public sealed class DayFlow
     {
         private readonly World _world;
@@ -1793,7 +1795,7 @@ namespace ForestGuild.Core.Sim
                 report.Parties.Add(result);
                 report.Lines.AddRange(result.Log);
                 foreach (var found in result.Found)
-                    report.Lines.Add($"Принесено: {_tables.Items.Get(found.Key).Name} ×{found.Value}");
+                    report.Lines.Add($"РџСЂРёРЅРµСЃРµРЅРѕ: {_tables.Items.Get(found.Key).Name} Г—{found.Value}");
             }
             report.Night = NightSim.AdvanceNight(_world, _tables, _rng);
             report.Lines.AddRange(report.Night.Lines);
@@ -1803,12 +1805,12 @@ namespace ForestGuild.Core.Sim
 }
 ```
 
-- [ ] **Step 4: Запустить проверку**
+- [ ] **Step 4: Р—Р°РїСѓСЃС‚РёС‚СЊ РїСЂРѕРІРµСЂРєСѓ**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: `ok   day plan sends people to zone`, код 0.
+РћР¶РёРґР°РЅРёРµ: `ok   day plan sends people to zone`, РєРѕРґ 0.
 
-- [ ] **Step 5: Написать `RosterPanel` (UI)**
+- [ ] **Step 5: РќР°РїРёСЃР°С‚СЊ `RosterPanel` (UI)**
 
 ```csharp
 using System.Collections.Generic;
@@ -1818,7 +1820,7 @@ using UnityEngine.UIElements;
 
 namespace ForestGuild.Game
 {
-    /// Список жителей с выбором: клик — взять/отпустить.
+    /// РЎРїРёСЃРѕРє Р¶РёС‚РµР»РµР№ СЃ РІС‹Р±РѕСЂРѕРј: РєР»РёРє вЂ” РІР·СЏС‚СЊ/РѕС‚РїСѓСЃС‚РёС‚СЊ.
     public sealed class RosterPanel
     {
         private readonly VisualElement _root;
@@ -1833,7 +1835,7 @@ namespace ForestGuild.Game
             _root.Clear();
             foreach (var person in tables.Roster.All)
             {
-                var button = new Button { text = $"{person.Name} · {PersonLine(person)}", name = "person-" + person.Id };
+                var button = new Button { text = $"{person.Name} В· {PersonLine(person)}", name = "person-" + person.Id };
                 button.clicked += () => Toggle(person.Id, button);
                 _root.Add(button);
             }
@@ -1856,11 +1858,11 @@ namespace ForestGuild.Game
 }
 ```
 
-Добавить в `.uss`: `.selected { border-color: rgb(240, 190, 90); border-width: 3px; }`
+Р”РѕР±Р°РІРёС‚СЊ РІ `.uss`: `.selected { border-color: rgb(240, 190, 90); border-width: 3px; }`
 
-- [ ] **Step 6: Связать всё в `MapScreen`**
+- [ ] **Step 6: РЎРІСЏР·Р°С‚СЊ РІСЃС‘ РІ `MapScreen`**
 
-Дописать в `MapScreen`:
+Р”РѕРїРёСЃР°С‚СЊ РІ `MapScreen`:
 
 ```csharp
 private RosterPanel _roster;
@@ -1879,12 +1881,12 @@ private void Start()
 
 private void SendParty()
 {
-    if (Map.Selected == null) { ShowMessage("Сначала выберите зону"); return; }
-    if (_roster.Selected.Count == 0) { ShowMessage("Выберите хотя бы одного жителя"); return; }
+    if (Map.Selected == null) { ShowMessage("РЎРЅР°С‡Р°Р»Р° РІС‹Р±РµСЂРёС‚Рµ Р·РѕРЅСѓ"); return; }
+    if (_roster.Selected.Count == 0) { ShowMessage("Р’С‹Р±РµСЂРёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕРіРѕ Р¶РёС‚РµР»СЏ"); return; }
     var party = new PartyAssignment { ZoneId = Map.Selected };
     party.PersonIds.AddRange(_roster.Selected);
     _plan.Parties.Add(party);
-    ShowMessage($"Отряд из {party.PersonIds.Count} идёт в {Tables.Zones.Get(Map.Selected).Name}");
+    ShowMessage($"РћС‚СЂСЏРґ РёР· {party.PersonIds.Count} РёРґС‘С‚ РІ {Tables.Zones.Get(Map.Selected).Name}");
     _roster.Selected.Clear();
 }
 
@@ -1892,13 +1894,13 @@ private void EndDay()
 {
     var report = _flow.RunDay(_plan);
     _plan = new DayPlan();
-    _dayLabel.text = "День " + World.Day;
+    _dayLabel.text = "Р”РµРЅСЊ " + World.Day;
     ShowReport(report);
     RefreshMapState();
 }
 ```
 
-`ShowMessage`/`ShowReport`/`RefreshMapState` — тоже дописать в `MapScreen`:
+`ShowMessage`/`ShowReport`/`RefreshMapState` вЂ” С‚РѕР¶Рµ РґРѕРїРёСЃР°С‚СЊ РІ `MapScreen`:
 
 ```csharp
 private void ShowMessage(string text)
@@ -1911,8 +1913,8 @@ private void ShowMessage(string text)
 private void ShowReport(DayReport report)
 {
     _report.Clear();
-    _report.Add(new Label("День " + World.Day));
-    foreach (var line in report.Lines) _report.Add(new Label("· " + line));
+    _report.Add(new Label("Р”РµРЅСЊ " + World.Day));
+    foreach (var line in report.Lines) _report.Add(new Label("В· " + line));
     _report.RemoveFromClassList("hidden");
 }
 
@@ -1922,82 +1924,82 @@ private void RefreshMapState()
 }
 ```
 
-- [ ] **Step 7: Проверить в Play Mode**
+- [ ] **Step 7: РџСЂРѕРІРµСЂРёС‚СЊ РІ Play Mode**
 
-Скриншот: отряд отправлен, нажатие «КОНЕЦ ДНЯ» даёт отчёт с строками о находках и ночи, день становится 2.
+РЎРєСЂРёРЅС€РѕС‚: РѕС‚СЂСЏРґ РѕС‚РїСЂР°РІР»РµРЅ, РЅР°Р¶Р°С‚РёРµ В«РљРћРќР•Р¦ Р”РќРЇВ» РґР°С‘С‚ РѕС‚С‡С‘С‚ СЃ СЃС‚СЂРѕРєР°РјРё Рѕ РЅР°С…РѕРґРєР°С… Рё РЅРѕС‡Рё, РґРµРЅСЊ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ 2.
 
-- [ ] **Step 8: Коммит**
+- [ ] **Step 8: РљРѕРјРјРёС‚**
 
 ```powershell
-cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(game): ростер, отправка отряда и конец дня с ночным отчётом"
+cd F:\WORK\ForestGuild; git add -A; git commit -m "feat(game): СЂРѕСЃС‚РµСЂ, РѕС‚РїСЂР°РІРєР° РѕС‚СЂСЏРґР° Рё РєРѕРЅРµС† РґРЅСЏ СЃ РЅРѕС‡РЅС‹Рј РѕС‚С‡С‘С‚РѕРј"
 ```
 
 ---
 
-### Task 10: Документация и приёмка шага
+### Task 10: Р”РѕРєСѓРјРµРЅС‚Р°С†РёСЏ Рё РїСЂРёС‘РјРєР° С€Р°РіР°
 
 **Files:**
-- Modify: `docs/architecture.md` (колонки `map_x/map_y` в `zones.csv`, фактический список файлов)
+- Modify: `docs/architecture.md` (РєРѕР»РѕРЅРєРё `map_x/map_y` РІ `zones.csv`, С„Р°РєС‚РёС‡РµСЃРєРёР№ СЃРїРёСЃРѕРє С„Р°Р№Р»РѕРІ)
 - Create: `docs/current/2026-11-07-ui-slice/result.md`
 
-**Interfaces:** нет.
+**Interfaces:** РЅРµС‚.
 
-- [ ] **Step 1: Обновить `docs/architecture.md`**
+- [ ] **Step 1: РћР±РЅРѕРІРёС‚СЊ `docs/architecture.md`**
 
-В таблицу справочников добавить `map_x; map_y` в строку `zones.csv` и дописать раздел:
-
-```markdown
-## 10. Шаг 1: что уже работает
-
-- `tools/sim --selfcheck` — проверки ядра без редактора.
-- Сцена `Assets/Scenes/Main.unity`: карта из `zones.csv`, панель зоны, ростер, «конец дня».
-- Ночь: кормление (корм → труп → кристалл), миграция наружу, гнездо по опыту, плод гнезда.
-- Вылазка: авторезолв по часам (находки, встречи 50/50 отход/бой), без пауз.
-```
-
-- [ ] **Step 2: Написать `result.md`**
+Р’ С‚Р°Р±Р»РёС†Сѓ СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ РґРѕР±Р°РІРёС‚СЊ `map_x; map_y` РІ СЃС‚СЂРѕРєСѓ `zones.csv` Рё РґРѕРїРёСЃР°С‚СЊ СЂР°Р·РґРµР»:
 
 ```markdown
-# Шаг 1 — каркас, карта, первый день
+## 10. РЁР°Рі 1: С‡С‚Рѕ СѓР¶Рµ СЂР°Р±РѕС‚Р°РµС‚
 
-Дата: <дата>. Статус: принято.
-
-## Сделано
-- Unity 6000.6.6f1 (URP 2D), проект в корне репозитория.
-- 14 CSV-справочников, загрузчик с валидацией внешних ключей.
-- Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `ExpeditionSim`, `DayFlow`.
-- UI Toolkit: карта (узлы, рёбра), панель зоны, ростер, кнопка дня, отчёт.
-- `tools/sim --selfcheck`: N проверок.
-
-## Чем проверено
-- `dotnet run ... --selfcheck` → все проверки ok, код 0 (вывод приложить).
-- Play Mode: скриншот карты и скриншот отчёта дня 2.
-- `grep` по `Core` не находит `UnityEngine`.
-
-## Что не вошло
-Паузы в вылазке, туша/разделка, раненый, полноценный бой, волна на 21-й день.
+- `tools/sim --selfcheck` вЂ” РїСЂРѕРІРµСЂРєРё СЏРґСЂР° Р±РµР· СЂРµРґР°РєС‚РѕСЂР°.
+- РЎС†РµРЅР° `Assets/Scenes/Main.unity`: РєР°СЂС‚Р° РёР· `zones.csv`, РїР°РЅРµР»СЊ Р·РѕРЅС‹, СЂРѕСЃС‚РµСЂ, В«РєРѕРЅРµС† РґРЅСЏВ».
+- РќРѕС‡СЊ: РєРѕСЂРјР»РµРЅРёРµ (РєРѕСЂРј в†’ С‚СЂСѓРї в†’ РєСЂРёСЃС‚Р°Р»Р»), РјРёРіСЂР°С†РёСЏ РЅР°СЂСѓР¶Сѓ, РіРЅРµР·РґРѕ РїРѕ РѕРїС‹С‚Сѓ, РїР»РѕРґ РіРЅРµР·РґР°.
+- Р’С‹Р»Р°Р·РєР°: Р°РІС‚РѕСЂРµР·РѕР»РІ РїРѕ С‡Р°СЃР°Рј (РЅР°С…РѕРґРєРё, РІСЃС‚СЂРµС‡Рё 50/50 РѕС‚С…РѕРґ/Р±РѕР№), Р±РµР· РїР°СѓР·.
 ```
 
-- [ ] **Step 3: Проверить, что ядро без Unity**
+- [ ] **Step 2: РќР°РїРёСЃР°С‚СЊ `result.md`**
+
+```markdown
+# РЁР°Рі 1 вЂ” РєР°СЂРєР°СЃ, РєР°СЂС‚Р°, РїРµСЂРІС‹Р№ РґРµРЅСЊ
+
+Р”Р°С‚Р°: <РґР°С‚Р°>. РЎС‚Р°С‚СѓСЃ: РїСЂРёРЅСЏС‚Рѕ.
+
+## РЎРґРµР»Р°РЅРѕ
+- Unity 6000.6.6f1 (URP 2D), РїСЂРѕРµРєС‚ РІ РєРѕСЂРЅРµ СЂРµРїРѕР·РёС‚РѕСЂРёСЏ.
+- 14 CSV-СЃРїСЂР°РІРѕС‡РЅРёРєРѕРІ, Р·Р°РіСЂСѓР·С‡РёРє СЃ РІР°Р»РёРґР°С†РёРµР№ РІРЅРµС€РЅРёС… РєР»СЋС‡РµР№.
+- РЇРґСЂРѕ: `Rng`, `World`, `NightSim`, `DayPlan`, `ExpeditionSim`, `DayFlow`.
+- UI Toolkit: РєР°СЂС‚Р° (СѓР·Р»С‹, СЂС‘Р±СЂР°), РїР°РЅРµР»СЊ Р·РѕРЅС‹, СЂРѕСЃС‚РµСЂ, РєРЅРѕРїРєР° РґРЅСЏ, РѕС‚С‡С‘С‚.
+- `tools/sim --selfcheck`: N РїСЂРѕРІРµСЂРѕРє.
+
+## Р§РµРј РїСЂРѕРІРµСЂРµРЅРѕ
+- `dotnet run ... --selfcheck` в†’ РІСЃРµ РїСЂРѕРІРµСЂРєРё ok, РєРѕРґ 0 (РІС‹РІРѕРґ РїСЂРёР»РѕР¶РёС‚СЊ).
+- Play Mode: СЃРєСЂРёРЅС€РѕС‚ РєР°СЂС‚С‹ Рё СЃРєСЂРёРЅС€РѕС‚ РѕС‚С‡С‘С‚Р° РґРЅСЏ 2.
+- `grep` РїРѕ `Core` РЅРµ РЅР°С…РѕРґРёС‚ `UnityEngine`.
+
+## Р§С‚Рѕ РЅРµ РІРѕС€Р»Рѕ
+РџР°СѓР·С‹ РІ РІС‹Р»Р°Р·РєРµ, С‚СѓС€Р°/СЂР°Р·РґРµР»РєР°, СЂР°РЅРµРЅС‹Р№, РїРѕР»РЅРѕС†РµРЅРЅС‹Р№ Р±РѕР№, РІРѕР»РЅР° РЅР° 21-Р№ РґРµРЅСЊ.
+```
+
+- [ ] **Step 3: РџСЂРѕРІРµСЂРёС‚СЊ, С‡С‚Рѕ СЏРґСЂРѕ Р±РµР· Unity**
 
 ```powershell
 cd F:\WORK\ForestGuild; Get-ChildItem Assets\Scripts\Core -Recurse -Filter *.cs |
   Select-String -Pattern "using UnityEngine" | Out-String
 ```
 
-Ожидание: пусто. Если что-то нашлось — убрать.
+РћР¶РёРґР°РЅРёРµ: РїСѓСЃС‚Рѕ. Р•СЃР»Рё С‡С‚Рѕ-С‚Рѕ РЅР°С€Р»РѕСЃСЊ вЂ” СѓР±СЂР°С‚СЊ.
 
-- [ ] **Step 4: Финальный прогон**
+- [ ] **Step 4: Р¤РёРЅР°Р»СЊРЅС‹Р№ РїСЂРѕРіРѕРЅ**
 
 Run: `dotnet run --project F:\WORK\ForestGuild\tools\sim -- --selfcheck`
-Ожидание: код 0, все `ok`.
+РћР¶РёРґР°РЅРёРµ: РєРѕРґ 0, РІСЃРµ `ok`.
 
-- [ ] **Step 5: Коммит и перенос в архив**
+- [ ] **Step 5: РљРѕРјРјРёС‚ Рё РїРµСЂРµРЅРѕСЃ РІ Р°СЂС…РёРІ**
 
 ```powershell
 cd F:\WORK\ForestGuild
 git add -A
-git commit -m "docs: результат шага 1 и обновление архитектуры"
+git commit -m "docs: СЂРµР·СѓР»СЊС‚Р°С‚ С€Р°РіР° 1 Рё РѕР±РЅРѕРІР»РµРЅРёРµ Р°СЂС…РёС‚РµРєС‚СѓСЂС‹"
 ```
 
-Папку `docs/current/2026-11-07-ui-slice` перенести в `docs/archive/` **после** приёмки пользователем, отдельным коммитом.
+РџР°РїРєСѓ `docs/current/2026-11-07-ui-slice` РїРµСЂРµРЅРµСЃС‚Рё РІ `docs/archive/` **РїРѕСЃР»Рµ** РїСЂРёС‘РјРєРё РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј, РѕС‚РґРµР»СЊРЅС‹Рј РєРѕРјРјРёС‚РѕРј.
