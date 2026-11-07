@@ -23,6 +23,16 @@
 - В шаге 1 **нет пауз** в вылазке и нет туши/разделки — это шаг 2. Нет балансовых прогонов на 21 день.
 - Деньги/караван/станции в шаге 1 не работают; таблицы станций и рецептов существуют ради проверки формата.
 
+## Поправка от 2026-11-07: Unity-проект живёт в `FG/`
+
+После задачи 1 проект перенесён в подпапку: корень репозитория — `F:\WORK\ForestGuild`, Unity — `F:\WORK\ForestGuild\FG`.
+
+- Все пути вида `Assets/...`, `Packages/...`, `ProjectSettings/...` читаются как `FG/Assets/...` и т.д.
+- `unity open` / `unity pipeline install` / `unity_command projectPath` — с `F:\WORK\ForestGuild\FG`.
+- В `tools/sim/ForestGuild.Sim.csproj` путь к ядру: `..\..\FG\Assets\Scripts\Core\**\*.cs`.
+- `DataDir()` в `Program.cs` ищет `FG\Assets\StreamingAssets\Data` — в хелпере заменить `"Assets"` на `"FG", "Assets"`.
+- `Application.streamingAssetsPath` в Unity уже указывает внутрь `FG`, менять код `MapScreen` не нужно.
+
 ## Структура файлов
 
 ```

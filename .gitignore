@@ -21,6 +21,6 @@ __pycache__/
 
 # Временные файлы проекта
 *.meta.tmp
-/[Aa]ssets/[Ss]treamingAssets/Data/*.tmp
+/[Ff][Gg]/[Aa]ssets/[Ss]treamingAssets/Data/*.tmp
 tools/sim/bin/
 tools/sim/obj/
