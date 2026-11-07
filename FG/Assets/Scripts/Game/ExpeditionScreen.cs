@@ -173,8 +173,12 @@ namespace ForestGuild.Game
             {
                 var id = option.Id;
                 var button = new Button(() => Choose(id));
-                button.text = option.Label + " · " + (int)Math.Round(option.Chance * 100) + "%"
+
+                var sure = option.Chance >= 0.999;
+                button.text = option.Label
+                    + (sure ? "" : " · " + (int)Math.Round(option.Chance * 100) + "%")
                     + (string.IsNullOrEmpty(option.Note) ? "" : " — " + option.Note);
+
                 button.AddToClassList("decision-option");
                 _options.Add(button);
             }

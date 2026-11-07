@@ -337,17 +337,17 @@ namespace ForestGuild.Core.Sim
             decision.Options.Add(new ExpeditionOption
             {
                 Id = "haul", Label = "утащить целиком", Chance = 1.0,
-                Note = "3 слота, вся ценность",
+                Note = "3 слота",
             });
             decision.Options.Add(new ExpeditionOption
             {
                 Id = "butcher", Label = "освежевать", Chance = ButcherChance(),
-                Note = "час работы, в мешок — кристалл и части",
+                Note = "час работы",
             });
             decision.Options.Add(new ExpeditionOption
             {
                 Id = "leave", Label = "бросить", Chance = 1.0,
-                Note = "останется лесу: +1 корм зоне",
+                Note = "",
             });
 
             Pending = decision;
@@ -366,7 +366,7 @@ namespace ForestGuild.Core.Sim
             {
                 if (_freeSlots < 3f)
                 {
-                    Result.Log.Add("туша не влезла в мешок — бросили, зона накормлена");
+                    Result.Log.Add("туша не влезла в мешок — бросили");
                     _state.Forage++;
                     return;
                 }
@@ -394,7 +394,7 @@ namespace ForestGuild.Core.Sim
             }
 
             _state.Forage++;
-            Result.Log.Add("тушу бросили, лесу прибыло корма");
+            Result.Log.Add("тушу бросили");
         }
 
         private void Wound()
