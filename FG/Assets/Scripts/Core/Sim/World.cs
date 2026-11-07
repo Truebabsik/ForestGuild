@@ -45,6 +45,9 @@ namespace ForestGuild.Core.Sim
         public int PalisadeHp;
         public int PalisadeMax;
 
+        /// <summary>День следующей волны (design.md §10).</summary>
+        public int NextWaveDay;
+
         public readonly Dictionary<string, ZoneState> Zones =
             new Dictionary<string, ZoneState>(StringComparer.Ordinal);
 
@@ -64,6 +67,7 @@ namespace ForestGuild.Core.Sim
             var w = new World();
             w.PalisadeMax = tables.Tuning.GetInt("palisade_hp");
             w.PalisadeHp = w.PalisadeMax;
+            w.NextWaveDay = tables.Tuning.GetInt("wave_day");
 
             foreach (var person in tables.Roster.All)
                 w.People[person.Id] = new PersonState();

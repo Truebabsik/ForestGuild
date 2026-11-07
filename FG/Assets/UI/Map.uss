@@ -416,6 +416,20 @@
     color: rgb(232, 198, 132);
 }
 
+.wave-title {
+    color: rgb(228, 96, 70);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin: 12px 0 4px 0;
+}
+
+.wave-line {
+    color: rgb(238, 150, 120);
+    font-size: 14px;
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
 .pane-button {
     width: 260px;
     align-self: flex-end;

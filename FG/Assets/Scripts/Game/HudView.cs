@@ -21,7 +21,7 @@ namespace ForestGuild.Game
 
         public void Update(Phase phase)
         {
-            var waveIn = _tables.Tuning.GetInt("wave_day") - _world.Day;
+            var waveIn = _world.NextWaveDay - _world.Day;
             if (waveIn < 0) waveIn = 0;
 
             var shownDay = phase == Phase.Night ? _world.Day - 1 : _world.Day;

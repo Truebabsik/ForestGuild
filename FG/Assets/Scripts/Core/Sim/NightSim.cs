@@ -16,6 +16,9 @@ namespace ForestGuild.Core.Sim
         public readonly List<string> Lines = new List<string>();
         public readonly List<NightLine> Entries = new List<NightLine>();
 
+        /// <summary>Волна этой ночью, если пришла (design.md §10).</summary>
+        public WaveReport Wave;
+
         public void Add(string line, string zoneId = null)
         {
             Lines.Add(line);

@@ -113,7 +113,41 @@ namespace ForestGuild.Core.Sim
                 report.Add("К утру встали с постели: " + string.Join(", ", names));
             }
 
+            var endedDay = _world.Day - 1;
+            if (endedDay == _world.NextWaveDay)
+            {
+                report.Wave = WaveSim.Resolve(_world, _tables, Defenders(plan), _rng);
+                report.Lines.AddRange(report.Wave.Lines);
+            }
+
             return report;
+        }
+
+        /// Кто остался в деревне: все, кроме ушедших в лес.
+        private List<string> Defenders(DayPlan plan)
+        {
+            var home = new List<string>();
+
+            foreach (var person in _tables.Roster.All)
+            {
+                var inForest = false;
+
+                if (plan != null)
+                {
+                    foreach (var party in plan.Parties)
+                    {
+                        if (party.PersonIds.Contains(person.Id))
+                        {
+                            inForest = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!inForest) home.Add(person.Id);
+            }
+
+            return home;
         }
 
         /// Один день целиком — для консольных прогонов и тестов.

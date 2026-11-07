@@ -305,7 +305,63 @@ internal static class Program
             return t.Items.All.All(item => !string.IsNullOrEmpty(item.Short));
         });
 
+        checks.Check("wave arrives on its day and reschedules", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            w.Day = 21;
+            w.NextWaveDay = 21;
+
+            var report = new DayFlow(w, t, new Rng(7)).RunNight(new DayPlan());
+
+            return report.Wave != null
+                && report.Wave.Strength > 0
+                && w.NextWaveDay > 21;
+        });
+
+        checks.Check("hunters at home shoot the wave", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            var withHunters = World.Create(t);
+            withHunters.Day = 21;
+            withHunters.NextWaveDay = 21;
+            var a = new DayFlow(withHunters, t, new Rng(5)).RunNight(new DayPlan());
+
+            var alone = World.Create(t);
+            alone.Day = 21;
+            alone.NextWaveDay = 21;
+            KillHunters(alone, t);
+            var b = new DayFlow(alone, t, new Rng(5)).RunNight(new DayPlan());
+
+            return a.Wave != null && b.Wave != null
+                && b.Wave.Killed == 0
+                && a.Wave.Killed >= b.Wave.Killed;
+        });
+
+        checks.Check("wave damages the palisade", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            w.Day = 21;
+            w.NextWaveDay = 21;
+            KillHunters(w, t);
+
+            var before = w.PalisadeHp;
+            var report = new DayFlow(w, t, new Rng(3)).RunNight(new DayPlan());
+
+            return report.Wave != null && report.Wave.PalisadeDamage > 0 && w.PalisadeHp < before;
+        });
+
         return checks.Report() ? 0 : 1;
+    }
+
+    private static void KillHunters(World world, Tables tables)
+    {
+        foreach (var person in tables.Roster.All)
+        {
+            if (person.Profession == "hunter") Works.Kill(world, person.Id);
+        }
     }
 
     private static PartyAssignment Party(string zoneId, params string[] people)

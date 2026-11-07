@@ -270,6 +270,20 @@ namespace ForestGuild.Game
                 _paneLines.Add(label);
             }
 
+            if (night.Wave != null)
+            {
+                var title = new Label("ВОЛНА");
+                title.AddToClassList("wave-title");
+                _paneLines.Add(title);
+
+                foreach (var line in night.Wave.Lines)
+                {
+                    var label = new Label("· " + line);
+                    label.AddToClassList("wave-line");
+                    _paneLines.Add(label);
+                }
+            }
+
             _paneLines.scrollOffset = Vector2.zero;
         }
 
