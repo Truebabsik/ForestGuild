@@ -223,7 +223,7 @@ namespace ForestGuild.Core.Sim
             var decision = new ExpeditionDecision
             {
                 Kind = DecisionKind.Encounter,
-                Title = "СТРЕЧА: " + beast,
+                Title = "ВСТРЕЧА: " + beast,
                 Body = "Проскочить — тихо, если повезёт. Отойти — час долой. Бой — туша или рана.",
             };
 
