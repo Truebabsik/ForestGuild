@@ -1,0 +1,105 @@
+using System.Collections.Generic;
+
+namespace ForestGuild.Core.Data
+{
+    /// <summary>Строка zones.csv.</summary>
+    public sealed class Zone
+    {
+        public string Id, Name, Depth, EnvRule;
+        public float TravelHours, MapX, MapY;
+        public int CrystalsPerDay, ForagePerDay;
+        public string[] Neighbours;
+    }
+
+    /// <summary>Строка items.csv: ресурс, трофей и предмет — одна сущность.</summary>
+    public sealed class Item
+    {
+        public string Id, Name, Category, Tags;
+        public float Slots;
+        public int Value;
+    }
+
+    /// <summary>Строка zone_resources.csv.</summary>
+    public sealed class ZoneResource
+    {
+        public string ZoneId, ItemId;
+        public int Abundance;
+    }
+
+    /// <summary>Строка beasts.csv.</summary>
+    public sealed class Beast
+    {
+        public string Id, Name;
+        public int Strength, Speed, FoodNeed;
+        public bool NestCapable;
+    }
+
+    /// <summary>Строка zone_beasts.csv.</summary>
+    public sealed class ZoneBeast
+    {
+        public string ZoneId, BeastId;
+        public int Weight, InitialCount;
+    }
+
+    /// <summary>Строка drops.csv.</summary>
+    public sealed class Drop
+    {
+        public string BeastId, ItemId;
+        public double Chance;
+        public int MinSkill;
+    }
+
+    /// <summary>Строка skills.csv.</summary>
+    public sealed class Skill
+    {
+        public string Id, Name, Kind;
+        public int MaxLevel;
+    }
+
+    /// <summary>Строка traits.csv.</summary>
+    public sealed class Trait
+    {
+        public string Id, Name;
+        public int FightBonus, ButcherBonus, CarryBonus;
+        public double FindBonus;
+    }
+
+    /// <summary>Строка professions.csv: класс, а не пресет.</summary>
+    public sealed class Profession
+    {
+        public string Id, Name, RequiresTrait;
+        public string[] SkillsAllowed;
+        public Dictionary<string, int> StartSkills;
+    }
+
+    /// <summary>Строка roster.csv.</summary>
+    public sealed class Person
+    {
+        public string Id, Name, Profession;
+        public string[] Traits;
+        public Dictionary<string, int> SkillsOverride;
+    }
+
+    /// <summary>Строка stations.csv.</summary>
+    public sealed class Station
+    {
+        public string Id, Name, SkillId;
+        public int PeopleSlots;
+    }
+
+    /// <summary>Строка recipes.csv.</summary>
+    public sealed class Recipe
+    {
+        public string Id, Station, SkillId;
+        public int SkillReq, Hours;
+        public Dictionary<string, int> Inputs, Outputs;
+    }
+
+    /// <summary>Строка recipe_quality.csv.</summary>
+    public sealed class RecipeQuality
+    {
+        public string RecipeId, OutputId;
+        public int MinSkill, Qty;
+        public double Chance;
+    }
+}
