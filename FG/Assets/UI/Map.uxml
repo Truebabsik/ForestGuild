@@ -94,7 +94,6 @@
         </ui:VisualElement>
       </ui:VisualElement>
       <ui:VisualElement class="modal-buttons">
-        <ui:Button name="muster-clear" text="РАСПУСТИТЬ" class="action" />
         <ui:Button name="muster-done" text="ГОТОВО, В ДОСКУ" class="action primary" />
       </ui:VisualElement>
     </ui:VisualElement>

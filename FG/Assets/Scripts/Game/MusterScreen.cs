@@ -44,11 +44,6 @@ namespace ForestGuild.Game
             _summary = root.Q<Label>("muster-summary");
 
             root.Q<Button>("muster-done").clicked += Close;
-            root.Q<Button>("muster-clear").clicked += () =>
-            {
-                _squad?.Members.Clear();
-                Rebuild();
-            };
         }
 
         public bool IsOpen => _panel != null && !_panel.ClassListContains("hidden");
