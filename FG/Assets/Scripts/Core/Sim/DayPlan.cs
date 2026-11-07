@@ -15,6 +15,10 @@ namespace ForestGuild.Core.Sim
     public sealed class PartyAssignment
     {
         public string ZoneId;
+
+        /// <summary>Имя отряда-пресета («А», «Б») — для логов и отчётов.</summary>
+        public string Name;
+
         public readonly List<string> PersonIds = new List<string>();
         public Behavior Behavior = Behavior.Gather;
 

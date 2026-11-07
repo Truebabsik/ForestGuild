@@ -104,7 +104,7 @@ namespace ForestGuild.Game
             _current = new Expedition(_world, _tables, party, _rng);
 
             _title.text = "ПОХОД · " + _tables.Zones.Get(party.ZoneId).Name;
-            Append("— отряд «" + party.PersonIds.Count + "»: " + ZoneLine(party));
+            Append("— отряд «" + PartyName(party) + "»: " + ZoneLine(party));
             UpdateHour();
         }
 
@@ -193,11 +193,22 @@ namespace ForestGuild.Game
             {
                 _results.Add(_current.Result);
                 StartNext();
+                return;
             }
-            else
+
+            // Решение могло родить следующее (победа в бою → туша): показываем сразу.
+            if (_current.HasDecision)
             {
-                _tick.Resume();
+                ShowDecision(_current.Pending);
+                return;
             }
+
+            _tick.Resume();
+        }
+
+        private string PartyName(PartyAssignment party)
+        {
+            return string.IsNullOrEmpty(party.Name) ? party.PersonIds.Count.ToString() : party.Name;
         }
 
         // ---- домотать ----

@@ -341,6 +341,7 @@ namespace ForestGuild.Game
                 var party = new PartyAssignment
                 {
                     ZoneId = squad.ZoneId,
+                    Name = squad.Name,
                     Behavior = squad.Behavior,
                     Orders = squad.Orders,
                 };
