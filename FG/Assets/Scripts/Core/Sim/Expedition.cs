@@ -224,7 +224,7 @@ namespace ForestGuild.Core.Sim
             {
                 Kind = DecisionKind.Encounter,
                 Title = "СТРЕЧА: " + beast,
-                Body = _zone.Name + ": тварь рядом. Дальше — как решит отряд.",
+                Body = "Проскочить — тихо, если повезёт. Отойти — час долой. Бой — туша или рана.",
             };
 
             decision.Options.Add(new ExpeditionOption
@@ -232,7 +232,7 @@ namespace ForestGuild.Core.Sim
                 Id = "hide",
                 Label = "спрятаться",
                 Chance = 0.55,
-                Note = "проскочим — и никто не пострадает",
+                Note = RiskWord(0.55),
             });
 
             decision.Options.Add(new ExpeditionOption
@@ -240,7 +240,7 @@ namespace ForestGuild.Core.Sim
                 Id = "retreat",
                 Label = "отойти",
                 Chance = 0.70,
-                Note = "уходим, но теряем час и часть добычи",
+                Note = RiskWord(0.70),
             });
 
             decision.Options.Add(new ExpeditionOption
@@ -248,7 +248,7 @@ namespace ForestGuild.Core.Sim
                 Id = "fight",
                 Label = "бой",
                 Chance = FightChance(),
-                Note = "победа — туша и трофей, провал — ранение",
+                Note = RiskWord(FightChance()),
             });
 
             Pending = decision;
@@ -397,7 +397,16 @@ namespace ForestGuild.Core.Sim
             Result.Log.Add("тушу бросили");
         }
 
-        /// Кто в отряде лучше всех владеет ножом — его имя и стоит на кнопке.
+        /// Слова вместо процентов: игрок прикидывает шансы, а не читает таблицу.
+        public static string RiskWord(double chance)
+        {
+            if (chance >= 0.85) return "почти наверняка";
+            if (chance >= 0.70) return "надёжно";
+            if (chance >= 0.50) return "как повезёт";
+            return "рискованно";
+        }
+
+        /// Кто в отряде лучше всех владеет ножом — его имя и мастерство идут на кнопку.
         private string BestButcher()
         {
             string bestId = null;
@@ -406,15 +415,29 @@ namespace ForestGuild.Core.Sim
             foreach (var personId in Party.PersonIds)
             {
                 var person = _tables.Roster.Get(personId);
-                var score = People.SkillLevel(_tables, person, "butchering")
-                    + People.TraitSum(_tables, person, trait => trait.ButcherBonus);
+                var level = People.SkillLevel(_tables, person, "butchering");
 
-                if (score <= best) continue;
-                best = score;
+                if (level <= best) continue;
+                best = level;
                 bestId = personId;
             }
 
-            return bestId == null ? null : _tables.Roster.Get(bestId).Name;
+            if (bestId == null) return null;
+
+            return _tables.Roster.Get(bestId).Name + " · " + MasteryWord(best);
+        }
+
+        /// Степень мастерства словами — по уровню навыка.
+        public static string MasteryWord(int level)
+        {
+            switch (level)
+            {
+                case 5: return "виртуоз";
+                case 4: return "мастер";
+                case 3: return "умелый";
+                case 2: return "ученик";
+                default: return "новичок";
+            }
         }
 
         private void Wound()

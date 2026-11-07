@@ -428,6 +428,15 @@ internal static class Program
             return nests >= 1 && w.TotalBeasts() >= 6;
         });
 
+        checks.Check("risk and mastery stay words", () =>
+        {
+            return Expedition.RiskWord(0.9) == "почти наверняка"
+                && Expedition.RiskWord(0.55) == "как повезёт"
+                && Expedition.RiskWord(0.3) == "рискованно"
+                && Expedition.MasteryWord(4) == "мастер"
+                && Expedition.MasteryWord(1) == "новичок";
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
