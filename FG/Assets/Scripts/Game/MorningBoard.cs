@@ -126,10 +126,7 @@ namespace ForestGuild.Game
                 portraits.AddToClassList("squad-portraits");
                 foreach (var personId in squad.Members)
                 {
-                    var portrait = new VisualElement();
-                    portrait.AddToClassList("portrait");
-                    portrait.AddToClassList("portrait-" + personId);
-                    portraits.Add(portrait);
+                    portraits.Add(Ui.Portrait(personId));
                 }
 
                 body.Add(portraits);
@@ -268,11 +265,9 @@ namespace ForestGuild.Game
             _warnings.text = lines.Count == 0 ? "" : string.Join("  ·  ", lines);
         }
 
-        private Label Line(string className, string text)
+        private static Label Line(string className, string text)
         {
-            var label = new Label(text);
-            label.AddToClassList(className);
-            return label;
+            return Ui.Text(className, text);
         }
 
         private static string BehaviorName(Behavior behavior)

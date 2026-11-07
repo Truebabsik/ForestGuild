@@ -146,11 +146,9 @@ namespace ForestGuild.Game
             return _tables.ZoneLore.TryGet(_zoneId + "|" + field, out var row) ? row.Text : "—";
         }
 
-        private Label Text(string className, string value)
+        private static Label Text(string className, string value)
         {
-            var label = new Label(value);
-            label.AddToClassList(className);
-            return label;
+            return Ui.Text(className, value);
         }
     }
 }

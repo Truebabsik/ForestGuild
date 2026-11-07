@@ -139,10 +139,7 @@ namespace ForestGuild.Game
             tile.AddToClassList(StatusClass(condition));
             if (busy) tile.AddToClassList("busy");
 
-            var portrait = new VisualElement();
-            portrait.AddToClassList("portrait");
-            portrait.AddToClassList("portrait-" + personId);
-            tile.Add(portrait);
+            tile.Add(Ui.Portrait(personId));
 
             var info = new VisualElement();
             info.AddToClassList("person-info");
@@ -201,10 +198,7 @@ namespace ForestGuild.Game
                     var personId = _squad.Members[i];
                     var person = _tables.Roster.Get(personId);
 
-                    var portrait = new VisualElement();
-                    portrait.AddToClassList("portrait");
-                    portrait.AddToClassList("portrait-" + personId);
-                    slot.Add(portrait);
+                    slot.Add(Ui.Portrait(personId));
 
                     var info = new VisualElement();
                     info.AddToClassList("person-info");
