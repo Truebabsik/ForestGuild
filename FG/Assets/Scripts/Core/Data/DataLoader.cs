@@ -53,6 +53,7 @@ namespace ForestGuild.Core.Data
                 Slots = F(r, p, "slots"),
                 Value = I(r, p, "value"),
                 Tags = Opt(r, "tags"),
+                Short = Opt(r, "short"),
             }, x => x.Id);
 
             t.Zones = Read(dir, "zones.csv", (r, p) => new Zone

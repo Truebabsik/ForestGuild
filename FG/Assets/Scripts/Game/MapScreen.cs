@@ -187,7 +187,51 @@ namespace ForestGuild.Game
             var shownDay = _phase == Phase.Night ? World.Day - 1 : World.Day;
             _hud.text = "ДЕНЬ " + shownDay + " · " + PhaseName(_phase)
                 + "    |    частокол " + World.PalisadeHp + "/" + World.PalisadeMax
-                + "    |    до волны: " + waveIn + " дн.";
+                + "    |    до волны: " + waveIn + " дн."
+                + "    |    " + StoreLine()
+                + "    |    здоровы " + HealthyCount() + "/" + Tables.Roster.All.Count;
+        }
+
+        /// Склад в HUD (ui.md §8): до трёх позиций по количеству, короткими именами.
+        private string StoreLine()
+        {
+            var entries = new List<KeyValuePair<string, int>>();
+            foreach (var pair in World.Store)
+            {
+                if (pair.Value > 0) entries.Add(pair);
+            }
+
+            if (entries.Count == 0) return "склад пуст";
+
+            entries.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            var parts = new List<string>();
+            for (var i = 0; i < entries.Count && i < 3; i++)
+            {
+                var key = entries[i].Key;
+                var label = key == Works.ForageStoreKey
+                    ? "корм"
+                    : Tables.Items.TryGet(key, out var item)
+                        ? (string.IsNullOrEmpty(item.Short) ? item.Name : item.Short)
+                        : key;
+
+                parts.Add(label + " " + entries[i].Value);
+            }
+
+            if (entries.Count > 3) parts.Add("ещё " + (entries.Count - 3));
+
+            return "склад: " + string.Join(" · ", parts);
+        }
+
+        private int HealthyCount()
+        {
+            var count = 0;
+            foreach (var person in Tables.Roster.All)
+            {
+                if (World.ConditionOf(person.Id) == PersonCondition.Healthy) count++;
+            }
+
+            return count;
         }
 
         private string PhaseName(Phase phase)

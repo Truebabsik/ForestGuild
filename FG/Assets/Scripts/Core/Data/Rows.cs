@@ -15,6 +15,10 @@ namespace ForestGuild.Core.Data
     public sealed class Item
     {
         public string Id, Name, Category, Tags;
+
+        /// <summary>Короткое имя для HUD и списков (ui.md §8).</summary>
+        public string Short;
+
         public float Slots;
         public int Value;
     }

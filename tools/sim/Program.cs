@@ -299,6 +299,12 @@ internal static class Program
             return quiet <= 1 && report.Entries.Count <= 6;
         });
 
+        checks.Check("every item has a short name for HUD", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            return t.Items.All.All(item => !string.IsNullOrEmpty(item.Short));
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
