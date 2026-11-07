@@ -7,10 +7,17 @@ using UnityEngine.UIElements;
 
 namespace ForestGuild.Game
 {
+    public enum Phase
+    {
+        Morning,
+        Day,
+        Evening,
+        Night,
+    }
+
     /// <summary>
-    /// Экран дня: карта, ростер, план дня, досье зоны, «конец дня».
-    /// Вся логика — в ядре; здесь только показ и ввод. Точные числа зоны скрыты (design.md §6.5):
-    /// обычный режим показывает слова и слухи, тумблер «числа» — отладку.
+    /// Каркас цикла суток (docs/ui.md §3): HUD + фазы Утро → День → Вечер → Ночь.
+    /// Логика фаз — здесь; правила — в ядре.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class MapScreen : MonoBehaviour
@@ -21,16 +28,24 @@ namespace ForestGuild.Game
 
         private UIDocument _document;
         private RosterPanel _roster;
+        private DayFlow _flow;
         private DayPlan _plan = new DayPlan();
         private Rng _rng;
         private Behavior _behavior = Behavior.Gather;
         private bool _debug;
+        private Phase _phase = Phase.Morning;
+        private DayReport _dayReport;
+        private Action _paneAction;
 
-        private Label _dayLabel;
+        private Label _hud;
         private Label _queueLabel;
-        private Label _reportTitle;
-        private VisualElement _report;
-        private VisualElement _reportLines;
+        private Label _paneTitle;
+        private VisualElement _pane;
+        private ScrollView _paneLines;
+        private Button _paneButton;
+        private VisualElement _leftPanel;
+        private VisualElement _rightPanel;
+        private VisualElement _bottomBar;
         private VisualElement _parties;
         private ScrollView _zoneCard;
         private Label _toast;
@@ -50,6 +65,7 @@ namespace ForestGuild.Game
                 Tables = DataLoader.Load(dataDir);
                 World = World.Create(Tables);
                 _rng = new Rng(12345);
+                _flow = new DayFlow(World, Tables, _rng);
             }
             catch (Exception e)
             {
@@ -68,11 +84,16 @@ namespace ForestGuild.Game
             Map.ZoneSelected += ShowZone;
             Map.VillageClicked += ShowVillage;
 
-            _dayLabel = root.Q<Label>("day-label");
+            _hud = root.Q<Label>("hud");
             _queueLabel = root.Q<Label>("queue-label");
-            _report = root.Q<VisualElement>("report");
-            _reportTitle = root.Q<Label>("report-title");
-            _reportLines = root.Q<VisualElement>("report-lines");
+            _pane = root.Q<VisualElement>("pane");
+            _paneTitle = root.Q<Label>("pane-title");
+            _paneLines = root.Q<ScrollView>("pane-lines");
+            _paneButton = root.Q<Button>("pane-button");
+            _paneButton.clicked += () => _paneAction?.Invoke();
+            _leftPanel = root.Q<VisualElement>("left-panel");
+            _rightPanel = root.Q<VisualElement>("right-panel");
+            _bottomBar = root.Q<VisualElement>("bottom-bar");
             _parties = root.Q<VisualElement>("parties");
             _zoneCard = root.Q<ScrollView>("zone-card");
             _toast = root.Q<Label>("toast");
@@ -102,14 +123,143 @@ namespace ForestGuild.Game
 
             root.Q<Button>("send-button").clicked += SendParty;
             root.Q<Button>("village-button").clicked += SendToVillage;
-            root.Q<Button>("end-day").clicked += EndDay;
-            root.Q<Button>("report-close").clicked += () => _report.AddToClassList("hidden");
+            root.Q<Button>("sign-button").clicked += SignOrder;
 
             Map.RefreshStates(World);
-            _dayLabel.text = "День " + World.Day;
+            ShowHint();
+            RefreshPlan();
+            SetPhase(Phase.Morning);
+        }
+
+        // ---- фазы ----
+
+        private void SetPhase(Phase phase)
+        {
+            _phase = phase;
+            var morning = phase == Phase.Morning;
+
+            _leftPanel.EnableInClassList("hidden", !morning);
+            _rightPanel.EnableInClassList("hidden", !morning);
+            _bottomBar.EnableInClassList("hidden", !morning);
+            _pane.EnableInClassList("hidden", morning);
+
+            UpdateHud();
+        }
+
+        private void UpdateHud()
+        {
+            var waveIn = Tables.Tuning.GetInt("wave_day") - World.Day;
+            if (waveIn < 0) waveIn = 0;
+
+            // Ночь принадлежит уходящему дню: ядро уже переставило счётчик на утро следующего.
+            var shownDay = _phase == Phase.Night ? World.Day - 1 : World.Day;
+
+            _hud.text = "ДЕНЬ " + shownDay + " · " + PhaseName(_phase)
+                + "    |    частокол " + World.PalisadeHp + "/" + World.PalisadeMax
+                + "    |    до волны: " + waveIn + " дн.";
+        }
+
+        private string PhaseName(Phase phase)
+        {
+            switch (phase)
+            {
+                case Phase.Day: return "ДЕНЬ";
+                case Phase.Evening: return "ВЕЧЕР";
+                case Phase.Night: return "НОЧЬ";
+                default: return "УТРО";
+            }
+        }
+
+        private void SignOrder()
+        {
+            _dayReport = _flow.RunExpeditions(_plan);
+
+            var lines = new List<string>(_dayReport.Lines);
+            if (lines.Count == 0) lines.Add("День прошёл без событий");
+
+            SetPhase(Phase.Day);
+            ShowPane("ДЕНЬ " + World.Day + " · ПОХОД", lines, "К ВЕЧЕРУ →", GoToEvening);
+        }
+
+        private void GoToEvening()
+        {
+            SetPhase(Phase.Evening);
+            ShowPane("ДЕНЬ " + World.Day + " · ВЕЧЕР", EveningLines(), "СПАТЬ →", GoToNight);
+        }
+
+        private void GoToNight()
+        {
+            var night = _flow.RunNight();
+
+            SetPhase(Phase.Night);
+            ShowPane("НОЧЬ · лес живёт", night.Lines, "УТРО →", GoToMorning);
+
+            Map.RefreshStates(World);
+        }
+
+        private void GoToMorning()
+        {
+            _plan = new DayPlan();
+            _dayReport = null;
+
+            SetPhase(Phase.Morning);
+            Map.RefreshStates(World);
             ShowHint();
             RefreshPlan();
         }
+
+        private List<string> EveningLines()
+        {
+            var lines = new List<string>();
+            if (_dayReport == null) return lines;
+
+            var loot = new List<string>();
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            var wounded = 0;
+
+            foreach (var party in _dayReport.Parties)
+            {
+                if (party.Wounded) wounded++;
+                foreach (var found in party.Found)
+                {
+                    counts.TryGetValue(found.Key, out var current);
+                    counts[found.Key] = current + found.Value;
+                }
+            }
+
+            foreach (var pair in counts)
+            {
+                loot.Add(Tables.Items.Get(pair.Key).Name + " ×" + pair.Value);
+            }
+
+            lines.Add("Отрядов в лесу: " + _dayReport.Parties.Count);
+            lines.Add("Добыча: " + (loot.Count == 0 ? "пусто" : string.Join(", ", loot)));
+            lines.Add(wounded == 0 ? "Все вернулись целыми" : "Раненых: " + wounded);
+            lines.Add("Частокол: " + World.PalisadeHp + "/" + World.PalisadeMax);
+            lines.Add("");
+            lines.Add("Склад и распределение появятся вместе со станциями; пока добыча идёт в запас деревни.");
+
+            return lines;
+        }
+
+        private void ShowPane(string title, List<string> lines, string buttonText, Action action)
+        {
+            _paneTitle.text = title;
+            _paneButton.text = buttonText;
+            _paneAction = action;
+
+            _paneLines.Clear();
+            foreach (var line in lines)
+            {
+                var label = new Label(line.Length == 0 ? " " : "· " + line);
+                label.AddToClassList("pane-line");
+                _paneLines.Add(label);
+            }
+
+            _paneLines.scrollOffset = Vector2.zero;
+        }
+
+        // ---- утро ----
 
         private void SetBehavior(Behavior behavior)
         {
@@ -143,9 +293,8 @@ namespace ForestGuild.Game
             party.PersonIds.AddRange(_roster.Selected);
             _plan.Parties.Add(party);
 
-            var zone = Tables.Zones.Get(Map.Selected);
-            ShowMessage("Отряд из " + party.PersonIds.Count + " идёт в " + zone.Name
-                + " · " + BehaviorName(_behavior));
+            ShowMessage("Отряд из " + party.PersonIds.Count + " идёт в "
+                + Tables.Zones.Get(Map.Selected).Name + " · " + BehaviorName(_behavior));
             _roster.Clear();
             RefreshPlan();
         }
@@ -191,8 +340,7 @@ namespace ForestGuild.Game
                 text.AddToClassList("party-text");
                 row.Add(text);
 
-                var remove = new Button(() => RemoveParty(index));
-                remove.text = "×";
+                var remove = new Button(() => RemoveParty(index)) { text = "×" };
                 remove.AddToClassList("party-remove");
                 row.Add(remove);
 
@@ -214,8 +362,7 @@ namespace ForestGuild.Game
                 {
                     _plan.VillageWorkers.Clear();
                     RefreshPlan();
-                });
-                clear.text = "×";
+                }) { text = "×" };
                 clear.AddToClassList("party-remove");
                 row.Add(clear);
                 _parties.Add(row);
@@ -243,27 +390,13 @@ namespace ForestGuild.Game
             }
         }
 
-        private void EndDay()
-        {
-            var flow = new DayFlow(World, Tables, _rng);
-            var report = flow.RunDay(_plan);
-            _plan = new DayPlan();
-
-            _dayLabel.text = "День " + World.Day;
-            Map.RefreshStates(World);
-            if (Map.Selected != null) ShowZone(Map.Selected);
-            if (Map.VillageSelected) ShowVillage();
-            RefreshPlan();
-
-            ShowReport(report);
-        }
+        // ---- досье ----
 
         private void ShowZone(string zoneId)
         {
             ShowZone(zoneId, true);
         }
 
-        /// <summary>Досье зоны: картинка, нарратив, кто водится, находки, слухи.</summary>
         private void ShowZone(string zoneId, bool scrollToTop)
         {
             var zone = Tables.Zones.Get(zoneId);
@@ -351,9 +484,7 @@ namespace ForestGuild.Game
 
         private string Lore(string zoneId, string field)
         {
-            return Tables.ZoneLore.TryGet(zoneId + "|" + field, out var row)
-                ? row.Text
-                : "—";
+            return Tables.ZoneLore.TryGet(zoneId + "|" + field, out var row) ? row.Text : "—";
         }
 
         private IEnumerable<string> NeighbourNames(Zone zone)
@@ -371,7 +502,9 @@ namespace ForestGuild.Game
                 + " · кристаллы " + state.Crystals
                 + " · корм " + state.Forage
                 + " · опыт гнезда " + state.NestXp
-                + " · гнездо " + (state.Nest.Exists ? state.Nest.Beasts + "/" + Tables.Tuning.GetInt("nest_beasts_cap") : "нет")
+                + " · гнездо " + (state.Nest.Exists
+                    ? state.Nest.Beasts + "/" + Tables.Tuning.GetInt("nest_beasts_cap")
+                    : "нет")
                 + " · тревога " + state.AlertDays;
         }
 
@@ -384,41 +517,12 @@ namespace ForestGuild.Game
 
         private void ShowMessage(string text)
         {
-            if (_toast == null)
-            {
-                ShowReportTitleOnly(text);
-                return;
-            }
+            if (_toast == null) return;
 
             _toast.text = text;
             _toast.RemoveFromClassList("hidden");
             _toastHide?.Pause();
             _toastHide = _toast.schedule.Execute(() => _toast.AddToClassList("hidden")).StartingIn(3000);
-        }
-
-        private void ShowReportTitleOnly(string text)
-        {
-            _reportTitle.text = "Сообщение";
-            _reportLines.Clear();
-            _reportLines.Add(new Label(text));
-            _report.RemoveFromClassList("hidden");
-        }
-
-        private void ShowReport(DayReport report)
-        {
-            _reportTitle.text = "Итоги дня " + (World.Day - 1);
-            _reportLines.Clear();
-            foreach (var line in report.Lines)
-            {
-                _reportLines.Add(new Label("· " + line));
-            }
-
-            if (report.Lines.Count == 0)
-            {
-                _reportLines.Add(new Label("· день прошёл тихо"));
-            }
-
-            _report.RemoveFromClassList("hidden");
         }
     }
 }

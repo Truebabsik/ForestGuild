@@ -13,8 +13,8 @@ namespace ForestGuild.Core.Sim
     }
 
     /// <summary>
-    /// Один день: работы в деревне, вылазки, ночь. Единственное место, где день «идёт» —
-    /// чтобы UI не решал порядок шагов сам.
+    /// День по фазам: вылазки (День) и жизнь леса (Ночь) разделены, как в UI (docs/ui.md §3).
+    /// `RunDay` остаётся для консольных прогонов и тестов.
     /// </summary>
     public sealed class DayFlow
     {
@@ -29,7 +29,8 @@ namespace ForestGuild.Core.Sim
             _rng = rng;
         }
 
-        public DayReport RunDay(DayPlan plan)
+        /// Фаза «День»: работы в деревне и вылазки. Ночь не наступает, день не меняется.
+        public DayReport RunExpeditions(DayPlan plan)
         {
             var report = new DayReport();
 
@@ -52,7 +53,20 @@ namespace ForestGuild.Core.Sim
                 report.Lines.Add("В лес никто не пошёл");
             }
 
-            report.Night = NightSim.AdvanceNight(_world, _tables, _rng);
+            return report;
+        }
+
+        /// Фаза «Ночь»: лес живёт, день сменяется.
+        public NightReport RunNight()
+        {
+            return NightSim.AdvanceNight(_world, _tables, _rng);
+        }
+
+        /// Один день целиком — для консольных прогонов и тестов.
+        public DayReport RunDay(DayPlan plan)
+        {
+            var report = RunExpeditions(plan);
+            report.Night = RunNight();
             report.Lines.AddRange(report.Night.Lines);
             return report;
         }

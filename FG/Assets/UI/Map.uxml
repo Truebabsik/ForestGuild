@@ -1,6 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:u="UnityEditor.UIElements">
   <Style src="Map.uss" />
   <ui:VisualElement name="root" class="root">
+    <ui:Label name="hud" class="hud" text="ДЕНЬ 1 · УТРО" />
+
     <ui:VisualElement name="map" class="map" />
 
     <ui:VisualElement name="left-panel" class="panel left">
@@ -28,16 +30,15 @@
     </ui:VisualElement>
 
     <ui:VisualElement name="bottom-bar" class="bottom">
-      <ui:Label name="day-label" text="День 1" class="day-label" />
       <ui:Label name="queue-label" text="" class="zone-info" />
       <ui:Toggle name="debug-toggle" label="числа" class="debug-toggle" />
-      <ui:Button name="end-day" text="КОНЕЦ ДНЯ" class="action primary" />
+      <ui:Button name="sign-button" text="ПОДПИСАТЬ ПРИКАЗ" class="action primary" />
     </ui:VisualElement>
 
-    <ui:VisualElement name="report" class="report hidden">
-      <ui:Label name="report-title" text="Итоги дня" class="panel-title" />
-      <ui:ScrollView name="report-lines" class="report-lines" />
-      <ui:Button name="report-close" text="ЗАКРЫТЬ" class="action report-close" />
+    <ui:VisualElement name="pane" class="pane hidden">
+      <ui:Label name="pane-title" text="" class="panel-title" />
+      <ui:ScrollView name="pane-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
+      <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
     </ui:VisualElement>
 
     <ui:Label name="toast" text="" class="toast hidden" />

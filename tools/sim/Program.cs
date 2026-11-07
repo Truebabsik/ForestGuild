@@ -161,7 +161,9 @@ internal static class Program
             var t = DataLoader.Load(DataDir());
             var w = World.Create(t);
             var report = NightSim.AdvanceNight(w, t, new Rng(1));
-            return report.Lines.Any(line => line.Contains("твар."));
+            return report.Lines.Any(line => line.Contains("кормятся")
+                || line.Contains("кристалл")
+                || line.Contains("голодные"));
         });
 
         checks.Check("zone lore is complete for all zones", () =>
@@ -184,6 +186,21 @@ internal static class Program
             ExpeditionSim.Resolve(w, t, Party("verge_meadow", "leya"), new Rng(3));
             return w.Zones["verge_meadow"].Scouted
                 && ZoneKnowledge.Mood(w, "verge_meadow") != "?";
+        });
+
+        checks.Check("phases: day does not advance, night does", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var flow = new DayFlow(w, t, new Rng(9));
+
+            var plan = new DayPlan();
+            plan.Parties.Add(Party("verge_meadow", "leya"));
+            var day = flow.RunExpeditions(plan);
+            var dayAfter = w.Day;
+
+            var night = flow.RunNight();
+            return dayAfter == 1 && w.Day == 2 && day.Parties.Count == 1 && night.Lines.Count > 0;
         });
 
         return checks.Report() ? 0 : 1;

@@ -48,8 +48,6 @@ namespace ForestGuild.Core.Sim
             GrowNests(world, tables, tuning, report);
             AgeCrystals(world, tables, tuning);
 
-            report.Add("В лесу тварей: " + world.TotalBeasts() + ", кристаллов на земле: " + world.TotalCrystals());
-
             world.Day++;
             report.Add("Наступил день " + world.Day);
             return report;
@@ -108,12 +106,19 @@ namespace ForestGuild.Core.Sim
         {
             foreach (var log in logs)
             {
-                var beasts = world.BeastCount(log.ZoneId);
-                var text = tables.Zones.Get(log.ZoneId).Name + ": " + beasts + " твар.";
-                if (log.ForageEaten > 0) text += ", съедено корма " + log.ForageEaten;
-                if (log.CrystalsEaten > 0) text += ", кристаллов " + log.CrystalsEaten;
-                if (log.Starved > 0) text += ", голодных " + log.Starved;
-                report.Add(text);
+                var name = tables.Zones.Get(log.ZoneId).Name;
+                if (log.Starved > 0)
+                {
+                    report.Add(name + ": голодные — кто-то уйдёт к деревне");
+                }
+                else if (log.CrystalsEaten > 0)
+                {
+                    report.Add(name + ": твари добрались до кристаллов");
+                }
+                else if (log.ForageEaten > 0)
+                {
+                    report.Add(name + ": твари кормятся");
+                }
             }
         }
 

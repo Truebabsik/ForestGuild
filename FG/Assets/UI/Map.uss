@@ -3,11 +3,57 @@
     background-color: rgb(20, 22, 20);
 }
 
+.hud {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 36px;
+    padding-left: 20px;
+    padding-top: 8px;
+    background-color: rgb(30, 32, 28);
+    border-bottom-width: 2px;
+    border-color: rgb(120, 104, 74);
+    color: rgb(226, 208, 170);
+    font-size: 14px;
+    -unity-font-style: bold;
+    white-space: nowrap;
+}
+
+.pane {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 56px;
+    bottom: 40px;
+    background-color: rgb(16, 18, 16);
+    border-width: 2px;
+    border-color: rgb(150, 128, 88);
+    padding: 20px;
+}
+
+.pane-lines {
+    flex-grow: 1;
+    margin-bottom: 12px;
+}
+
+.pane-lines .unity-label {
+    color: rgb(208, 204, 190);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.pane-button {
+    width: 260px;
+    align-self: flex-end;
+}
+
 .map {
     position: absolute;
     left: 250px;
-    right: 330px;
-    top: 0;
+    right: 440px;
+    top: 36px;
     bottom: 96px;
     background-image: url("project://database/Assets/UI/Art/map_bg.jpg");
     -unity-background-scale-mode: scale-and-crop;
@@ -15,7 +61,7 @@
 
 .panel {
     position: absolute;
-    top: 0;
+    top: 36px;
     bottom: 96px;
     padding: 14px;
     background-color: rgb(34, 36, 32);
