@@ -289,6 +289,16 @@ internal static class Program
             return w.ConditionOf("leya") == PersonCondition.Healthy;
         });
 
+        checks.Check("quiet night folds into one line", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var report = NightSim.AdvanceNight(w, t, new Rng(1));
+
+            var quiet = report.Entries.FindAll(e => e.Text.Contains("просто кормятся")).Count;
+            return quiet <= 1 && report.Entries.Count <= 6;
+        });
+
         return checks.Report() ? 0 : 1;
     }
 

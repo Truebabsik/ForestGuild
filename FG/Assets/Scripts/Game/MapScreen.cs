@@ -283,9 +283,36 @@ namespace ForestGuild.Game
             var night = _flow.RunNight(_plan);
 
             SetPhase(Phase.Night);
-            ShowPane("НОЧЬ · лес живёт", night.Lines, "УТРО →", GoToMorning);
+            ShowNight(night);
 
             Map.RefreshStates(World);
+        }
+
+        /// Ночь (ui.md §7): строки с именами зон, по клику — досье. Стрелок на карте нет.
+        private void ShowNight(NightReport night)
+        {
+            _paneTitle.text = "НОЧЬ · лес живёт";
+            _paneButton.text = "УТРО →";
+            _paneAction = GoToMorning;
+
+            _paneLines.Clear();
+            foreach (var entry in night.Entries)
+            {
+                var label = new Label("· " + entry.Text);
+                label.AddToClassList("pane-line");
+
+                if (entry.ZoneId != null)
+                {
+                    label.AddToClassList("link");
+                    var zoneId = entry.ZoneId;
+                    label.RegisterCallback<ClickEvent>(_ =>
+                        Dossier.Open(zoneId, Tables, World, false));
+                }
+
+                _paneLines.Add(label);
+            }
+
+            _paneLines.scrollOffset = Vector2.zero;
         }
 
         private void GoToMorning()

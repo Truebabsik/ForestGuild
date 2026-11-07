@@ -5,13 +5,21 @@ using ForestGuild.Core.Data;
 
 namespace ForestGuild.Core.Sim
 {
+    public sealed class NightLine
+    {
+        public string Text;
+        public string ZoneId;
+    }
+
     public sealed class NightReport
     {
         public readonly List<string> Lines = new List<string>();
+        public readonly List<NightLine> Entries = new List<NightLine>();
 
-        public void Add(string line)
+        public void Add(string line, string zoneId = null)
         {
             Lines.Add(line);
+            Entries.Add(new NightLine { Text = line, ZoneId = zoneId });
         }
     }
 
@@ -102,24 +110,30 @@ namespace ForestGuild.Core.Sim
             return logs;
         }
 
+        /// Тихую ночь не перечисляем: одна строка на все зоны, где только ели.
         private static void ReportFeeding(World world, Tables tables, List<ZoneNightLog> logs, NightReport report)
         {
+            var quiet = 0;
+
             foreach (var log in logs)
             {
                 var name = tables.Zones.Get(log.ZoneId).Name;
+
                 if (log.Starved > 0)
                 {
-                    report.Add(name + ": голодные — кто-то уйдёт к деревне");
+                    report.Add(name + ": голодные — кто-то уйдёт к деревне", log.ZoneId);
                 }
                 else if (log.CrystalsEaten > 0)
                 {
-                    report.Add(name + ": твари добрались до кристаллов");
+                    report.Add(name + ": твари добрались до кристаллов", log.ZoneId);
                 }
                 else if (log.ForageEaten > 0)
                 {
-                    report.Add(name + ": твари кормятся");
+                    quiet++;
                 }
             }
+
+            if (quiet > 0) report.Add("В остальных зонах твари просто кормятся");
         }
 
         private static void Migrate(World world, Tables tables,
@@ -140,8 +154,9 @@ namespace ForestGuild.Core.Sim
 
                 if (move > 0)
                 {
-                    report.Add(tables.Zones.Get(pair.Key).Name + ": " + move
-                        + " твар. уходит в " + tables.Zones.Get(outward).Name);
+                    var what = move == 1 ? "одна тварь" : "несколько тварей";
+                    report.Add(tables.Zones.Get(pair.Key).Name + ": " + what
+                        + " уходит наружу — " + tables.Zones.Get(outward).Name, pair.Key);
                 }
             }
         }
@@ -158,7 +173,7 @@ namespace ForestGuild.Core.Sim
                 state.Nest.Beasts = 0;
                 state.Nest.DaysSinceSpawn = 0;
                 state.AddSighting(world.Day, tables.Zones.Get(state.ZoneId).Name + ": видели гнездо");
-                report.Add(tables.Zones.Get(state.ZoneId).Name + ": появилось гнездо");
+                report.Add(tables.Zones.Get(state.ZoneId).Name + ": появилось гнездо", state.ZoneId);
             }
 
             var spawnDays = tuning.GetInt("nest_spawn_days");
@@ -180,7 +195,7 @@ namespace ForestGuild.Core.Sim
 
                 state.Beasts.TryGetValue(nestBeast.BeastId, out var current);
                 state.Beasts[nestBeast.BeastId] = current + 1;
-                report.Add(tables.Zones.Get(state.ZoneId).Name + ": гнездо растит тварь");
+                report.Add(tables.Zones.Get(state.ZoneId).Name + ": гнездо растит тварь", state.ZoneId);
             }
         }
 

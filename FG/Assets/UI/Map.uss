@@ -44,6 +44,10 @@
     margin-bottom: 4px;
 }
 
+.pane-line.link {
+    color: rgb(232, 198, 132);
+}
+
 .pane-button {
     width: 260px;
     align-self: flex-end;
