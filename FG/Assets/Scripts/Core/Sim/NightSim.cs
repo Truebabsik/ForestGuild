@@ -152,6 +152,7 @@ namespace ForestGuild.Core.Sim
                 state.Nest.Exists = true;
                 state.Nest.Beasts = 0;
                 state.Nest.DaysSinceSpawn = 0;
+                state.AddSighting(world.Day, tables.Zones.Get(state.ZoneId).Name + ": видели гнездо");
                 report.Add(tables.Zones.Get(state.ZoneId).Name + ": появилось гнездо");
             }
 

@@ -103,9 +103,7 @@ namespace ForestGuild.Game
 
             foreach (var zone in _tables.Zones.All)
             {
-                var beasts = world != null ? world.BeastCount(zone.Id) : 0;
-                var nest = world != null && world.Zones[zone.Id].Nest.Exists;
-                _nodes[zone.Id].ShowState(beasts, nest);
+                _nodes[zone.Id].ShowMood(world != null ? ZoneKnowledge.Mood(world, zone.Id) : "?");
             }
 
             if (world != null) _villageState.text = world.PalisadeHp + "/" + world.PalisadeMax;

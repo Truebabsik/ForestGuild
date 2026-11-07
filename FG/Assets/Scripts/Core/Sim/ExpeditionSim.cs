@@ -27,6 +27,7 @@ namespace ForestGuild.Core.Sim
             var tuning = tables.Tuning;
             var zone = tables.Zones.Get(party.ZoneId);
             var state = world.Zones[party.ZoneId];
+            state.Scouted = true;
 
             var result = new ExpeditionResult
             {
@@ -95,20 +96,25 @@ namespace ForestGuild.Core.Sim
                 result.Encountered = true;
                 result.Stamina -= 1;
 
+                var beastName = PickBeast(tables, zone.Id, rng);
+
                 if (rng.Chance(0.5))
                 {
                     result.Log.Add(zone.Name + ": тварь рядом — отряд отошёл");
+                    state.AddSighting(world.Day, zone.Name + ": отряд столкнулся с " + beastName + " — отошли");
                     continue;
                 }
 
                 if (rng.Chance(0.5))
                 {
                     result.Log.Add(zone.Name + ": бой — победа, туша брошена");
+                    state.AddSighting(world.Day, zone.Name + ": " + beastName + " — приняли бой и ушли с добычей");
                     continue;
                 }
 
                 result.Wounded = true;
                 result.Log.Add(zone.Name + ": бой — ранение, отряд возвращается");
+                state.AddSighting(world.Day, zone.Name + ": " + beastName + " — ранили человека");
                 break;
             }
 
@@ -135,6 +141,25 @@ namespace ForestGuild.Core.Sim
             if (party.PersonIds.Count > 2) intensity *= 1.2;
             if (state.AlertDays > 0) intensity *= 1.2;
             return intensity;
+        }
+
+        private static string PickBeast(Tables tables, string zoneId, Rng rng)
+        {
+            var pool = tables.ZoneBeasts.All.Where(x => x.ZoneId == zoneId).ToList();
+            if (pool.Count == 0) return "тварь";
+
+            var total = 0;
+            foreach (var entry in pool) total += entry.Weight;
+            if (total <= 0) return "тварь";
+
+            var roll = rng.Next(total);
+            foreach (var entry in pool)
+            {
+                roll -= entry.Weight;
+                if (roll < 0) return tables.Beasts.Get(entry.BeastId).Name;
+            }
+
+            return tables.Beasts.Get(pool[pool.Count - 1].BeastId).Name;
         }
 
         private static string PickResource(Tables tables, string zoneId, Rng rng)

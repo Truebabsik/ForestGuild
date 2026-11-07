@@ -71,6 +71,7 @@ tools/
 | `traits.csv` | `id; name; fight_bonus; find_bonus; butcher_bonus; carry_bonus` — черты характера: гейт класса и модификаторы |
 | `professions.csv` | `id; name; skills_allowed; requires_trait; start_skills` — класс: что может расти, по какой черте берут, с чем стартует |
 | `roster.csv` | `id; name; profession; traits; skills_override` |
+| `zone_lore.csv` | `zone_id; field; text` — `field`: `look` / `beasts` / `finds` / `special`. Нарратив досье зоны |
 | `stations.csv` | `id; name; skill_id; people_slots` |
 | `recipes.csv` | `id; station; skill_id; skill_req; hours; inputs; outputs` |
 | `recipe_quality.csv` | `recipe_id; min_skill; output_id; qty; chance` |
@@ -116,7 +117,8 @@ tools/
 
 ## 10. Шаг 1: что уже работает
 
-Проект Unity живёт в `FG/`, документация — в корне репозитория.
+Проект Unity живёт в `FG/`, документация — в корне репозитория. Проектирование интерфейса
+(экраны цикла суток, отряды-пресеты, карты событий вылазки) — в `docs/ui.md`.
 
 | Что | Где | Чем проверено |
 |---|---|---|

@@ -33,9 +33,65 @@
 
 .panel.right {
     right: 0;
-    width: 330px;
+    width: 420px;
     border-left-width: 2px;
     border-right-width: 0;
+}
+
+.zone-card {
+    flex-grow: 1;
+}
+
+.zone-art {
+    height: 186px;
+    margin-bottom: 10px;
+    border-width: 2px;
+    border-color: rgb(120, 104, 74);
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(20, 22, 20);
+}
+
+.zone-art-verge_meadow { background-image: url("project://database/Assets/UI/Art/Zones/verge_meadow.jpg"); }
+.zone-art-verge_springs { background-image: url("project://database/Assets/UI/Art/Zones/verge_springs.jpg"); }
+.zone-art-verge_marsh { background-image: url("project://database/Assets/UI/Art/Zones/verge_marsh.jpg"); }
+.zone-art-verge_thicket { background-image: url("project://database/Assets/UI/Art/Zones/verge_thicket.jpg"); }
+.zone-art-belt_stone { background-image: url("project://database/Assets/UI/Art/Zones/belt_stone.jpg"); }
+.zone-art-heart_root { background-image: url("project://database/Assets/UI/Art/Zones/heart_root.jpg"); }
+
+.zone-title {
+    color: rgb(232, 214, 176);
+    font-size: 19px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+    white-space: normal;
+}
+
+.zone-meta {
+    color: rgb(168, 154, 124);
+    font-size: 12px;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.zone-text {
+    color: rgb(206, 202, 190);
+    font-size: 13px;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.zone-section-title {
+    color: rgb(160, 146, 118);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+
+.debug-toggle {
+    color: rgb(168, 154, 124);
+    font-size: 12px;
+    margin-right: 12px;
 }
 
 .panel-title {
@@ -283,7 +339,7 @@
 .report {
     position: absolute;
     left: 270px;
-    right: 350px;
+    right: 440px;
     top: 20px;
     bottom: 140px;
     background-color: rgb(16, 18, 16);
@@ -312,7 +368,7 @@
 .toast {
     position: absolute;
     left: 250px;
-    right: 330px;
+    right: 440px;
     bottom: 106px;
     padding: 8px 12px;
     background-color: rgb(46, 42, 32);

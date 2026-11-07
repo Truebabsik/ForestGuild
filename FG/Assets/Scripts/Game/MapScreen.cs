@@ -8,8 +8,9 @@ using UnityEngine.UIElements;
 namespace ForestGuild.Game
 {
     /// <summary>
-    /// Экран дня: карта, ростер, план дня, панель зоны, «конец дня».
-    /// Вся логика — в ядре; здесь только показ и ввод.
+    /// Экран дня: карта, ростер, план дня, досье зоны, «конец дня».
+    /// Вся логика — в ядре; здесь только показ и ввод. Точные числа зоны скрыты (design.md §6.5):
+    /// обычный режим показывает слова и слухи, тумблер «числа» — отладку.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class MapScreen : MonoBehaviour
@@ -23,17 +24,15 @@ namespace ForestGuild.Game
         private DayPlan _plan = new DayPlan();
         private Rng _rng;
         private Behavior _behavior = Behavior.Gather;
+        private bool _debug;
 
-        private Label _zoneName;
-        private Label _zoneInfo;
-        private Label _zoneBeasts;
-        private Label _zoneParties;
         private Label _dayLabel;
         private Label _queueLabel;
         private Label _reportTitle;
         private VisualElement _report;
         private VisualElement _reportLines;
         private VisualElement _parties;
+        private ScrollView _zoneCard;
         private Label _toast;
         private IVisualElementScheduledItem _toastHide;
         private Button _behaviorGather;
@@ -69,16 +68,13 @@ namespace ForestGuild.Game
             Map.ZoneSelected += ShowZone;
             Map.VillageClicked += ShowVillage;
 
-            _zoneName = root.Q<Label>("zone-name");
-            _zoneInfo = root.Q<Label>("zone-info");
-            _zoneBeasts = root.Q<Label>("zone-beasts");
-            _zoneParties = root.Q<Label>("zone-parties");
             _dayLabel = root.Q<Label>("day-label");
             _queueLabel = root.Q<Label>("queue-label");
             _report = root.Q<VisualElement>("report");
             _reportTitle = root.Q<Label>("report-title");
             _reportLines = root.Q<VisualElement>("report-lines");
             _parties = root.Q<VisualElement>("parties");
+            _zoneCard = root.Q<ScrollView>("zone-card");
             _toast = root.Q<Label>("toast");
 
             _roster = new RosterPanel(root.Q<VisualElement>("roster"));
@@ -92,6 +88,18 @@ namespace ForestGuild.Game
             _behaviorClean.clicked += () => SetBehavior(Behavior.Clean);
             SetBehavior(Behavior.Gather);
 
+            var debugToggle = root.Q<Toggle>("debug-toggle");
+            if (debugToggle != null)
+            {
+                debugToggle.value = false;
+                debugToggle.RegisterValueChangedCallback(e =>
+                {
+                    _debug = e.newValue;
+                    if (Map.Selected != null) ShowZone(Map.Selected);
+                    else if (Map.VillageSelected) ShowVillage();
+                });
+            }
+
             root.Q<Button>("send-button").clicked += SendParty;
             root.Q<Button>("village-button").clicked += SendToVillage;
             root.Q<Button>("end-day").clicked += EndDay;
@@ -99,6 +107,7 @@ namespace ForestGuild.Game
 
             Map.RefreshStates(World);
             _dayLabel.text = "День " + World.Day;
+            ShowHint();
             RefreshPlan();
         }
 
@@ -221,7 +230,7 @@ namespace ForestGuild.Game
                 : "План: отрядов " + _plan.Parties.Count + " из " + DayPlan.MaxParties
                   + ", занято " + workers + " из " + Tables.Roster.All.Count;
 
-            if (Map.Selected != null) ShowZone(Map.Selected);
+            if (Map.Selected != null) ShowZone(Map.Selected, false);
         }
 
         private string BehaviorName(Behavior behavior)
@@ -251,47 +260,126 @@ namespace ForestGuild.Game
 
         private void ShowZone(string zoneId)
         {
+            ShowZone(zoneId, true);
+        }
+
+        /// <summary>Досье зоны: картинка, нарратив, кто водится, находки, слухи.</summary>
+        private void ShowZone(string zoneId, bool scrollToTop)
+        {
             var zone = Tables.Zones.Get(zoneId);
             var state = World.Zones[zoneId];
+            _zoneCard.Clear();
 
-            _zoneName.text = zone.Name;
-            _zoneInfo.text = "Глубина: " + zone.Depth + "\n"
-                + "Дорога: " + zone.TravelHours.ToString("0.#") + " ч в одну сторону\n"
-                + "Кристаллы: " + state.Crystals + " · корм: " + state.Forage;
+            var art = new VisualElement();
+            art.AddToClassList("zone-art");
+            art.AddToClassList("zone-art-" + zoneId);
+            _zoneCard.Add(art);
 
-            if (state.Beasts.Count == 0)
+            _zoneCard.Add(Text("zone-title", zone.Name));
+            _zoneCard.Add(Text("zone-meta", zone.Depth + " · дорога " + zone.TravelHours.ToString("0.#")
+                + " ч · сейчас: " + ZoneKnowledge.Mood(World, zoneId)));
+
+            if (!state.Scouted)
             {
-                _zoneBeasts.text = "Тварей не видно";
+                _zoneCard.Add(Text("zone-text", "Сюда ещё не ходили. Известны только дорога и соседи — "
+                    + string.Join(", ", NeighbourNames(zone)) + "."));
+                if (_debug) _zoneCard.Add(Text("zone-text", DebugLine(zoneId)));
+                return;
+            }
+
+            _zoneCard.Add(Text("zone-text", Lore(zoneId, "look")));
+            AddSection("КТО ВОДИТСЯ", Lore(zoneId, "beasts"));
+            AddSection("ЧТО НАЙТИ", Lore(zoneId, "finds"));
+            AddSection("ОСОБОЕ", Lore(zoneId, "special"));
+
+            _zoneCard.Add(Text("zone-section-title", "СЛУХИ"));
+            if (state.Sightings.Count == 0)
+            {
+                _zoneCard.Add(Text("zone-text", "Пока ничего не рассказывали."));
             }
             else
             {
-                var lines = new List<string>();
-                foreach (var pair in state.Beasts)
+                var from = Math.Max(0, state.Sightings.Count - 3);
+                for (var i = from; i < state.Sightings.Count; i++)
                 {
-                    lines.Add(Tables.Beasts.Get(pair.Key).Name + ": " + pair.Value);
+                    var sighting = state.Sightings[i];
+                    _zoneCard.Add(Text("zone-text", "день " + sighting.Day + " — " + sighting.Text));
                 }
-                _zoneBeasts.text = string.Join("\n", lines);
             }
 
-            var planned = 0;
-            foreach (var party in _plan.Parties)
-            {
-                if (party.ZoneId == zoneId) planned++;
-            }
+            if (_debug) _zoneCard.Add(Text("zone-text", DebugLine(zoneId)));
 
-            _zoneParties.text = planned > 0
-                ? "Отрядов отправлено: " + planned
-                : "Отряд не отправлен";
+            if (scrollToTop) _zoneCard.scrollOffset = Vector2.zero;
         }
 
         private void ShowVillage()
         {
-            _zoneName.text = "Деревня";
-            _zoneInfo.text = "Частокол: " + World.PalisadeHp + " / " + World.PalisadeMax + "\n"
-                + "В деревне: " + _plan.VillageWorkers.Count + " чел.\n"
-                + "1 человеко-день = +2 к частоколу";
-            _zoneBeasts.text = "Жителей: " + Tables.Roster.All.Count;
-            _zoneParties.text = "";
+            _zoneCard.Clear();
+
+            var art = new VisualElement();
+            art.AddToClassList("zone-art");
+            art.AddToClassList("zone-art-verge_meadow");
+            _zoneCard.Add(art);
+
+            _zoneCard.Add(Text("zone-title", "Деревня"));
+            _zoneCard.Add(Text("zone-meta", "частокол " + World.PalisadeHp + " из " + World.PalisadeMax));
+            _zoneCard.Add(Text("zone-text", "Пока стена держит, лес сюда не заходит. "
+                + "Один человеко-день даёт два очка прочности."));
+            _zoneCard.Add(Text("zone-text", "Жителей: " + Tables.Roster.All.Count
+                + ". В деревне сейчас: " + _plan.VillageWorkers.Count + "."));
+
+            if (_debug)
+            {
+                _zoneCard.Add(Text("zone-text", "отладка: прочность " + World.PalisadeHp + "/" + World.PalisadeMax
+                    + ", день " + World.Day));
+            }
+        }
+
+        private void ShowHint()
+        {
+            _zoneCard.Clear();
+            _zoneCard.Add(Text("zone-title", "Выберите зону"));
+            _zoneCard.Add(Text("zone-text", "Клик по узлу на карте открывает досье: что там за место, "
+                + "кто водится, что находили и что рассказывают."));
+        }
+
+        private void AddSection(string title, string body)
+        {
+            _zoneCard.Add(Text("zone-section-title", title));
+            _zoneCard.Add(Text("zone-text", body));
+        }
+
+        private string Lore(string zoneId, string field)
+        {
+            return Tables.ZoneLore.TryGet(zoneId + "|" + field, out var row)
+                ? row.Text
+                : "—";
+        }
+
+        private IEnumerable<string> NeighbourNames(Zone zone)
+        {
+            foreach (var id in zone.Neighbours) yield return Tables.Zones.Get(id).Name;
+        }
+
+        private string DebugLine(string zoneId)
+        {
+            var state = World.Zones[zoneId];
+            var beasts = new List<string>();
+            foreach (var pair in state.Beasts) beasts.Add(Tables.Beasts.Get(pair.Key).Name + " " + pair.Value);
+
+            return "отладка: твари " + (beasts.Count == 0 ? "нет" : string.Join(", ", beasts))
+                + " · кристаллы " + state.Crystals
+                + " · корм " + state.Forage
+                + " · опыт гнезда " + state.NestXp
+                + " · гнездо " + (state.Nest.Exists ? state.Nest.Beasts + "/" + Tables.Tuning.GetInt("nest_beasts_cap") : "нет")
+                + " · тревога " + state.AlertDays;
+        }
+
+        private Label Text(string className, string value)
+        {
+            var label = new Label(value);
+            label.AddToClassList(className);
+            return label;
         }
 
         private void ShowMessage(string text)

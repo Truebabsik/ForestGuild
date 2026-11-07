@@ -49,6 +49,12 @@ namespace ForestGuild.Core.Data
         public int MinSkill;
     }
 
+    /// <summary>Строка zone_lore.csv: нарратив досье зоны.</summary>
+    public sealed class ZoneLore
+    {
+        public string ZoneId, Field, Text;
+    }
+
     /// <summary>Строка skills.csv.</summary>
     public sealed class Skill
     {

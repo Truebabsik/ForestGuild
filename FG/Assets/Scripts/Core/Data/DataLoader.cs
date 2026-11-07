@@ -16,6 +16,7 @@ namespace ForestGuild.Core.Data
         public Table<Beast> Beasts;
         public Table<ZoneBeast> ZoneBeasts;
         public Table<Drop> Drops;
+        public Table<ZoneLore> ZoneLore;
         public Table<Skill> Skills;
         public Table<Trait> Traits;
         public Table<Profession> Professions;
@@ -75,6 +76,13 @@ namespace ForestGuild.Core.Data
                 Kind = Get(r, p, "kind"),
                 MaxLevel = I(r, p, "max_level"),
             }, x => x.Id);
+
+            t.ZoneLore = Read(dir, "zone_lore.csv", (r, p) => new ZoneLore
+            {
+                ZoneId = Get(r, p, "zone_id"),
+                Field = Get(r, p, "field"),
+                Text = Get(r, p, "text"),
+            }, x => x.ZoneId + "|" + x.Field);
 
             t.Traits = Read(dir, "traits.csv", (r, p) => new Trait
             {
@@ -171,6 +179,8 @@ namespace ForestGuild.Core.Data
 
         private static void Validate(Tables t)
         {
+            RequireRefs(t.ZoneLore.All.Select(x => x.ZoneId), t.Zones, "zone_lore.csv", "zone_id");
+
             foreach (var z in t.Zones.All)
             {
                 foreach (var nb in z.Neighbours)
@@ -200,6 +210,16 @@ namespace ForestGuild.Core.Data
             RequireRefs(t.Recipes.All.SelectMany(x => x.Outputs.Keys), t.Items, "recipes.csv", "outputs");
             RequireRefs(t.RecipeQuality.All.Select(x => x.RecipeId), t.Recipes, "recipe_quality.csv", "recipe_id");
             RequireRefs(t.RecipeQuality.All.Select(x => x.OutputId), t.Items, "recipe_quality.csv", "output_id");
+
+            var fields = new[] { "look", "beasts", "finds", "special" };
+            foreach (var zone in t.Zones.All)
+            {
+                foreach (var field in fields)
+                {
+                    if (!t.ZoneLore.TryGet(zone.Id + "|" + field, out _))
+                        throw new DataException("zone_lore.csv", "у зоны " + zone.Id + " нет поля " + field);
+                }
+            }
         }
 
         private static void RequireRefs<T>(IEnumerable<string> ids, Table<T> table, string file, string col)

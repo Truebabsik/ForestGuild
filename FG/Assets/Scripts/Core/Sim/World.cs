@@ -11,6 +11,13 @@ namespace ForestGuild.Core.Sim
         public int DaysSinceSpawn;
     }
 
+    /// <summary>Слух: что люди принесли из леса, с днём.</summary>
+    public sealed class Sighting
+    {
+        public int Day;
+        public string Text;
+    }
+
     /// <summary>Состояние одной зоны леса на текущий день.</summary>
     public sealed class ZoneState
     {
@@ -22,6 +29,13 @@ namespace ForestGuild.Core.Sim
         public NestState Nest = new NestState();
         public bool Scouted;
         public int AlertDays;
+        public readonly List<Sighting> Sightings = new List<Sighting>();
+
+        public void AddSighting(int day, string text)
+        {
+            Sightings.Add(new Sighting { Day = day, Text = text });
+            if (Sightings.Count > 6) Sightings.RemoveAt(0);
+        }
     }
 
     /// <summary>Мир: только данные и правила, без UnityEngine (ADR-0002).</summary>

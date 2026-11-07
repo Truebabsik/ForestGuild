@@ -164,6 +164,28 @@ internal static class Program
             return report.Lines.Any(line => line.Contains("твар."));
         });
 
+        checks.Check("zone lore is complete for all zones", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            return t.ZoneLore.All.Count == t.Zones.All.Count * 4;
+        });
+
+        checks.Check("unscouted zone shows question mark", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            return ZoneKnowledge.Mood(w, "verge_springs") == "?";
+        });
+
+        checks.Check("expedition scouts the zone", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            ExpeditionSim.Resolve(w, t, Party("verge_meadow", "leya"), new Rng(3));
+            return w.Zones["verge_meadow"].Scouted
+                && ZoneKnowledge.Mood(w, "verge_meadow") != "?";
+        });
+
         return checks.Report() ? 0 : 1;
     }
 

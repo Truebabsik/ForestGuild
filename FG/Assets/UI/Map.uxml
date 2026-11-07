@@ -24,15 +24,13 @@
     </ui:VisualElement>
 
     <ui:VisualElement name="right-panel" class="panel right">
-      <ui:Label name="zone-name" text="Выберите зону" class="panel-title" />
-      <ui:Label name="zone-info" text="" class="zone-info" />
-      <ui:Label name="zone-beasts" text="" class="zone-info" />
-      <ui:Label name="zone-parties" text="" class="zone-info" />
+      <ui:ScrollView name="zone-card" class="zone-card" horizontal-scroller-visibility="Hidden" />
     </ui:VisualElement>
 
     <ui:VisualElement name="bottom-bar" class="bottom">
       <ui:Label name="day-label" text="День 1" class="day-label" />
       <ui:Label name="queue-label" text="" class="zone-info" />
+      <ui:Toggle name="debug-toggle" label="числа" class="debug-toggle" />
       <ui:Button name="end-day" text="КОНЕЦ ДНЯ" class="action primary" />
     </ui:VisualElement>
 

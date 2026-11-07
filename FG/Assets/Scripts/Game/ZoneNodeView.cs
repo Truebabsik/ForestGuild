@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace ForestGuild.Game
 {
-    /// <summary>Узел зоны: иконка в круге, под ней имя и состояние леса.</summary>
+    /// <summary>Узел зоны: иконка в круге, под ней имя и настроение леса словами.</summary>
     public sealed class ZoneNodeView : VisualElement
     {
         private readonly VisualElement _icon;
@@ -33,13 +33,11 @@ namespace ForestGuild.Game
             RegisterCallback<ClickEvent>(_ => Clicked?.Invoke(ZoneId));
         }
 
-        public void ShowState(int beasts, bool nest)
+        /// Точных чисел на карте нет: только слово (design.md §6.5).
+        public void ShowMood(string mood)
         {
-            if (nest) _state.text = "гнездо";
-            else if (beasts == 0) _state.text = "тихо";
-            else _state.text = beasts + " твар.";
-
-            EnableInClassList("danger", nest || beasts > 2);
+            _state.text = mood;
+            EnableInClassList("danger", mood == "неспокойно" || mood == "гнездо");
         }
     }
 }
