@@ -18,3 +18,9 @@
 agnes-media/
 __pycache__/
 *.pyc
+
+# Временные файлы проекта
+*.meta.tmp
+/[Aa]ssets/[Ss]treamingAssets/Data/*.tmp
+tools/sim/bin/
+tools/sim/obj/
