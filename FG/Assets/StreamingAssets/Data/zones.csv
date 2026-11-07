@@ -1,0 +1,7 @@
+id;name;depth;travel_hours;crystals_per_day;forage_per_day;neighbours;env_rule;map_x;map_y
+verge_meadow;Опушка;edge;1;1;2;verge_springs|verge_thicket;none;0.50;0.52
+verge_springs;Вулканические ключи;edge;1.5;1;2;verge_meadow|verge_marsh|belt_stone;heat;0.28;0.38
+verge_marsh;Топь;edge;1.5;1;2;verge_springs|verge_thicket;mud;0.16;0.62
+verge_thicket;Чаща;edge;1;1;2;verge_meadow|verge_marsh|belt_stone;thicket;0.74;0.40
+belt_stone;Каменный лог;belt;3;2;3;verge_springs|verge_thicket|heart_root;none;0.58;0.20
+heart_root;Сердце леса;heart;6;4;4;belt_stone;none;0.86;0.08

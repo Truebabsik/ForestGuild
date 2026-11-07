@@ -1,0 +1,3 @@
+id;station;skill_id;skill_req;hours;inputs;outputs
+knife_obsidian;smithy;smithing;2;2;ore_obsidian:1|sulfur_nodule:1;bone_plate:1
+salve_ash;workshop;alchemy;1;1;herb_ash_lichen:2;moss_common:1

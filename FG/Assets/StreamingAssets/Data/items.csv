@@ -1,0 +1,10 @@
+id;name;category;slots;value;tags
+herb_fire_leaf;Огненная крапива;material;0.5;3;fire
+herb_ash_lichen;Пепельный лишай;material;0.5;4;
+herb_glass_stem;Стеклянница;material;0.5;3;
+ore_obsidian;Обсидиановая руда;material;2;8;heavy
+sulfur_nodule;Серный натёк;material;1;5;fire
+crystal_fire;Кристалл огня;material;1;25;crystal
+moss_common;Обычный мох;material;0.5;1;
+bone_plate;Костяная пластина;trophy;1;12;bone
+hide_rough;Грубая шкура;trophy;1;6;hide

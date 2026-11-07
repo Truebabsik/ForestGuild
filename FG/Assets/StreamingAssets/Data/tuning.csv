@@ -1,0 +1,20 @@
+id;value;note
+schema_version;1;версия схемы таблиц
+hours_per_day;6;рабочих часов в сутках
+slots_per_person;4;слотов груза на человека
+stamina_per_person;4;выносливости на человека
+encounter_per_hour;0.25;шанс встречи за час на единицу плотности
+find_base;0.12;база шанса находки
+find_per_skill;0.06;прибавка за уровень навыка
+xp_to_nest;5;опыта до гнезда
+nest_beasts_cap;2;тварей в гнезде максимум
+nest_spawn_days;2;дней на одну тварь в гнезде
+migration_per_night;1;миграций в зону за ночь
+heart_influx_days;3;дней между притоком из сердца
+crystal_life_days;2;дней жизни кристалла на земле
+palisade_hp;10;прочность частокола
+wave_day;21;день первой волны
+xp_per_day;1;опыта за день работы
+xp_per_fight;1;бонус опыта за бой
+xp_per_depth;1;бонус опыта за пояс
+level_xp;10|30|70|150;опыта на переходы 1-2,2-3,3-4,4-5

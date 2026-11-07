@@ -115,21 +115,21 @@ cd F:\WORK\ForestGuild; git add -A; git commit -m "feat: проект Unity 6000
 unity open F:\WORK\ForestGuild --args -automated
 ```
 
-- [ ] **Step 3: Установить пакет Pipeline и включить автотик**
+- [x] **Step 3: Установить пакет Pipeline и включить автотик** (сделано 2026-11-07)
 
 Установка — через CLI:
 
 ```powershell
-unity pipeline install --project-path F:\WORK\ForestGuild
+unity pipeline install --project-path F:\WORK\ForestGuild\FG
 ```
 
-Автотик — через MCP-инструменты, а не через shell: сначала `unity_list_commands`, чтобы взять **точное** имя команды управления автотиком (ожидается `set_autotick`), затем:
+Автотик — через MCP-инструменты. **Фактическое имя команды — `set_auto_tick`, параметр — `--enabled`** (прежнее `set_autotick --enable` переименовано, CLI об этом сообщает при ошибке):
 
 ```
-unity_command(command: "set_autotick", args: ["--enabled", "true"])
+unity_command(command: "set_auto_tick", args: ["--enabled", "true"])
 ```
 
-Ожидание: `success: true`. Если имени нет в списке — не выдумывать: взять из `unity_list_commands` то, что отвечает за тик редактора, и записать фактическое имя в журнал шага.
+Ответ: `"Auto-tick already enabled (interval updated to 16ms)"`.
 
 - [ ] **Step 4: Проверить состояние**
 
