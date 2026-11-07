@@ -270,18 +270,42 @@ namespace ForestGuild.Game
                 var profession = _tables.Professions.Get(person.Profession);
                 var level = People.SkillLevel(_tables, person, profession.SkillsAllowed[0]);
 
+                var card = new VisualElement();
+                card.AddToClassList("person-card");
+                card.AddToClassList(condition == PersonCondition.Wounded ? "status-wounded"
+                    : condition == PersonCondition.Dead ? "status-dead"
+                    : "status-ok");
+
+                if (IsInActiveSquad(person.Id)) card.AddToClassList("in-squad");
+                if (condition != PersonCondition.Healthy) card.AddToClassList("busy");
+
+                var portrait = new VisualElement();
+                portrait.AddToClassList("portrait");
+                portrait.AddToClassList("portrait-small");
+                portrait.AddToClassList("portrait-" + person.Id);
+                card.Add(portrait);
+
+                var info = new VisualElement();
+                info.AddToClassList("person-info");
+
+                var name = new Label(person.Name);
+                name.AddToClassList("person-name");
+                info.Add(name);
+
                 var state = condition == PersonCondition.Wounded ? " · ранен"
                     : condition == PersonCondition.Dead ? " · мёртв"
                     : "";
 
-                var button = new Button(() => OnPersonClicked(person.Id));
-                button.text = person.Name + " · " + profession.Name + " " + level + state;
-                button.AddToClassList("roster-button");
+                var primary = profession.SkillsAllowed[0];
+                var note = new Label(_tables.Skills.Get(primary).Name + " " + level + state);
+                note.AddToClassList("person-note");
+                info.Add(note);
 
-                if (condition != PersonCondition.Healthy) button.AddToClassList("busy");
-                if (IsInActiveSquad(person.Id)) button.AddToClassList("selected");
+                card.Add(info);
 
-                _roster.Add(button);
+                var id = person.Id;
+                card.RegisterCallback<ClickEvent>(_ => OnPersonClicked(id));
+                _roster.Add(card);
             }
         }
 

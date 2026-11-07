@@ -228,27 +228,59 @@
 .person-card {
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    border-width: 1px;
+    border-width: 2px;
     border-color: rgb(96, 88, 70);
     background-color: rgb(44, 46, 40);
     padding: 6px 8px;
     margin-bottom: 4px;
 }
 
-.person-card.busy {
-    opacity: 0.45;
+.person-card.status-ok { border-color: rgb(92, 118, 78); }
+.person-card.status-wounded { border-color: rgb(198, 148, 72); background-color: rgb(48, 42, 32); }
+.person-card.status-dead { border-color: rgb(118, 68, 62); background-color: rgb(36, 32, 32); opacity: 0.55; }
+.person-card.in-squad { border-color: rgb(240, 190, 90); border-width: 3px; background-color: rgb(54, 48, 34); }
+.person-card.busy { opacity: 0.45; }
+
+.portrait {
+    width: 64px;
+    height: 64px;
+    border-width: 2px;
+    border-color: rgb(88, 82, 68);
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(24, 26, 22);
+}
+
+.portrait-small {
+    width: 40px;
+    height: 40px;
+    border-width: 1px;
+}
+
+.portrait-brunni { background-image: url("project://database/Assets/UI/Art/Portraits/brunni.jpg"); }
+.portrait-skadi { background-image: url("project://database/Assets/UI/Art/Portraits/skadi.jpg"); }
+.portrait-hilda { background-image: url("project://database/Assets/UI/Art/Portraits/hilda.jpg"); }
+.portrait-orn { background-image: url("project://database/Assets/UI/Art/Portraits/orn.jpg"); }
+.portrait-leya { background-image: url("project://database/Assets/UI/Art/Portraits/leya.jpg"); }
+.portrait-tove { background-image: url("project://database/Assets/UI/Art/Portraits/tove.jpg"); }
+.portrait-run { background-image: url("project://database/Assets/UI/Art/Portraits/run.jpg"); }
+.portrait-valda { background-image: url("project://database/Assets/UI/Art/Portraits/valda.jpg"); }
+
+.person-info {
+    flex-direction: column;
+    flex-grow: 1;
+    margin-left: 8px;
 }
 
 .person-card .person-name {
-    color: rgb(216, 208, 190);
-    font-size: 12px;
+    color: rgb(226, 214, 190);
+    font-size: 13px;
     white-space: nowrap;
 }
 
 .person-card .person-note {
-    color: rgb(168, 154, 124);
-    font-size: 11px;
+    color: rgb(176, 166, 142);
+    font-size: 10px;
+    white-space: normal;
 }
 
 .muster-tray {
@@ -267,23 +299,46 @@
 }
 
 .tray-slot {
-    width: 178px;
-    height: 108px;
+    flex-direction: row;
+    width: 214px;
+    height: 118px;
     border-width: 1px;
     border-color: rgb(84, 78, 64);
     margin-right: 8px;
     padding: 6px;
 }
 
+.tray-slot .portrait {
+    width: 56px;
+    height: 56px;
+}
+
+.tray-slot .person-info {
+    margin-left: 6px;
+}
+
 .tray-slot .person-name {
     white-space: normal;
     color: rgb(226, 208, 170);
+    font-size: 12px;
 }
 
 .tray-slot .person-note {
     color: rgb(168, 154, 124);
     font-size: 10px;
     white-space: normal;
+}
+
+.tray-remove {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    padding: 0;
+    margin-top: 4px;
+    color: rgb(238, 178, 150);
+    background-color: rgb(60, 40, 34);
+    border-width: 1px;
+    border-color: rgb(150, 90, 70);
 }
 
 .tray-role {

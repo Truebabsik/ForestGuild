@@ -95,7 +95,7 @@ namespace ForestGuild.Game
                 var where = Where(person.Id);
                 var busy = where != null;
 
-                var card = MakePersonCard(person, busy ? Note(person, where) : Note(person, null));
+                var card = MakePersonCard(person.Id, busy ? where : null);
                 if (busy) card.AddToClassList("busy");
 
                 var id = person.Id;
@@ -124,17 +124,24 @@ namespace ForestGuild.Game
                     var personId = _squad.Members[i];
                     var person = _tables.Roster.Get(personId);
 
+                    var portrait = new VisualElement();
+                    portrait.AddToClassList("portrait");
+                    portrait.AddToClassList("portrait-" + personId);
+                    slot.Add(portrait);
+
+                    var info = new VisualElement();
+                    info.AddToClassList("person-info");
+
                     var name = new Label(person.Name);
                     name.AddToClassList("person-name");
-                    slot.Add(name);
+                    info.Add(name);
 
                     var profession = _tables.Professions.Get(person.Profession);
-                    var skill = profession.SkillsAllowed[0];
-                    var note = new Label(profession.Name + " "
-                        + People.SkillLevel(_tables, person, skill)
-                        + " · " + Traits(person));
+                    var primarySkill = profession.SkillsAllowed[0];
+                    var note = new Label(_tables.Skills.Get(primarySkill).Name + " "
+                        + People.SkillLevel(_tables, person, primarySkill));
                     note.AddToClassList("person-note");
-                    slot.Add(note);
+                    info.Add(note);
 
                     if (profession.Id == "hunter")
                     {
@@ -148,14 +155,20 @@ namespace ForestGuild.Game
                         });
                         role.text = RoleName(_squad.RoleOf(personId));
                         role.AddToClassList("tray-role");
-                        slot.Add(role);
+                        info.Add(role);
                     }
 
+                    slot.Add(info);
+
                     var captured = personId;
-                    slot.RegisterCallback<ClickEvent>(_ =>
+                    var remove = new Button(() =>
                     {
-                        if (_squad.Members.Remove(captured)) Rebuild();
+                        if (!_squad.Members.Remove(captured)) return;
+                        Rebuild();
                     });
+                    remove.text = "×";
+                    remove.AddToClassList("tray-remove");
+                    slot.Add(remove);
                 }
                 else
                 {
@@ -220,29 +233,70 @@ namespace ForestGuild.Game
 
         // ---- люди ----
 
-        private VisualElement MakePersonCard(Person person, string note)
+        private VisualElement MakePersonCard(string personId, string busyNote)
         {
+            var person = _tables.Roster.Get(personId);
             var card = new VisualElement();
             card.AddToClassList("person-card");
+            card.AddToClassList(StatusClass(_world.ConditionOf(personId)));
+            if (_squad.Members.Contains(personId)) card.AddToClassList("in-squad");
 
-            var name = new Label(person.Name + " · " + _tables.Professions.Get(person.Profession).Name);
+            var portrait = new VisualElement();
+            portrait.AddToClassList("portrait");
+            portrait.AddToClassList("portrait-" + personId);
+            card.Add(portrait);
+
+            var info = new VisualElement();
+            info.AddToClassList("person-info");
+
+            var name = new Label(person.Name);
             name.AddToClassList("person-name");
-            card.Add(name);
+            info.Add(name);
 
-            var noteLabel = new Label(note);
-            noteLabel.AddToClassList("person-note");
-            card.Add(noteLabel);
+            if (busyNote != null)
+            {
+                var note = new Label(busyNote);
+                note.AddToClassList("person-note");
+                info.Add(note);
+            }
 
+            var skillLine = new Label(SkillLine(person));
+            skillLine.AddToClassList("person-note");
+            info.Add(skillLine);
+
+            var traits = Traits(person);
+            if (traits.Length > 0)
+            {
+                var traitLine = new Label(traits);
+                traitLine.AddToClassList("person-note");
+                info.Add(traitLine);
+            }
+
+            card.Add(info);
             return card;
         }
 
-        private string Note(Person person, string where)
+        private static string StatusClass(PersonCondition condition)
         {
-            if (where != null) return where;
+            switch (condition)
+            {
+                case PersonCondition.Wounded: return "status-wounded";
+                case PersonCondition.Dead: return "status-dead";
+                default: return "status-ok";
+            }
+        }
 
+        private string SkillLine(Person person)
+        {
             var profession = _tables.Professions.Get(person.Profession);
-            var level = People.SkillLevel(_tables, person, profession.SkillsAllowed[0]);
-            return "навык " + level + " · " + Traits(person);
+            var parts = new List<string>();
+
+            foreach (var skillId in profession.SkillsAllowed)
+            {
+                parts.Add(_tables.Skills.Get(skillId).Name + " " + People.SkillLevel(_tables, person, skillId));
+            }
+
+            return string.Join(" · ", parts);
         }
 
         private string Traits(Person person)
