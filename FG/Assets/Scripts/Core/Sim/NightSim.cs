@@ -15,6 +15,15 @@ namespace ForestGuild.Core.Sim
         }
     }
 
+    /// <summary>Что произошло в зоне за ночь — для отчёта и для миграции.</summary>
+    public sealed class ZoneNightLog
+    {
+        public string ZoneId;
+        public int ForageEaten;
+        public int CrystalsEaten;
+        public int Starved;
+    }
+
     /// <summary>
     /// Ночь леса: приход еды, кормление голодных, миграция наружу, гнездо из опыта, плод гнезда.
     /// Порядок шагов фиксирован — от него зависят тесты и баланс.
@@ -28,10 +37,18 @@ namespace ForestGuild.Core.Sim
 
             AddDailyFood(world, tables);
 
-            var hungry = Feed(world, tuning);
+            var logs = Feed(world, tuning);
+            ReportFeeding(world, tables, logs, report);
+
+            var hungry = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var log in logs)
+                if (log.Starved > 0) hungry[log.ZoneId] = log.Starved;
+
             Migrate(world, tables, hungry, tuning, report);
             GrowNests(world, tables, tuning, report);
             AgeCrystals(world, tables, tuning);
+
+            report.Add("В лесу тварей: " + world.TotalBeasts() + ", кристаллов на земле: " + world.TotalCrystals());
 
             world.Day++;
             report.Add("Наступил день " + world.Day);
@@ -48,14 +65,15 @@ namespace ForestGuild.Core.Sim
             }
         }
 
-        /// Кормление: корм → труп → кристалл. Возвращает, сколько осталось голодных по зонам.
-        private static Dictionary<string, int> Feed(World world, Tuning tuning)
+        /// Кормление: корм → труп → кристалл.
+        private static List<ZoneNightLog> Feed(World world, Tuning tuning)
         {
-            var hungry = new Dictionary<string, int>(StringComparer.Ordinal);
+            var logs = new List<ZoneNightLog>();
 
             foreach (var state in world.Zones.Values)
             {
-                var starved = 0;
+                var log = new ZoneNightLog { ZoneId = state.ZoneId };
+
                 foreach (var beastId in state.Beasts.Keys.ToList())
                 {
                     var count = state.Beasts[beastId];
@@ -64,6 +82,7 @@ namespace ForestGuild.Core.Sim
                         if (state.Forage > 0)
                         {
                             state.Forage--;
+                            log.ForageEaten++;
                             continue;
                         }
 
@@ -71,17 +90,31 @@ namespace ForestGuild.Core.Sim
                         {
                             state.Crystals--;
                             state.NestXp++;
+                            log.CrystalsEaten++;
                             continue;
                         }
 
-                        starved++;
+                        log.Starved++;
                     }
                 }
 
-                if (starved > 0) hungry[state.ZoneId] = starved;
+                if (world.BeastCount(state.ZoneId) > 0) logs.Add(log);
             }
 
-            return hungry;
+            return logs;
+        }
+
+        private static void ReportFeeding(World world, Tables tables, List<ZoneNightLog> logs, NightReport report)
+        {
+            foreach (var log in logs)
+            {
+                var beasts = world.BeastCount(log.ZoneId);
+                var text = tables.Zones.Get(log.ZoneId).Name + ": " + beasts + " твар.";
+                if (log.ForageEaten > 0) text += ", съедено корма " + log.ForageEaten;
+                if (log.CrystalsEaten > 0) text += ", кристаллов " + log.CrystalsEaten;
+                if (log.Starved > 0) text += ", голодных " + log.Starved;
+                report.Add(text);
+            }
         }
 
         private static void Migrate(World world, Tables tables,

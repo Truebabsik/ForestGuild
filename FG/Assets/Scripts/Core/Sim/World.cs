@@ -28,12 +28,18 @@ namespace ForestGuild.Core.Sim
     public sealed class World
     {
         public int Day = 1;
+        public int PalisadeHp;
+        public int PalisadeMax;
+
         public readonly Dictionary<string, ZoneState> Zones =
             new Dictionary<string, ZoneState>(StringComparer.Ordinal);
 
         public static World Create(Tables tables)
         {
             var w = new World();
+            w.PalisadeMax = tables.Tuning.GetInt("palisade_hp");
+            w.PalisadeHp = w.PalisadeMax;
+
             foreach (var z in tables.Zones.All)
                 w.Zones[z.Id] = new ZoneState { ZoneId = z.Id, Forage = z.ForagePerDay };
 
@@ -45,6 +51,13 @@ namespace ForestGuild.Core.Sim
             }
 
             return w;
+        }
+
+        public int TotalCrystals()
+        {
+            var sum = 0;
+            foreach (var z in Zones.Values) sum += z.Crystals;
+            return sum;
         }
 
         public int BeastCount(string zoneId)

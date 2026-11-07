@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ForestGuild.Core.Data;
 using ForestGuild.Core.Sim;
@@ -43,17 +44,24 @@ namespace ForestGuild.Game
             foreach (var pair in _buttons) pair.Value.RemoveFromClassList("selected");
         }
 
+        /// Занятые люди недоступны: один человек — одно дело в день.
+        public void SetBusy(Func<string, bool> isBusy)
+        {
+            foreach (var pair in _buttons)
+            {
+                var busy = isBusy(pair.Key);
+                pair.Value.EnableInClassList("busy", busy);
+                pair.Value.SetEnabled(!busy);
+                if (busy) Selected.Remove(pair.Key);
+            }
+        }
+
         private string Line(Person person)
         {
             var profession = _tables.Professions.Get(person.Profession);
-            var skills = new List<string>();
-            foreach (var skillId in profession.SkillsAllowed)
-            {
-                var level = People.SkillLevel(_tables, person, skillId);
-                skills.Add(_tables.Skills.Get(skillId).Name + " " + level);
-            }
-
-            return person.Name + " · " + profession.Name + " · " + string.Join(", ", skills);
+            var mainSkill = profession.SkillsAllowed.Length > 0 ? profession.SkillsAllowed[0] : null;
+            var level = mainSkill != null ? People.SkillLevel(_tables, person, mainSkill) : 0;
+            return person.Name + " · " + profession.Name + " " + level;
         }
 
         private void Toggle(string personId)

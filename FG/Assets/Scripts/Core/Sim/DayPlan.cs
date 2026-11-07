@@ -22,8 +22,27 @@ namespace ForestGuild.Core.Sim
     /// <summary>План дня: кто куда идёт и кто остаётся в деревне.</summary>
     public sealed class DayPlan
     {
+        public const int MaxParties = 2;
+
         public readonly List<PartyAssignment> Parties = new List<PartyAssignment>();
         public readonly List<string> VillageWorkers = new List<string>();
+
+        public bool IsBusy(string personId)
+        {
+            foreach (var party in Parties)
+                foreach (var id in party.PersonIds)
+                    if (id == personId) return true;
+
+            return VillageWorkers.Contains(personId);
+        }
+
+        public int PartyOf(string personId)
+        {
+            for (var i = 0; i < Parties.Count; i++)
+                if (Parties[i].PersonIds.Contains(personId)) return i;
+
+            return -1;
+        }
     }
 
     /// <summary>Навыки жителя: override из ростера важнее пресета класса.</summary>

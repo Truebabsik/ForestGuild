@@ -145,6 +145,25 @@ internal static class Program
             return report.Parties.Count == 1 && w.Day == 2 && report.Lines.Count > 0;
         });
 
+        checks.Check("village workers repair palisade", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            w.PalisadeHp = 5;
+            var plan = new DayPlan();
+            plan.VillageWorkers.Add("valda");
+            var report = new DayFlow(w, t, new Rng(1)).RunDay(plan);
+            return w.PalisadeHp == 7 && report.Repaired == 2;
+        });
+
+        checks.Check("night report explains feeding", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var report = NightSim.AdvanceNight(w, t, new Rng(1));
+            return report.Lines.Any(line => line.Contains("твар."));
+        });
+
         return checks.Report() ? 0 : 1;
     }
 

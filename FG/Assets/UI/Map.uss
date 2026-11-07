@@ -46,6 +46,76 @@
     white-space: normal;
 }
 
+.panel-subtitle {
+    color: rgb(160, 146, 118);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+
+.behavior-row {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.behavior {
+    flex-grow: 1;
+    height: 26px;
+    font-size: 10px;
+    margin-right: 3px;
+    padding: 0;
+    color: rgb(206, 198, 178);
+    background-color: rgb(44, 46, 40);
+    border-width: 1px;
+    border-color: rgb(90, 84, 70);
+}
+
+.behavior.selected {
+    background-color: rgb(96, 78, 42);
+    border-color: rgb(226, 190, 110);
+    color: rgb(245, 232, 200);
+}
+
+.button-row {
+    flex-direction: row;
+}
+
+.button-row .action {
+    flex-grow: 1;
+    margin-right: 4px;
+    height: 34px;
+    font-size: 12px;
+}
+
+.parties {
+    max-height: 176px;
+}
+
+.party-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.party-row .party-text {
+    flex-grow: 1;
+    color: rgb(206, 198, 178);
+    font-size: 11px;
+    white-space: normal;
+}
+
+.party-row .party-remove {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    padding: 0;
+    color: rgb(226, 170, 140);
+    background-color: rgb(58, 40, 34);
+    border-width: 1px;
+    border-color: rgb(150, 90, 70);
+}
+
 .zone-info {
     color: rgb(196, 196, 184);
     font-size: 13px;
@@ -55,13 +125,14 @@
 
 .roster {
     flex-grow: 1;
-    margin-bottom: 10px;
+    max-height: 264px;
+    margin-bottom: 8px;
 }
 
 .roster .unity-button {
-    height: 34px;
-    margin-bottom: 4px;
-    font-size: 12px;
+    height: 28px;
+    margin-bottom: 3px;
+    font-size: 11px;
     background-color: rgb(48, 50, 44);
     color: rgb(214, 208, 190);
     border-width: 1px;
@@ -75,6 +146,50 @@
     background-color: rgb(92, 74, 40);
     border-color: rgb(226, 190, 110);
     color: rgb(245, 232, 200);
+}
+
+.roster .unity-button.busy {
+    opacity: 0.45;
+    color: rgb(160, 154, 138);
+}
+
+.village-node {
+    position: absolute;
+    width: 130px;
+    height: 152px;
+    background-color: rgba(0, 0, 0, 0);
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0;
+}
+
+.village-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 10px;
+    border-width: 3px;
+    border-color: rgb(196, 150, 90);
+    background-image: url("project://database/Assets/UI/Art/Icons/village.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.village-node.selected .village-icon {
+    border-color: rgb(240, 190, 90);
+    border-width: 4px;
+}
+
+.village-node .village-name {
+    margin-top: 3px;
+    color: rgb(238, 220, 184);
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.village-node .village-state {
+    color: rgb(200, 170, 130);
+    font-size: 10px;
+    -unity-text-align: middle-center;
 }
 
 .bottom {
@@ -117,38 +232,52 @@
 
 .zone-node {
     position: absolute;
-    width: 104px;
-    height: 104px;
-    border-radius: 52px;
-    background-color: rgb(44, 48, 40);
-    border-width: 3px;
-    border-color: rgb(150, 128, 88);
-    justify-content: center;
+    width: 120px;
+    height: 152px;
+    background-color: rgba(0, 0, 0, 0);
+    justify-content: flex-start;
     align-items: center;
-    padding: 6px;
+    padding: 0;
 }
 
-.zone-node.selected {
+.zone-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 48px;
+    border-width: 3px;
+    border-color: rgb(150, 128, 88);
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(24, 26, 22);
+}
+
+.zone-node.selected .zone-icon {
     border-color: rgb(240, 190, 90);
     border-width: 4px;
 }
 
-.zone-node .zone-node-name {
+.zone-node.danger .zone-icon {
+    border-color: rgb(178, 96, 60);
+}
+
+.icon-verge_meadow { background-image: url("project://database/Assets/UI/Art/Icons/zone_meadow.png"); }
+.icon-verge_springs { background-image: url("project://database/Assets/UI/Art/Icons/zone_springs.png"); }
+.icon-verge_marsh { background-image: url("project://database/Assets/UI/Art/Icons/zone_marsh.png"); }
+.icon-verge_thicket { background-image: url("project://database/Assets/UI/Art/Icons/zone_thicket.png"); }
+.icon-belt_stone { background-image: url("project://database/Assets/UI/Art/Icons/zone_stone.png"); }
+.icon-heart_root { background-image: url("project://database/Assets/UI/Art/Icons/zone_heart.png"); }
+
+.zone-node-name {
+    margin-top: 3px;
     color: rgb(228, 214, 180);
-    font-size: 12px;
+    font-size: 11px;
     -unity-text-align: middle-center;
     white-space: normal;
 }
 
-.zone-node .zone-node-state {
+.zone-node-state {
     color: rgb(180, 150, 110);
-    font-size: 11px;
+    font-size: 10px;
     -unity-text-align: middle-center;
-}
-
-.zone-node.danger {
-    background-color: rgb(58, 40, 34);
-    border-color: rgb(168, 96, 60);
 }
 
 .report {
@@ -178,6 +307,21 @@
     font-size: 13px;
     white-space: normal;
     margin-bottom: 3px;
+}
+
+.toast {
+    position: absolute;
+    left: 250px;
+    right: 330px;
+    bottom: 106px;
+    padding: 8px 12px;
+    background-color: rgb(46, 42, 32);
+    border-width: 2px;
+    border-color: rgb(196, 150, 90);
+    color: rgb(240, 226, 194);
+    font-size: 13px;
+    -unity-text-align: middle-center;
+    white-space: normal;
 }
 
 .hidden {

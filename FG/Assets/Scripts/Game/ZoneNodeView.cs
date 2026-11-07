@@ -3,10 +3,10 @@ using UnityEngine.UIElements;
 
 namespace ForestGuild.Game
 {
-    /// <summary>Кружок зоны на карте: имя и состояние леса.</summary>
+    /// <summary>Узел зоны: иконка в круге, под ней имя и состояние леса.</summary>
     public sealed class ZoneNodeView : VisualElement
     {
-        private readonly Label _name;
+        private readonly VisualElement _icon;
         private readonly Label _state;
 
         public string ZoneId { get; }
@@ -17,9 +17,14 @@ namespace ForestGuild.Game
             ZoneId = zoneId;
             AddToClassList("zone-node");
 
-            _name = new Label(title);
-            _name.AddToClassList("zone-node-name");
-            Add(_name);
+            _icon = new VisualElement();
+            _icon.AddToClassList("zone-icon");
+            _icon.AddToClassList("icon-" + zoneId);
+            Add(_icon);
+
+            var name = new Label(title);
+            name.AddToClassList("zone-node-name");
+            Add(name);
 
             _state = new Label("");
             _state.AddToClassList("zone-node-state");

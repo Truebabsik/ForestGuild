@@ -5,8 +5,22 @@
 
     <ui:VisualElement name="left-panel" class="panel left">
       <ui:Label text="ЖИТЕЛИ" class="panel-title" />
-      <ui:ScrollView name="roster" class="roster" />
-      <ui:Button name="send-button" text="В ЛЕС" class="action" />
+      <ui:ScrollView name="roster" class="roster" horizontal-scroller-visibility="Hidden" />
+
+      <ui:Label text="НАМЕРЕНИЕ" class="panel-subtitle" />
+      <ui:VisualElement name="behaviors" class="behavior-row">
+        <ui:Button name="behavior-gather" text="Сбор" class="behavior" />
+        <ui:Button name="behavior-avoid" text="Избегание" class="behavior" />
+        <ui:Button name="behavior-clean" text="Чистка" class="behavior" />
+      </ui:VisualElement>
+
+      <ui:VisualElement class="button-row">
+        <ui:Button name="send-button" text="В ЛЕС" class="action" />
+        <ui:Button name="village-button" text="В ДЕРЕВНЮ" class="action" />
+      </ui:VisualElement>
+
+      <ui:Label text="ПЛАН ДНЯ" class="panel-subtitle" />
+      <ui:ScrollView name="parties" class="parties" horizontal-scroller-visibility="Hidden" />
     </ui:VisualElement>
 
     <ui:VisualElement name="right-panel" class="panel right">
@@ -27,5 +41,7 @@
       <ui:ScrollView name="report-lines" class="report-lines" />
       <ui:Button name="report-close" text="ЗАКРЫТЬ" class="action report-close" />
     </ui:VisualElement>
+
+    <ui:Label name="toast" text="" class="toast hidden" />
   </ui:VisualElement>
 </ui:UXML>
