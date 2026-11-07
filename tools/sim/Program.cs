@@ -9,6 +9,12 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Length > 0 && args[0] == "--days")
+        {
+            var days = args.Length > 1 ? int.Parse(args[1]) : 21;
+            return Days(days);
+        }
+
         var checks = new CheckRunner();
 
         checks.Check("rng is deterministic", () =>
@@ -410,7 +416,44 @@ internal static class Program
                 && t.Zones.Get("verge_meadow").TravelHours == 0.5f;
         });
 
+        checks.Check("passive forest grows a nest before the wave", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var flow = new DayFlow(w, t, new Rng(2026));
+
+            for (var i = 0; i < 21; i++) flow.RunNight(new DayPlan());
+
+            var nests = w.Zones.Values.Count(z => z.Nest.Exists);
+            return nests >= 1 && w.TotalBeasts() >= 6;
+        });
+
         return checks.Report() ? 0 : 1;
+    }
+
+    /// Пассивный прогон N дней: никто не работает, никто не ходит в лес — видно, что делает лес сам.
+    private static int Days(int count)
+    {
+        var tables = DataLoader.Load(DataDir());
+        var world = World.Create(tables);
+        var flow = new DayFlow(world, tables, new Rng(2026));
+
+        Console.WriteLine("день;частокол;волна;гнёзда;твари");
+
+        for (var i = 0; i < count; i++)
+        {
+            var plan = new DayPlan();
+            var night = flow.RunNight(plan);
+
+            var nests = world.Zones.Values.Count(z => z.Nest.Exists);
+            var beasts = world.TotalBeasts();
+            var wave = night.Wave != null ? night.Wave.Strength.ToString() : "";
+
+            Console.WriteLine((world.Day - 1) + ";" + world.PalisadeHp + "/" + world.PalisadeMax
+                + ";" + wave + ";" + nests + ";" + beasts);
+        }
+
+        return 0;
     }
 
     private static void KillHunters(World world, Tables tables)

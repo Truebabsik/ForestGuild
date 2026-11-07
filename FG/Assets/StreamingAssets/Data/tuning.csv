@@ -6,7 +6,7 @@ stamina_per_person;4;выносливости на человека
 encounter_per_hour;0.25;шанс встречи за час на единицу плотности
 find_base;0.12;база шанса находки
 find_per_skill;0.06;прибавка за уровень навыка
-xp_to_nest;5;опыта до гнезда
+xp_to_nest;10;опыта до гнезда
 nest_beasts_cap;2;тварей в гнезде максимум
 nest_spawn_days;2;дней на одну тварь в гнезде
 migration_per_night;1;миграций в зону за ночь

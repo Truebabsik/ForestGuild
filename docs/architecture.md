@@ -98,14 +98,14 @@ tools/
 
 ## 7. Хот-релоад
 
-В Play Mode `R` перечитывает все CSV, валидирует и применяет **на границе дня**: текущая вылазка не рвётся, сутки доигрываются. Если валидация не прошла — старые таблицы остаются в силе, ошибка в лог. Вне Play Mode перезагрузка не требуется: таблицы читаются при старте.
+Горячей перезагрузки таблиц в игре пока нет: CSV читаются один раз при старте. Перечитывание на границе дня (`R`) — план, не реализация; правки данных сейчас требуют перезапуска Play Mode.
 
 ## 8. Тесты и прогоны
 
 | Инструмент | Что проверяет |
 |---|---|
 | `sim --validate` | схема, внешние ключи, диапазоны; код возврата ≠ 0 при ошибке |
-| `sim --days 21` | таблица дней: твари по зонам, гнёзда, волна; проверка целей баланса из дизайна |
+| `sim --days 21` | таблица дней: твари по зонам, гнёзда, волна; пассивный прогон без игрока |
 | `sim --days 21 --seed N --roster ...` | воспроизводимость: один сид — один результат |
 | EditMode-тесты Unity | загрузчик, шаг дня, границы (голод, миграция, волна) |
 
@@ -122,9 +122,9 @@ tools/
 
 | Что | Где | Чем проверено |
 |---|---|---|
-| 14 CSV-справочников | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
+| 15 CSV-справочников | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
 | Загрузчик с валидацией внешних ключей | `FG/Assets/Scripts/Core/Data/` | проверки «сломанный сосед», «неизвестный предмет», «чужая schema_version» |
-| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `DayFlow`, `WaveSim` | `FG/Assets/Scripts/Core/Sim/` | 31 проверка в `tools/sim`, ядро без `UnityEngine` |
+| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `DayFlow`, `WaveSim` | `FG/Assets/Scripts/Core/Sim/` | 32 проверки в `tools/sim`, ядро без `UnityEngine` |
 | Карта, ростер, панель зоны, отчёт | `FG/Assets/UI/`, `FG/Assets/Scripts/Game/` | скриншоты `docs/images/ui/step1/` |
 | Сцена | `FG/Assets/Scenes/Main.unity` | Play Mode, день 1 → отчёт → день 2 |
 

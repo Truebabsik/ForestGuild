@@ -164,14 +164,48 @@ namespace ForestGuild.Core.Sim
 
                 if (_freeSlots < item.Slots)
                 {
-                    Result.Log.Add(person.Name + ": мешок полон, " + item.Name + " брошено");
-                    continue;
+                    if (!TryMakeRoom(item))
+                    {
+                        Result.Log.Add(person.Name + ": мешок полон, " + item.Name + " брошено");
+                        continue;
+                    }
                 }
 
                 _freeSlots -= item.Slots;
                 AddFound(itemId);
                 Result.Log.Add(person.Name + " нашёл: " + item.Name);
             }
+        }
+
+        /// Наказ «мешок»: если велено менять, выбрасываем самую дешёвую находку ради новой.
+        private bool TryMakeRoom(Item incoming)
+        {
+            var orders = Party.Orders ?? new StandingOrders();
+            if (orders.BagFull != BagOrder.ReplaceCheapest) return false;
+
+            var worstIndex = -1;
+            var worstValue = int.MaxValue;
+
+            for (var i = 0; i < Result.Found.Count; i++)
+            {
+                var value = _tables.Items.Get(Result.Found[i].Key).Value;
+                if (value >= worstValue) continue;
+                worstValue = value;
+                worstIndex = i;
+            }
+
+            if (worstIndex < 0 || worstValue >= incoming.Value) return false;
+
+            var droppedId = Result.Found[worstIndex].Key;
+            if (Result.Found[worstIndex].Value > 1)
+                Result.Found[worstIndex] = new KeyValuePair<string, int>(droppedId, Result.Found[worstIndex].Value - 1);
+            else
+                Result.Found.RemoveAt(worstIndex);
+
+            _freeSlots += _tables.Items.Get(droppedId).Slots;
+            Result.Log.Add("выбросили " + _tables.Items.Get(droppedId).Name + " ради " + incoming.Name);
+
+            return _freeSlots >= incoming.Slots;
         }
 
         private void Meet()
@@ -461,7 +495,11 @@ namespace ForestGuild.Core.Sim
             var intensity = Party.Behavior == Behavior.Avoid ? 0.5
                 : Party.Behavior == Behavior.Clean ? 2.5 : 1.0;
 
-            if (Party.PersonIds.Count > 2) intensity *= 1.2;
+            if (Party.PersonIds.Count > 2)
+            {
+                intensity *= Math.Pow(1.2, Party.PersonIds.Count - 2);
+            }
+
             if (_state.AlertDays > 0) intensity *= 1.2;
             return intensity;
         }
