@@ -342,7 +342,7 @@ namespace ForestGuild.Core.Sim
             decision.Options.Add(new ExpeditionOption
             {
                 Id = "butcher", Label = "освежевать", Chance = ButcherChance(),
-                Note = "час работы",
+                Note = BestButcher(),
             });
             decision.Options.Add(new ExpeditionOption
             {
@@ -395,6 +395,26 @@ namespace ForestGuild.Core.Sim
 
             _state.Forage++;
             Result.Log.Add("тушу бросили");
+        }
+
+        /// Кто в отряде лучше всех владеет ножом — его имя и стоит на кнопке.
+        private string BestButcher()
+        {
+            string bestId = null;
+            var best = -1;
+
+            foreach (var personId in Party.PersonIds)
+            {
+                var person = _tables.Roster.Get(personId);
+                var score = People.SkillLevel(_tables, person, "butchering")
+                    + People.TraitSum(_tables, person, trait => trait.ButcherBonus);
+
+                if (score <= best) continue;
+                best = score;
+                bestId = personId;
+            }
+
+            return bestId == null ? null : _tables.Roster.Get(bestId).Name;
         }
 
         private void Wound()
