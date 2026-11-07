@@ -105,7 +105,6 @@ namespace ForestGuild.Game
             Board = new MorningBoard(Tables, World, _plan,
                 root.Q<VisualElement>("squads"),
                 root.Q<VisualElement>("works"),
-                root.Q<VisualElement>("roster"),
                 _warnings);
             Board.Active = World.Squads[0];
             Board.Changed += ShowActiveSquadZone;
@@ -135,6 +134,7 @@ namespace ForestGuild.Game
             Map.RefreshStates(World);
             ShowHint();
             Board.Rebuild();
+            ShowActiveSquadZone();
             SetPhase(Phase.Morning);
         }
 

@@ -122,6 +122,27 @@
     white-space: normal;
 }
 
+.squad-body {
+    flex-direction: row;
+    margin-top: 4px;
+}
+
+.squad-left {
+    flex-grow: 1;
+}
+
+.squad-portraits {
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.squad-portraits .portrait {
+    width: 46px;
+    height: 46px;
+    margin-left: 4px;
+    border-color: rgb(120, 104, 74);
+}
+
 .squad-actions {
     flex-direction: row;
     margin-top: 5px;

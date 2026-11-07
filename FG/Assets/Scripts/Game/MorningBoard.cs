@@ -17,7 +17,6 @@ namespace ForestGuild.Game
         private readonly DayPlan _plan;
         private readonly VisualElement _squads;
         private readonly VisualElement _works;
-        private readonly VisualElement _roster;
         private readonly Label _warnings;
 
         public Squad Active;
@@ -25,14 +24,13 @@ namespace ForestGuild.Game
         public event Action<Squad> EditRequested;
 
         public MorningBoard(Tables tables, World world, DayPlan plan,
-            VisualElement squads, VisualElement works, VisualElement roster, Label warnings)
+            VisualElement squads, VisualElement works, Label warnings)
         {
             _tables = tables;
             _world = world;
             _plan = plan;
             _squads = squads;
             _works = works;
-            _roster = roster;
             _warnings = warnings;
         }
 
@@ -40,7 +38,6 @@ namespace ForestGuild.Game
         {
             BuildSquads();
             BuildWorks();
-            BuildRoster();
             BuildWarnings();
         }
 
@@ -79,14 +76,21 @@ namespace ForestGuild.Game
                 card.Add(head);
 
                 var members = squad.Members.Count == 0
-                    ? "никого — жми людей справа"
-                    : string.Join(" · ", MemberNames(squad));
-                card.Add(Line("squad-members", members));
+                    ? "никого — жми «настроить…»"
+                    : "";
 
-                card.Add(Line("squad-line",
-                    "дорога " + briefing.TravelHours.ToString("0.#") + " ч → работа " + briefing.WorkHours + " ч"
-                    + " · слоты " + briefing.Slots
-                    + " · встречи ×1,0 → ~" + Math.Round(briefing.EncounterPerHour * 100) + "%/час"));
+                var body = new VisualElement();
+                body.AddToClassList("squad-body");
+
+                var left = new VisualElement();
+                left.AddToClassList("squad-left");
+
+                if (members.Length > 0) left.Add(Line("squad-members", members));
+
+                left.Add(Line("squad-line",
+                    "дорога " + briefing.TravelHours.ToString("0.#") + " ч · работа " + briefing.WorkHours
+                    + " ч · слоты " + briefing.Slots
+                    + " · встречи " + Math.Round(briefing.EncounterPerHour * 100) + "%/час"));
 
                 var actions = new VisualElement();
                 actions.AddToClassList("squad-actions");
@@ -104,17 +108,6 @@ namespace ForestGuild.Game
                 behavior.AddToClassList("action");
                 actions.Add(behavior);
 
-                var clear = new Button(() =>
-                {
-                    Active = squad;
-                    squad.Members.Clear();
-                    Rebuild();
-                    Changed?.Invoke();
-                });
-                clear.text = "распустить";
-                clear.AddToClassList("action");
-                actions.Add(clear);
-
                 var edit = new Button(() =>
                 {
                     Active = squad;
@@ -124,7 +117,21 @@ namespace ForestGuild.Game
                 edit.AddToClassList("action");
                 actions.Add(edit);
 
-                card.Add(actions);
+                left.Add(actions);
+                body.Add(left);
+
+                var portraits = new VisualElement();
+                portraits.AddToClassList("squad-portraits");
+                foreach (var personId in squad.Members)
+                {
+                    var portrait = new VisualElement();
+                    portrait.AddToClassList("portrait");
+                    portrait.AddToClassList("portrait-" + personId);
+                    portraits.Add(portrait);
+                }
+
+                body.Add(portraits);
+                card.Add(body);
 
                 var captured = squad;
                 card.RegisterCallback<ClickEvent>(_ =>
@@ -135,17 +142,6 @@ namespace ForestGuild.Game
                 });
 
                 _squads.Add(card);
-            }
-        }
-
-        private IEnumerable<string> MemberNames(Squad squad)
-        {
-            foreach (var personId in squad.Members)
-            {
-                var person = _tables.Roster.Get(personId);
-                var level = People.SkillLevel(_tables, person,
-                    _tables.Professions.Get(person.Profession).SkillsAllowed[0]);
-                yield return person.Name + " " + level;
             }
         }
 
@@ -256,86 +252,6 @@ namespace ForestGuild.Game
             }
 
             return true;
-        }
-
-        // ---- люди ----
-
-        private void BuildRoster()
-        {
-            _roster.Clear();
-
-            foreach (var person in _tables.Roster.All)
-            {
-                var condition = _world.ConditionOf(person.Id);
-                var profession = _tables.Professions.Get(person.Profession);
-                var level = People.SkillLevel(_tables, person, profession.SkillsAllowed[0]);
-
-                var card = new VisualElement();
-                card.AddToClassList("person-card");
-                card.AddToClassList(condition == PersonCondition.Wounded ? "status-wounded"
-                    : condition == PersonCondition.Dead ? "status-dead"
-                    : "status-ok");
-
-                if (IsInActiveSquad(person.Id)) card.AddToClassList("in-squad");
-                if (condition != PersonCondition.Healthy) card.AddToClassList("busy");
-
-                var portrait = new VisualElement();
-                portrait.AddToClassList("portrait");
-                portrait.AddToClassList("portrait-small");
-                portrait.AddToClassList("portrait-" + person.Id);
-                card.Add(portrait);
-
-                var info = new VisualElement();
-                info.AddToClassList("person-info");
-
-                var name = new Label(person.Name);
-                name.AddToClassList("person-name");
-                info.Add(name);
-
-                var state = condition == PersonCondition.Wounded ? " · ранен"
-                    : condition == PersonCondition.Dead ? " · мёртв"
-                    : "";
-
-                var primary = profession.SkillsAllowed[0];
-                var note = new Label(_tables.Skills.Get(primary).Name + " " + level + state);
-                note.AddToClassList("person-note");
-                info.Add(note);
-
-                card.Add(info);
-
-                var id = person.Id;
-                card.RegisterCallback<ClickEvent>(_ => OnPersonClicked(id));
-                _roster.Add(card);
-            }
-        }
-
-        private bool IsInActiveSquad(string personId)
-        {
-            return Active != null && Active.Members.Contains(personId);
-        }
-
-        private void OnPersonClicked(string personId)
-        {
-            if (Active == null)
-            {
-                _warnings.text = "Сначала выбери отряд: клик по карточке слева";
-                return;
-            }
-
-            if (_world.ConditionOf(personId) != PersonCondition.Healthy) return;
-
-            if (Active.Members.Contains(personId))
-            {
-                Active.Members.Remove(personId);
-            }
-            else
-            {
-                if (Active.Members.Count >= 3) return;
-                Active.Members.Add(personId);
-            }
-
-            Rebuild();
-            Changed?.Invoke();
         }
 
         // ---- предупреждения ----
