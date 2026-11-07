@@ -29,6 +29,18 @@
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
     </ui:VisualElement>
 
+    <ui:VisualElement name="evening" class="evening hidden">
+      <ui:Label name="evening-title" text="ВЕЧЕР" class="panel-title" />
+      <ui:VisualElement class="evening-columns">
+        <ui:ScrollView name="evening-lines" class="evening-lines" horizontal-scroller-visibility="Hidden" />
+        <ui:VisualElement class="evening-beds">
+          <ui:Label text="ПОСТЕЛИ" class="panel-subtitle" />
+          <ui:ScrollView name="evening-wounded" class="evening-wounded" horizontal-scroller-visibility="Hidden" />
+        </ui:VisualElement>
+      </ui:VisualElement>
+      <ui:Button name="evening-sleep" text="СПАТЬ →" class="action primary pane-button" />
+    </ui:VisualElement>
+
     <ui:VisualElement name="dossier" class="dossier hidden">
       <ui:VisualElement class="dossier-body">
         <ui:VisualElement name="dossier-art" class="dossier-art" />

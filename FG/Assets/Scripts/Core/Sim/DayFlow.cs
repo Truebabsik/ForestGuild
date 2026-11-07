@@ -9,6 +9,10 @@ namespace ForestGuild.Core.Sim
     {
         public readonly List<ExpeditionResult> Parties = new List<ExpeditionResult>();
         public readonly List<string> Lines = new List<string>();
+
+        /// <summary>Добыча дня по предметам — уходит в склад (ui.md §6).</summary>
+        public readonly Dictionary<string, int> Loot = new Dictionary<string, int>(StringComparer.Ordinal);
+
         public NightReport Night;
         public int Repaired;
     }
@@ -54,7 +58,24 @@ namespace ForestGuild.Core.Sim
                 report.Lines.Add("В лес никто не пошёл");
             }
 
+            CollectLoot(report);
             return report;
+        }
+
+        /// Добыча уходит в склад сразу: вечер разбирает её, а не решает, доедет ли она.
+        private void CollectLoot(DayReport report)
+        {
+            foreach (var party in report.Parties)
+            {
+                foreach (var found in party.Found)
+                {
+                    report.Loot.TryGetValue(found.Key, out var current);
+                    report.Loot[found.Key] = current + found.Value;
+
+                    _world.Store.TryGetValue(found.Key, out var stored);
+                    _world.Store[found.Key] = stored + found.Value;
+                }
+            }
         }
 
         private void RunWorks(DayPlan plan, DayReport report)
@@ -75,9 +96,14 @@ namespace ForestGuild.Core.Sim
             foreach (var personId in plan.Beds) Works.PutToBed(_world, personId);
         }
 
-        /// Фаза «Ночь»: лес живёт, день сменяется, постели делают своё дело.
-        public NightReport RunNight()
+        /// Фаза «Ночь»: постели, лес живёт, день сменяется.
+        public NightReport RunNight(DayPlan plan = null)
         {
+            if (plan != null)
+            {
+                foreach (var personId in plan.Beds) Works.PutToBed(_world, personId);
+            }
+
             var report = NightSim.AdvanceNight(_world, _tables, _rng);
 
             var healed = Works.Recover(_world);

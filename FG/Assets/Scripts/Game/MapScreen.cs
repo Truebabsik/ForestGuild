@@ -28,6 +28,7 @@ namespace ForestGuild.Game
         public MorningBoard Board;
         public MusterScreen Muster;
         public DossierScreen Dossier;
+        public EveningScreen Evening;
 
         private UIDocument _document;
         private DayFlow _flow;
@@ -131,6 +132,9 @@ namespace ForestGuild.Game
                 ShowZone(zoneId);
             };
 
+            Evening = new EveningScreen(root);
+            Evening.Slept += GoToNight;
+
             var debugToggle = root.Q<Toggle>("debug-toggle");
             if (debugToggle != null)
             {
@@ -169,6 +173,8 @@ namespace ForestGuild.Game
                 Muster?.Close();
                 Dossier?.Close();
             }
+
+            if (phase != Phase.Evening) Evening?.Close();
 
             UpdateHud();
         }
@@ -269,12 +275,12 @@ namespace ForestGuild.Game
         private void GoToEvening()
         {
             SetPhase(Phase.Evening);
-            ShowPane("ДЕНЬ " + World.Day + " · ВЕЧЕР", EveningLines(), "СПАТЬ →", GoToNight);
+            Evening.Open(_dayReport, _plan, World, Tables);
         }
 
         private void GoToNight()
         {
-            var night = _flow.RunNight();
+            var night = _flow.RunNight(_plan);
 
             SetPhase(Phase.Night);
             ShowPane("НОЧЬ · лес живёт", night.Lines, "УТРО →", GoToMorning);

@@ -216,6 +216,82 @@
     justify-content: flex-end;
 }
 
+.evening {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 56px;
+    bottom: 40px;
+    background-color: rgb(16, 18, 16);
+    border-width: 2px;
+    border-color: rgb(150, 128, 88);
+    padding: 20px;
+}
+
+.evening-columns {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.evening-lines {
+    flex-grow: 1;
+    margin-right: 18px;
+}
+
+.evening-lines .unity-label {
+    color: rgb(220, 216, 204);
+    font-size: 15px;
+    white-space: normal;
+    margin-bottom: 6px;
+}
+
+.evening-beds {
+    width: 440px;
+    border-width: 1px;
+    border-color: rgb(96, 88, 70);
+    padding: 10px;
+}
+
+.evening-wounded {
+    flex-grow: 1;
+}
+
+.bed-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-width: 1px;
+    border-color: rgb(150, 110, 70);
+    background-color: rgb(46, 40, 32);
+    padding: 6px 8px;
+    margin-bottom: 6px;
+}
+
+.bed-row.taken {
+    border-color: rgb(120, 160, 110);
+    background-color: rgb(38, 46, 36);
+}
+
+.bed-row .bed-name {
+    color: rgb(226, 214, 190);
+    font-size: 13px;
+}
+
+.bed-row .bed-note {
+    color: rgb(176, 166, 142);
+    font-size: 11px;
+}
+
+.bed-button {
+    height: 26px;
+    font-size: 11px;
+    padding: 0 10px;
+    color: rgb(230, 220, 196);
+    background-color: rgb(62, 64, 54);
+    border-width: 1px;
+    border-color: rgb(120, 104, 74);
+}
+
 .dossier {
     position: absolute;
     left: 0;

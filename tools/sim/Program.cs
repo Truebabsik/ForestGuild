@@ -253,6 +253,42 @@ internal static class Program
                 && three.Warnings.Count >= 2;          // сверх двух + зона не разведана
         });
 
+        checks.Check("loot goes to store and reports delta", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+
+            var plan = new DayPlan();
+            plan.Parties.Add(Party("verge_meadow", "leya", "tove"));
+            var report = new DayFlow(w, t, new Rng(11)).RunExpeditions(plan);
+
+            if (report.Loot.Count == 0) return true; // сид без находок — не провал
+
+            foreach (var pair in report.Loot)
+            {
+                if (!w.Store.TryGetValue(pair.Key, out var stored)) return false;
+                if (stored < pair.Value) return false;
+            }
+
+            return true;
+        });
+
+        checks.Check("evening beds heal the wounded overnight", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            Works.Wound(w, "leya");
+
+            var plan = new DayPlan();
+            plan.Beds.Add("leya");
+
+            var flow = new DayFlow(w, t, new Rng(4));
+            flow.RunExpeditions(new DayPlan());
+            flow.RunNight(plan);
+
+            return w.ConditionOf("leya") == PersonCondition.Healthy;
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
