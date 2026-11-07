@@ -88,26 +88,103 @@ namespace ForestGuild.Game
         {
             _free.Clear();
 
+            AddGuildBlock("hunter", "ГИЛЬДИЯ ОХОТНИКОВ");
+            AddGuildBlock("gatherer", "ГИЛЬДИЯ СОБИРАТЕЛЕЙ");
+        }
+
+        /// Блок гильдии: рамка, заголовок и плитки тех, кто свободен.
+        private void AddGuildBlock(string professionId, string title)
+        {
+            var block = new VisualElement();
+            block.AddToClassList("guild-block");
+
+            var header = new Label(title);
+            header.AddToClassList("guild-title");
+            block.Add(header);
+
+            var tiles = new VisualElement();
+            tiles.AddToClassList("guild-tiles");
+            block.Add(tiles);
+
+            var any = false;
             foreach (var person in _tables.Roster.All)
             {
+                if (person.Profession != professionId) continue;
                 if (_squad.Members.Contains(person.Id)) continue;
 
-                var where = Where(person.Id);
-                var busy = where != null;
-
-                var card = MakePersonCard(person.Id, busy ? where : null);
-                if (busy) card.AddToClassList("busy");
-
-                var id = person.Id;
-                card.RegisterCallback<ClickEvent>(_ =>
-                {
-                    if (busy) return;
-                    AddMember(id);
-                });
-
-                if (!busy) EnableDrag(card, id);
-                _free.Add(card);
+                any = true;
+                tiles.Add(MakeTile(person));
             }
+
+            if (!any)
+            {
+                var empty = new Label("все заняты или в отряде");
+                empty.AddToClassList("person-note");
+                tiles.Add(empty);
+            }
+
+            _free.Add(block);
+        }
+
+        /// Плитка свободного человека — того же размера, что и место в лотке.
+        private VisualElement MakeTile(Person person)
+        {
+            var personId = person.Id;
+            var condition = _world.ConditionOf(personId);
+            var where = Where(personId);
+            var busy = where != null;
+
+            var tile = new VisualElement();
+            tile.AddToClassList("guild-tile");
+            tile.AddToClassList(StatusClass(condition));
+            if (busy) tile.AddToClassList("busy");
+
+            var portrait = new VisualElement();
+            portrait.AddToClassList("portrait");
+            portrait.AddToClassList("portrait-" + personId);
+            tile.Add(portrait);
+
+            var info = new VisualElement();
+            info.AddToClassList("person-info");
+
+            var name = new Label(person.Name);
+            name.AddToClassList("person-name");
+            info.Add(name);
+
+            var profession = _tables.Professions.Get(person.Profession);
+            var primary = profession.SkillsAllowed[0];
+            var skill = new Label(_tables.Skills.Get(primary).Name + " "
+                + People.SkillLevel(_tables, person, primary));
+            skill.AddToClassList("person-note");
+            info.Add(skill);
+
+            if (busy)
+            {
+                var note = new Label(where);
+                note.AddToClassList("person-note");
+                info.Add(note);
+            }
+            else
+            {
+                var traits = Traits(person);
+                if (traits.Length > 0)
+                {
+                    var traitLine = new Label(traits);
+                    traitLine.AddToClassList("person-note");
+                    info.Add(traitLine);
+                }
+            }
+
+            tile.Add(info);
+
+            tile.RegisterCallback<ClickEvent>(_ =>
+            {
+                if (busy) return;
+                AddMember(personId);
+            });
+
+            if (!busy) EnableDrag(tile, personId);
+            return tile;
         }
 
         private void BuildTray()
@@ -232,49 +309,6 @@ namespace ForestGuild.Game
         }
 
         // ---- люди ----
-
-        private VisualElement MakePersonCard(string personId, string busyNote)
-        {
-            var person = _tables.Roster.Get(personId);
-            var card = new VisualElement();
-            card.AddToClassList("person-card");
-            card.AddToClassList(StatusClass(_world.ConditionOf(personId)));
-            if (_squad.Members.Contains(personId)) card.AddToClassList("in-squad");
-
-            var portrait = new VisualElement();
-            portrait.AddToClassList("portrait");
-            portrait.AddToClassList("portrait-" + personId);
-            card.Add(portrait);
-
-            var info = new VisualElement();
-            info.AddToClassList("person-info");
-
-            var name = new Label(person.Name);
-            name.AddToClassList("person-name");
-            info.Add(name);
-
-            if (busyNote != null)
-            {
-                var note = new Label(busyNote);
-                note.AddToClassList("person-note");
-                info.Add(note);
-            }
-
-            var skillLine = new Label(SkillLine(person));
-            skillLine.AddToClassList("person-note");
-            info.Add(skillLine);
-
-            var traits = Traits(person);
-            if (traits.Length > 0)
-            {
-                var traitLine = new Label(traits);
-                traitLine.AddToClassList("person-note");
-                info.Add(traitLine);
-            }
-
-            card.Add(info);
-            return card;
-        }
 
         private static string StatusClass(PersonCondition condition)
         {
