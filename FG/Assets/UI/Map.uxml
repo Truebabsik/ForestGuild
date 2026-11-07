@@ -29,6 +29,17 @@
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
     </ui:VisualElement>
 
+    <ui:VisualElement name="dossier" class="dossier hidden">
+      <ui:VisualElement class="dossier-body">
+        <ui:VisualElement name="dossier-art" class="dossier-art" />
+        <ui:ScrollView name="dossier-text" class="dossier-text" horizontal-scroller-visibility="Hidden" />
+      </ui:VisualElement>
+      <ui:VisualElement class="modal-buttons">
+        <ui:Button name="dossier-back" text="← НАЗАД" class="action" />
+        <ui:Button name="dossier-gather" text="К СБОРКЕ ЭТОЙ ЗОНЫ" class="action primary" />
+      </ui:VisualElement>
+    </ui:VisualElement>
+
     <ui:VisualElement name="muster" class="muster hidden">
       <ui:Label name="muster-title" text="СБОР ОТРЯДА" class="panel-title" />
       <ui:VisualElement class="muster-columns">

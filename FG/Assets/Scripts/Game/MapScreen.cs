@@ -27,6 +27,7 @@ namespace ForestGuild.Game
         public MapController Map;
         public MorningBoard Board;
         public MusterScreen Muster;
+        public DossierScreen Dossier;
 
         private UIDocument _document;
         private DayFlow _flow;
@@ -80,7 +81,11 @@ namespace ForestGuild.Game
 
             Map = new MapController(root.Q<VisualElement>("map"));
             Map.Build(Tables);
-            Map.ZoneSelected += ShowZone;
+            Map.ZoneSelected += zoneId =>
+            {
+                ShowZone(zoneId);
+                Dossier?.Open(zoneId, Tables, World, _phase == Phase.Morning);
+            };
             Map.VillageClicked += ShowVillage;
 
             _hud = root.Q<Label>("hud");
@@ -117,6 +122,15 @@ namespace ForestGuild.Game
                 ShowActiveSquadZone();
             };
 
+            Dossier = new DossierScreen(root);
+            Dossier.GatherRequested += zoneId =>
+            {
+                if (Board.Active == null) Board.Active = World.Squads[0];
+                Board.Active.ZoneId = zoneId;
+                Board.Rebuild();
+                ShowZone(zoneId);
+            };
+
             var debugToggle = root.Q<Toggle>("debug-toggle");
             if (debugToggle != null)
             {
@@ -150,7 +164,11 @@ namespace ForestGuild.Game
             _bottomBar.EnableInClassList("hidden", !morning);
             _pane.EnableInClassList("hidden", morning);
             _modal.AddToClassList("hidden");
-            if (!morning) Muster?.Close();
+            if (!morning)
+            {
+                Muster?.Close();
+                Dossier?.Close();
+            }
 
             UpdateHud();
         }
