@@ -106,7 +106,42 @@ internal static class Program
             return z.NestXp >= 1;
         });
 
+        checks.Check("expedition works whole day budget", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var party = Party("verge_meadow", "leya");
+            var r = ExpeditionSim.Resolve(w, t, party, new Rng(7));
+            return r.HoursUsed == 4 && r.ZoneId == "verge_meadow";
+        });
+
+        checks.Check("expedition finds something over many seeds", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var total = 0;
+            for (var seed = 0; seed < 20; seed++)
+                total += ExpeditionSim.Resolve(w, t, Party("verge_springs", "leya", "tove"), new Rng(seed)).Found.Count;
+            return total > 0;
+        });
+
+        checks.Check("expedition is deterministic", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var a = ExpeditionSim.Resolve(w, t, Party("verge_springs", "brunni"), new Rng(3));
+            var b = ExpeditionSim.Resolve(w, t, Party("verge_springs", "brunni"), new Rng(3));
+            return a.Found.Count == b.Found.Count && a.Wounded == b.Wounded && a.HoursUsed == b.HoursUsed;
+        });
+
         return checks.Report() ? 0 : 1;
+    }
+
+    private static PartyAssignment Party(string zoneId, params string[] people)
+    {
+        var party = new PartyAssignment { ZoneId = zoneId, Behavior = Behavior.Gather };
+        party.PersonIds.AddRange(people);
+        return party;
     }
 
     private static string DataDir()
