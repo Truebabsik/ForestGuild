@@ -290,16 +290,11 @@ namespace ForestGuild.Game
             _orders.Add(button);
         }
 
+        /// В Сборе — только слова о составе, без слотов, процентов и дороги (ui.md §4.3).
         private void BuildSummary()
         {
             var briefing = Briefing.Compute(_world, _tables, _squad.Members, _squad.ZoneId, _squad.Behavior);
-
-            var text = "дорога " + briefing.TravelHours.ToString("0.#") + " ч → работа " + briefing.WorkHours
-                + " ч · слоты " + briefing.Slots
-                + " · встречи ~" + Math.Round(briefing.EncounterPerHour * 100) + "%/час";
-
-            if (briefing.Warnings.Count > 0) text += "   ⚠ " + string.Join(", ", briefing.Warnings);
-            _summary.text = text;
+            _summary.text = string.Join(" · ", briefing.Warnings);
         }
 
         // ---- люди ----

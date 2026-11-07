@@ -48,32 +48,32 @@ namespace ForestGuild.Core.Sim
 
             if (members.Count == 0)
             {
-                briefing.Warnings.Add("Отряд никого не идёт");
+                briefing.Warnings.Add("Отряд пуст — в лес идти некому");
             }
 
             if (members.Count == 1)
             {
-                briefing.Warnings.Add("Один в лесу: охраны нет");
+                briefing.Warnings.Add("Один в лесу: прикрыть некому");
             }
 
             if (members.Count > 2)
             {
-                briefing.Warnings.Add("Люди сверх двух: ×1,2 к встречам");
+                briefing.Warnings.Add("Втроём в лесу шумно — твари замечают раньше");
             }
 
             if (behavior == Behavior.Clean && !brave)
             {
-                briefing.Warnings.Add("На тварей без храбрых не ходят");
+                briefing.Warnings.Add("На тварей без храброго охотника не ходят");
             }
 
             if (!world.Zones.TryGetValue(zoneId, out var state) || !state.Scouted)
             {
-                briefing.Warnings.Add("Состав неизвестен: проценты по худшему случаю");
+                briefing.Warnings.Add("Состав зоны неизвестен — считаем по худшему");
             }
 
             if (briefing.WorkHours == 0)
             {
-                briefing.Warnings.Add("Дорога съедает весь день — работы не будет");
+                briefing.Warnings.Add("До места и обратно — весь день, работать некогда");
             }
 
             var density = 0.0;

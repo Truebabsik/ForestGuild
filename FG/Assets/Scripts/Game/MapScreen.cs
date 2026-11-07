@@ -184,8 +184,8 @@ namespace ForestGuild.Game
 
         private void OpenOrder()
         {
-            var lines = new List<string>();
             _plan.Parties.Clear();
+            _modalLines.Clear();
 
             foreach (var squad in World.Squads)
             {
@@ -203,33 +203,39 @@ namespace ForestGuild.Game
                 var zone = Tables.Zones.Get(squad.ZoneId);
                 var briefing = Briefing.Compute(World, Tables, squad.Members, squad.ZoneId, squad.Behavior);
 
-                lines.Add("ОТРЯД «" + squad.Name + "» → " + zone.Name + " · " + BehaviorName(squad.Behavior));
-                lines.Add("   " + string.Join(" · ", MemberNames(squad)));
-                lines.Add("   дорога " + briefing.TravelHours.ToString("0.#") + " ч"
+                AddModalLine("ОТРЯД «" + squad.Name + "» → " + zone.Name + " · " + BehaviorName(squad.Behavior));
+
+                var portraits = new VisualElement();
+                portraits.AddToClassList("modal-portraits");
+                foreach (var personId in squad.Members) portraits.Add(Ui.Portrait(personId));
+                _modalLines.Add(portraits);
+
+                AddModalLine("   " + string.Join(" · ", MemberNames(squad)));
+                AddModalLine("   дорога " + briefing.TravelHours.ToString("0.#") + " ч"
                     + (briefing.WorkHours > 0
                         ? ", в лесу " + briefing.WorkHours + " ч"
                         : ", работы не будет — день уйдёт на дорогу"));
 
-                foreach (var warning in briefing.Warnings) lines.Add("   ⚠ " + warning);
+                foreach (var warning in briefing.Warnings) AddModalLine("   ⚠ " + warning, "warning-line");
             }
 
-            if (_plan.Parties.Count == 0) lines.Add("В лес никто не идёт.");
+            if (_plan.Parties.Count == 0) AddModalLine("В лес никто не идёт.");
 
-            lines.Add("");
-            lines.Add("В ДЕРЕВНЕ: починка " + _plan.VillageWorkers.Count
+            AddModalLine("");
+            AddModalLine("В ДЕРЕВНЕ: починка " + _plan.VillageWorkers.Count
                 + " · постели " + _plan.Beds.Count
                 + " · заготовка " + _plan.Foragers.Count);
 
             _modalTitle.text = "ДЕНЬ " + World.Day + " · ПРИКАЗ";
-            _modalLines.Clear();
-            foreach (var line in lines)
-            {
-                var label = new Label(line);
-                label.AddToClassList("pane-line");
-                _modalLines.Add(label);
-            }
-
             _modal.RemoveFromClassList("hidden");
+        }
+
+        private void AddModalLine(string text, string extraClass = null)
+        {
+            var label = new Label(text);
+            label.AddToClassList("pane-line");
+            if (extraClass != null) label.AddToClassList(extraClass);
+            _modalLines.Add(label);
         }
 
         private void ConfirmOrder()
