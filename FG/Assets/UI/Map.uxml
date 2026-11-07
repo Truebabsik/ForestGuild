@@ -17,7 +17,7 @@
 
     <ui:VisualElement name="pane" class="pane hidden">
       <ui:Label name="pane-title" text="" class="panel-title" />
-      <ui:ScrollView name="pane-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
+      <ui:ScrollView name="pane-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
     </ui:VisualElement>
 
@@ -26,7 +26,7 @@
         <ui:Label name="expedition-title" text="ПОХОД" class="panel-title" />
         <ui:Label name="expedition-hour" text="" class="zone-meta" />
       </ui:VisualElement>
-      <ui:ScrollView name="expedition-log" class="expedition-log" horizontal-scroller-visibility="Hidden" />
+      <ui:ScrollView name="expedition-log" class="expedition-log" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
       <ui:VisualElement name="expedition-card" class="decision-card hidden">
         <ui:Label name="decision-title" text="" class="decision-title" />
         <ui:Label name="decision-body" text="" class="zone-text" />
@@ -44,23 +44,23 @@
       <ui:Label text="РАБОТЫ" class="panel-subtitle" />
       <ui:VisualElement name="village-works" class="works" />
       <ui:Label text="КТО ГДЕ" class="panel-subtitle" />
-      <ui:ScrollView name="village-people" class="village-people" horizontal-scroller-visibility="Hidden" />
+      <ui:ScrollView name="village-people" class="village-people" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
       <ui:Button name="village-close" text="ГОТОВО ↩" class="action primary pane-button" />
     </ui:VisualElement>
 
     <ui:VisualElement name="startday" class="startday hidden">
       <ui:Label name="startday-title" text="ДЕНЬ 1" class="startday-title" />
-      <ui:ScrollView name="startday-lines" class="startday-lines" horizontal-scroller-visibility="Hidden" />
+      <ui:ScrollView name="startday-lines" class="startday-lines" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
       <ui:Button name="startday-go" text="НАЧАТЬ ДЕНЬ →" class="action primary pane-button" />
     </ui:VisualElement>
 
     <ui:VisualElement name="evening" class="evening hidden">
       <ui:Label name="evening-title" text="ВЕЧЕР" class="panel-title" />
       <ui:VisualElement class="evening-columns">
-        <ui:ScrollView name="evening-lines" class="evening-lines" horizontal-scroller-visibility="Hidden" />
+        <ui:ScrollView name="evening-lines" class="evening-lines" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
         <ui:VisualElement class="evening-beds">
           <ui:Label text="ПОСТЕЛИ" class="panel-subtitle" />
-          <ui:ScrollView name="evening-wounded" class="evening-wounded" horizontal-scroller-visibility="Hidden" />
+          <ui:ScrollView name="evening-wounded" class="evening-wounded" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
         </ui:VisualElement>
       </ui:VisualElement>
       <ui:Button name="evening-sleep" text="СПАТЬ →" class="action primary pane-button" />
@@ -69,7 +69,7 @@
     <ui:VisualElement name="dossier" class="dossier hidden">
       <ui:VisualElement class="dossier-body">
         <ui:VisualElement name="dossier-art" class="dossier-art" />
-        <ui:ScrollView name="dossier-text" class="dossier-text" horizontal-scroller-visibility="Hidden" />
+        <ui:ScrollView name="dossier-text" class="dossier-text" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
       </ui:VisualElement>
       <ui:VisualElement class="modal-buttons">
         <ui:Button name="dossier-back" text="← НАЗАД" class="action" />
@@ -83,7 +83,7 @@
       <ui:VisualElement class="muster-columns">
         <ui:VisualElement class="muster-column">
           <ui:Label text="СВОБОДНЫЕ ЛЮДИ" class="panel-subtitle" />
-          <ui:ScrollView name="muster-free" class="muster-free" horizontal-scroller-visibility="Hidden" />
+          <ui:ScrollView name="muster-free" class="muster-free" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
         </ui:VisualElement>
         <ui:VisualElement class="muster-column wide">
           <ui:Label text="СОСТАВ ОТРЯДА" class="panel-subtitle" />
@@ -101,7 +101,7 @@
 
     <ui:VisualElement name="modal" class="modal hidden">
       <ui:Label name="modal-title" text="ПРИКАЗ НА ВЫЛАЗКУ" class="panel-title" />
-      <ui:ScrollView name="modal-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
+      <ui:ScrollView name="modal-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" />
       <ui:VisualElement class="modal-buttons">
         <ui:Button name="modal-cancel" text="НЕ ПОКА, ДОПОЛНЮ" class="action" />
         <ui:Button name="modal-confirm" text="НАЧАТЬ ДЕНЬ" class="action primary" />
