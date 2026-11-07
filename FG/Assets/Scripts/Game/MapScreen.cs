@@ -205,9 +205,10 @@ namespace ForestGuild.Game
 
                 lines.Add("ОТРЯД «" + squad.Name + "» → " + zone.Name + " · " + BehaviorName(squad.Behavior));
                 lines.Add("   " + string.Join(" · ", MemberNames(squad)));
-                lines.Add("   дорога " + briefing.TravelHours.ToString("0.#") + " ч · работа "
-                    + briefing.WorkHours + " ч · слоты " + briefing.Slots
-                    + " · встречи ~" + Math.Round(briefing.EncounterPerHour * 100) + "%/час");
+                lines.Add("   дорога " + briefing.TravelHours.ToString("0.#") + " ч"
+                    + (briefing.WorkHours > 0
+                        ? ", в лесу " + briefing.WorkHours + " ч"
+                        : ", работы не будет — день уйдёт на дорогу"));
 
                 foreach (var warning in briefing.Warnings) lines.Add("   ⚠ " + warning);
             }

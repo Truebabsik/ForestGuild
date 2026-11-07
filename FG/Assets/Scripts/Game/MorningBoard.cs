@@ -88,9 +88,9 @@ namespace ForestGuild.Game
                 if (members.Length > 0) left.Add(Line("squad-members", members));
 
                 left.Add(Line("squad-line",
-                    "дорога " + briefing.TravelHours.ToString("0.#") + " ч · работа " + briefing.WorkHours
-                    + " ч · слоты " + briefing.Slots
-                    + " · встречи " + Math.Round(briefing.EncounterPerHour * 100) + "%/час"));
+                    briefing.WorkHours > 0
+                        ? "дорога " + briefing.TravelHours.ToString("0.#") + " ч · в лесу " + briefing.WorkHours + " ч"
+                        : "дорога " + briefing.TravelHours.ToString("0.#") + " ч · работы не будет"));
 
                 var actions = new VisualElement();
                 actions.AddToClassList("squad-actions");
