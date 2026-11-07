@@ -9,6 +9,7 @@ namespace ForestGuild.Game
 {
     public enum Phase
     {
+        StartOfDay,
         Morning,
         Day,
         Evening,
@@ -16,9 +17,8 @@ namespace ForestGuild.Game
     }
 
     /// <summary>
-    /// Каркас цикла суток (docs/ui.md §3): HUD + фазы Утро → День → Вечер → Ночь.
-    /// Здесь только переключение фаз и связка экранов; показ вынесен в HudView,
-    /// ZoneCardView, DossierScreen, MusterScreen, EveningScreen.
+    /// Цикл суток (docs/ui.md §3): окно начала дня → экран планирования → день → вечер → ночь.
+    /// Здесь только фазы и связка экранов; показ — в отдельных View/Screen-классах.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class MapScreen : MonoBehaviour
@@ -30,24 +30,23 @@ namespace ForestGuild.Game
         public MusterScreen Muster;
         public DossierScreen Dossier;
         public EveningScreen Evening;
+        public StartOfDayScreen StartDay;
 
         private UIDocument _document;
         private DayFlow _flow;
         private DayPlan _plan = new DayPlan();
         private Rng _rng;
-        private Phase _phase = Phase.Morning;
+        private Phase _phase = Phase.StartOfDay;
         private DayReport _dayReport;
         private Action _paneAction;
 
         private HudView _hud;
-        private ZoneCardView _zoneCard;
         private Label _warnings;
         private Label _paneTitle;
         private VisualElement _pane;
         private ScrollView _paneLines;
         private Button _paneButton;
         private VisualElement _leftPanel;
-        private VisualElement _rightPanel;
         private VisualElement _bottomBar;
         private VisualElement _modal;
         private Label _modalTitle;
@@ -80,15 +79,9 @@ namespace ForestGuild.Game
 
             Map = new MapController(root.Q<VisualElement>("map"));
             Map.Build(Tables);
-            Map.ZoneSelected += zoneId =>
-            {
-                _zoneCard.ShowZone(zoneId);
-                Dossier.Open(zoneId, Tables, World, _phase == Phase.Morning);
-            };
-            Map.VillageClicked += () => _zoneCard.ShowVillage();
+            Map.ZoneSelected += zoneId => Dossier.Open(zoneId, Tables, World, _phase == Phase.Morning);
 
             _hud = new HudView(root.Q<Label>("hud"), Tables, World);
-            _zoneCard = new ZoneCardView(root.Q<ScrollView>("zone-card"), Tables, World);
 
             _warnings = root.Q<Label>("warnings");
             _pane = root.Q<VisualElement>("pane");
@@ -97,7 +90,6 @@ namespace ForestGuild.Game
             _paneButton = root.Q<Button>("pane-button");
             _paneButton.clicked += () => _paneAction?.Invoke();
             _leftPanel = root.Q<VisualElement>("left-panel");
-            _rightPanel = root.Q<VisualElement>("right-panel");
             _bottomBar = root.Q<VisualElement>("bottom-bar");
 
             _modal = root.Q<VisualElement>("modal");
@@ -111,15 +103,10 @@ namespace ForestGuild.Game
                 root.Q<VisualElement>("works"),
                 _warnings);
             Board.Active = World.Squads[0];
-            Board.Changed += ShowActiveSquadZone;
 
             Muster = new MusterScreen(root);
             Board.EditRequested += squad => Muster.Open(squad, Tables, World, _plan);
-            Muster.Closed += () =>
-            {
-                Board.Rebuild();
-                ShowActiveSquadZone();
-            };
+            Muster.Closed += () => Board.Rebuild();
 
             Dossier = new DossierScreen(root);
             Dossier.GatherRequested += zoneId =>
@@ -127,31 +114,19 @@ namespace ForestGuild.Game
                 if (Board.Active == null) Board.Active = World.Squads[0];
                 Board.Active.ZoneId = zoneId;
                 Board.Rebuild();
-                _zoneCard.ShowZone(zoneId);
             };
 
             Evening = new EveningScreen(root);
             Evening.Slept += GoToNight;
 
-            var debugToggle = root.Q<Toggle>("debug-toggle");
-            if (debugToggle != null)
-            {
-                debugToggle.value = false;
-                debugToggle.RegisterValueChangedCallback(e =>
-                {
-                    _zoneCard.Debug = e.newValue;
-                    if (Map.Selected != null) _zoneCard.ShowZone(Map.Selected);
-                    else if (Map.VillageSelected) _zoneCard.ShowVillage();
-                });
-            }
+            StartDay = new StartOfDayScreen(root);
+            StartDay.Continued += EnterPlanning;
 
             root.Q<Button>("sign-button").clicked += OpenOrder;
 
             Map.RefreshStates(World);
-            _zoneCard.ShowHint();
             Board.Rebuild();
-            ShowActiveSquadZone();
-            SetPhase(Phase.Morning);
+            BeginDay();
         }
 
         // ---- фазы ----
@@ -159,29 +134,36 @@ namespace ForestGuild.Game
         private void SetPhase(Phase phase)
         {
             _phase = phase;
-            var morning = phase == Phase.Morning;
+            var planning = phase == Phase.Morning;
 
-            _leftPanel.EnableInClassList("hidden", !morning);
-            _rightPanel.EnableInClassList("hidden", !morning);
-            _bottomBar.EnableInClassList("hidden", !morning);
-            _pane.EnableInClassList("hidden", morning);
+            _leftPanel.EnableInClassList("hidden", !planning);
+            _bottomBar.EnableInClassList("hidden", !planning);
+            _pane.EnableInClassList("hidden", phase != Phase.Day && phase != Phase.Night);
             _modal.AddToClassList("hidden");
 
-            if (!morning)
+            if (!planning)
             {
                 Muster.Close();
                 Dossier.Close();
             }
 
             if (phase != Phase.Evening) Evening.Close();
+            if (phase != Phase.StartOfDay) StartDay.Close();
 
             _hud.Update(_phase);
         }
 
-        private void ShowActiveSquadZone()
+        /// Окно начала дня: номер дня и кто в каком состоянии.
+        private void BeginDay()
         {
-            if (Board.Active != null && !string.IsNullOrEmpty(Board.Active.ZoneId))
-                _zoneCard.ShowZone(Board.Active.ZoneId);
+            SetPhase(Phase.StartOfDay);
+            StartDay.Open(World, Tables);
+        }
+
+        private void EnterPlanning()
+        {
+            SetPhase(Phase.Morning);
+            Board.Rebuild();
         }
 
         // ---- приказ ----
@@ -219,7 +201,7 @@ namespace ForestGuild.Game
                 + " · постели " + _plan.Beds.Count
                 + " · заготовка " + _plan.Foragers.Count);
 
-            _modalTitle.text = "ПРИКАЗ НА ВЫЛАЗКУ";
+            _modalTitle.text = "ДЕНЬ " + World.Day + " · ПРИКАЗ";
             _modalLines.Clear();
             foreach (var line in lines)
             {
@@ -296,11 +278,11 @@ namespace ForestGuild.Game
                 squad.Members.RemoveAll(id => World.ConditionOf(id) != PersonCondition.Healthy);
             }
 
-            SetPhase(Phase.Morning);
             Map.RefreshStates(World);
             Board.Rebuild();
-            _zoneCard.ShowHint();
             if (_warnings != null) _warnings.text = "";
+
+            BeginDay();
         }
 
         private IEnumerable<string> MemberNames(Squad squad)

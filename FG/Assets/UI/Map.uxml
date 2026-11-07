@@ -13,20 +13,21 @@
       <ui:VisualElement name="works" class="works" />
     </ui:VisualElement>
 
-    <ui:VisualElement name="right-panel" class="panel right">
-      <ui:ScrollView name="zone-card" class="zone-card" horizontal-scroller-visibility="Hidden" />
-    </ui:VisualElement>
-
     <ui:VisualElement name="bottom-bar" class="bottom">
       <ui:Label name="warnings" text="" class="warnings" />
-      <ui:Toggle name="debug-toggle" label="числа" class="debug-toggle" />
-      <ui:Button name="sign-button" text="ПОДПИСАТЬ ПРИКАЗ" class="action primary" />
+      <ui:Button name="sign-button" text="НАЧАТЬ ДЕНЬ" class="action primary" />
     </ui:VisualElement>
 
     <ui:VisualElement name="pane" class="pane hidden">
       <ui:Label name="pane-title" text="" class="panel-title" />
       <ui:ScrollView name="pane-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
+    </ui:VisualElement>
+
+    <ui:VisualElement name="startday" class="startday hidden">
+      <ui:Label name="startday-title" text="ДЕНЬ 1" class="startday-title" />
+      <ui:ScrollView name="startday-lines" class="startday-lines" horizontal-scroller-visibility="Hidden" />
+      <ui:Button name="startday-go" text="НАЧАТЬ ДЕНЬ →" class="action primary pane-button" />
     </ui:VisualElement>
 
     <ui:VisualElement name="evening" class="evening hidden">
@@ -78,7 +79,7 @@
       <ui:ScrollView name="modal-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
       <ui:VisualElement class="modal-buttons">
         <ui:Button name="modal-cancel" text="НЕ ПОКА, ДОПОЛНЮ" class="action" />
-        <ui:Button name="modal-confirm" text="ПОДПИСАТЬ" class="action primary" />
+        <ui:Button name="modal-confirm" text="НАЧАТЬ ДЕНЬ" class="action primary" />
       </ui:VisualElement>
     </ui:VisualElement>
 

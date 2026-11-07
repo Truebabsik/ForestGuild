@@ -55,12 +55,42 @@
 
 .map {
     position: absolute;
-    left: 250px;
-    right: 440px;
+    left: 520px;
+    right: 0;
     top: 36px;
     bottom: 96px;
     background-image: url("project://database/Assets/UI/Art/map_bg.jpg");
     -unity-background-scale-mode: scale-and-crop;
+}
+
+.startday {
+    position: absolute;
+    left: 300px;
+    right: 300px;
+    top: 90px;
+    bottom: 120px;
+    background-color: rgb(16, 18, 16);
+    border-width: 2px;
+    border-color: rgb(196, 150, 90);
+    padding: 24px;
+}
+
+.startday-title {
+    color: rgb(238, 220, 180);
+    font-size: 34px;
+    -unity-font-style: bold;
+    margin-bottom: 16px;
+}
+
+.startday-lines {
+    flex-grow: 1;
+}
+
+.startday-lines .unity-label {
+    color: rgb(216, 210, 194);
+    font-size: 15px;
+    white-space: normal;
+    margin-bottom: 5px;
 }
 
 .panel {
