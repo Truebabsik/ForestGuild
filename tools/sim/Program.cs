@@ -134,6 +134,17 @@ internal static class Program
             return a.Found.Count == b.Found.Count && a.Wounded == b.Wounded && a.HoursUsed == b.HoursUsed;
         });
 
+        checks.Check("day flow resolves parties and advances night", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var plan = new DayPlan();
+            plan.Parties.Add(Party("verge_meadow", "leya"));
+            var flow = new DayFlow(w, t, new Rng(5));
+            var report = flow.RunDay(plan);
+            return report.Parties.Count == 1 && w.Day == 2 && report.Lines.Count > 0;
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
