@@ -1,7 +1,15 @@
+/* ForestGuild — UI (UI Toolkit). Только используемые классы. */
+
 .root {
     flex-grow: 1;
     background-color: rgb(20, 22, 20);
 }
+
+.hidden {
+    display: none;
+}
+
+/* ---- HUD ---- */
 
 .hud {
     position: absolute;
@@ -9,8 +17,7 @@
     right: 0;
     top: 0;
     height: 36px;
-    padding-left: 20px;
-    padding-top: 8px;
+    padding: 8px 20px 0 20px;
     background-color: rgb(30, 32, 28);
     border-bottom-width: 2px;
     border-color: rgb(120, 104, 74);
@@ -20,38 +27,7 @@
     white-space: nowrap;
 }
 
-.pane {
-    position: absolute;
-    left: 60px;
-    right: 60px;
-    top: 56px;
-    bottom: 40px;
-    background-color: rgb(16, 18, 16);
-    border-width: 2px;
-    border-color: rgb(150, 128, 88);
-    padding: 20px;
-}
-
-.pane-lines {
-    flex-grow: 1;
-    margin-bottom: 12px;
-}
-
-.pane-lines .unity-label {
-    color: rgb(208, 204, 190);
-    font-size: 13px;
-    white-space: normal;
-    margin-bottom: 4px;
-}
-
-.pane-line.link {
-    color: rgb(232, 198, 132);
-}
-
-.pane-button {
-    width: 260px;
-    align-self: flex-end;
-}
+/* ---- карта ---- */
 
 .map {
     position: absolute;
@@ -63,35 +39,96 @@
     -unity-background-scale-mode: scale-and-crop;
 }
 
-.startday {
+.zone-node {
     position: absolute;
-    left: 300px;
-    right: 300px;
-    top: 90px;
-    bottom: 120px;
-    background-color: rgb(16, 18, 16);
-    border-width: 2px;
-    border-color: rgb(196, 150, 90);
-    padding: 24px;
+    width: 120px;
+    height: 152px;
+    background-color: rgba(0, 0, 0, 0);
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0;
 }
 
-.startday-title {
-    color: rgb(238, 220, 180);
-    font-size: 34px;
-    -unity-font-style: bold;
-    margin-bottom: 16px;
+.zone-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 48px;
+    border-width: 3px;
+    border-color: rgb(150, 128, 88);
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(24, 26, 22);
 }
 
-.startday-lines {
-    flex-grow: 1;
+.zone-node.selected .zone-icon {
+    border-color: rgb(240, 190, 90);
+    border-width: 4px;
 }
 
-.startday-lines .unity-label {
-    color: rgb(216, 210, 194);
-    font-size: 15px;
+.zone-node.danger .zone-icon {
+    border-color: rgb(178, 96, 60);
+}
+
+.icon-verge_meadow { background-image: url("project://database/Assets/UI/Art/Icons/zone_meadow.png"); }
+.icon-verge_springs { background-image: url("project://database/Assets/UI/Art/Icons/zone_springs.png"); }
+.icon-verge_marsh { background-image: url("project://database/Assets/UI/Art/Icons/zone_marsh.png"); }
+.icon-verge_thicket { background-image: url("project://database/Assets/UI/Art/Icons/zone_thicket.png"); }
+.icon-belt_stone { background-image: url("project://database/Assets/UI/Art/Icons/zone_stone.png"); }
+.icon-heart_root { background-image: url("project://database/Assets/UI/Art/Icons/zone_heart.png"); }
+
+.zone-node-name {
+    margin-top: 3px;
+    color: rgb(228, 214, 180);
+    font-size: 11px;
+    -unity-text-align: middle-center;
     white-space: normal;
-    margin-bottom: 5px;
 }
+
+.zone-node-state {
+    color: rgb(180, 150, 110);
+    font-size: 10px;
+    -unity-text-align: middle-center;
+}
+
+.village-node {
+    position: absolute;
+    width: 130px;
+    height: 152px;
+    background-color: rgba(0, 0, 0, 0);
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0;
+}
+
+.village-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 10px;
+    border-width: 3px;
+    border-color: rgb(196, 150, 90);
+    background-image: url("project://database/Assets/UI/Art/Icons/village.png");
+    -unity-background-scale-mode: scale-and-crop;
+}
+
+.village-node.selected .village-icon {
+    border-color: rgb(240, 190, 90);
+    border-width: 4px;
+}
+
+.village-node .village-name {
+    margin-top: 3px;
+    color: rgb(238, 220, 184);
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.village-node .village-state {
+    color: rgb(200, 170, 130);
+    font-size: 10px;
+    -unity-text-align: middle-center;
+}
+
+/* ---- панели ---- */
 
 .panel {
     position: absolute;
@@ -110,6 +147,24 @@
     left: 0;
     width: 520px;
 }
+
+.panel-title {
+    color: rgb(226, 208, 170);
+    font-size: 17px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.panel-subtitle {
+    color: rgb(160, 146, 118);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+
+/* ---- отряды на планировании ---- */
 
 .squads {
     flex-direction: column;
@@ -186,13 +241,76 @@
     height: 26px;
     font-size: 11px;
     margin-right: 4px;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding: 0 8px;
 }
 
-.squad-actions .action.selected {
+.action {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+    color: rgb(240, 230, 205);
+    background-color: rgb(62, 64, 54);
+    border-width: 2px;
+    border-color: rgb(150, 128, 88);
+}
+
+.action.primary {
+    background-color: rgb(150, 96, 40);
+    border-color: rgb(226, 190, 110);
+}
+
+.action.selected {
     background-color: rgb(96, 78, 42);
     border-color: rgb(226, 190, 110);
+}
+
+/* ---- портреты и карточки людей ---- */
+
+.portrait {
+    width: 64px;
+    height: 64px;
+    border-width: 2px;
+    border-color: rgb(88, 82, 68);
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(24, 26, 22);
+}
+
+.portrait-small {
+    width: 40px;
+    height: 40px;
+}
+
+.portrait-brunni { background-image: url("project://database/Assets/UI/Art/Portraits/brunni.jpg"); }
+.portrait-skadi { background-image: url("project://database/Assets/UI/Art/Portraits/skadi.jpg"); }
+.portrait-hilda { background-image: url("project://database/Assets/UI/Art/Portraits/hilda.jpg"); }
+.portrait-orn { background-image: url("project://database/Assets/UI/Art/Portraits/orn.jpg"); }
+.portrait-leya { background-image: url("project://database/Assets/UI/Art/Portraits/leya.jpg"); }
+.portrait-tove { background-image: url("project://database/Assets/UI/Art/Portraits/tove.jpg"); }
+.portrait-run { background-image: url("project://database/Assets/UI/Art/Portraits/run.jpg"); }
+.portrait-valda { background-image: url("project://database/Assets/UI/Art/Portraits/valda.jpg"); }
+
+.person-info {
+    flex-direction: column;
+    flex-grow: 1;
+    margin-left: 6px;
+}
+
+.person-name {
+    color: rgb(226, 214, 190);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.person-note {
+    color: rgb(168, 154, 124);
+    font-size: 10px;
+    white-space: normal;
+}
+
+/* ---- работы в деревне ---- */
+
+.works {
+    margin-bottom: 6px;
 }
 
 .work-row {
@@ -202,9 +320,9 @@
 }
 
 .work-label {
-    flex-grow: 1;
     color: rgb(206, 202, 190);
     font-size: 12px;
+    width: 150px;
 }
 
 .work-count {
@@ -233,34 +351,129 @@
     white-space: normal;
 }
 
-.modal {
-    position: absolute;
-    left: 360px;
-    right: 360px;
-    top: 120px;
-    bottom: 120px;
-    background-color: rgb(18, 20, 18);
-    border-width: 2px;
-    border-color: rgb(196, 150, 90);
-    padding: 20px;
-}
+/* ---- нижняя панель ---- */
 
-.modal-buttons {
+.bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 96px;
     flex-direction: row;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    background-color: rgb(34, 36, 32);
+    border-top-width: 2px;
+    border-color: rgb(150, 128, 88);
 }
 
-.evening {
+/* ---- экраны фаз ---- */
+
+.pane,
+.evening,
+.dossier,
+.muster,
+.village,
+.startday {
     position: absolute;
-    left: 60px;
-    right: 60px;
-    top: 56px;
-    bottom: 40px;
     background-color: rgb(16, 18, 16);
     border-width: 2px;
     border-color: rgb(150, 128, 88);
     padding: 20px;
 }
+
+.pane,
+.evening,
+.dossier,
+.muster,
+.startday {
+    left: 60px;
+    right: 60px;
+    top: 56px;
+    bottom: 40px;
+}
+
+.dossier,
+.muster {
+    padding: 28px;
+}
+
+.pane-lines {
+    flex-grow: 1;
+    margin-bottom: 12px;
+}
+
+.pane-lines .unity-label,
+.pane-line {
+    color: rgb(208, 204, 190);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 4px;
+}
+
+.pane-line.link {
+    color: rgb(232, 198, 132);
+}
+
+.pane-button {
+    width: 260px;
+    align-self: flex-end;
+}
+
+/* ---- окно начала дня ---- */
+
+.startday {
+    left: 300px;
+    right: 300px;
+    top: 90px;
+    bottom: 120px;
+    border-color: rgb(196, 150, 90);
+    padding: 24px;
+}
+
+.startday-title {
+    color: rgb(238, 220, 180);
+    font-size: 34px;
+    -unity-font-style: bold;
+    margin-bottom: 16px;
+}
+
+.startday-lines {
+    flex-grow: 1;
+}
+
+.startday-lines .unity-label {
+    color: rgb(216, 210, 194);
+    font-size: 15px;
+    white-space: normal;
+    margin-bottom: 5px;
+}
+
+/* ---- деревня ---- */
+
+.village {
+    left: 180px;
+    right: 180px;
+    top: 70px;
+    bottom: 80px;
+    border-color: rgb(196, 150, 90);
+    padding: 22px;
+}
+
+.village-people {
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+.village-people .unity-label {
+    color: rgb(206, 202, 190);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 3px;
+}
+
+/* ---- вечер ---- */
 
 .evening-columns {
     flex-direction: row;
@@ -306,12 +519,12 @@
     background-color: rgb(38, 46, 36);
 }
 
-.bed-row .bed-name {
+.bed-name {
     color: rgb(226, 214, 190);
     font-size: 13px;
 }
 
-.bed-row .bed-note {
+.bed-note {
     color: rgb(176, 166, 142);
     font-size: 11px;
 }
@@ -326,15 +539,7 @@
     border-color: rgb(120, 104, 74);
 }
 
-.dossier {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgb(16, 18, 16);
-    padding: 28px;
-}
+/* ---- досье зоны ---- */
 
 .dossier-body {
     flex-direction: row;
@@ -351,8 +556,45 @@
     background-color: rgb(20, 22, 20);
 }
 
+.zone-art-verge_meadow { background-image: url("project://database/Assets/UI/Art/Zones/verge_meadow.jpg"); }
+.zone-art-verge_springs { background-image: url("project://database/Assets/UI/Art/Zones/verge_springs.jpg"); }
+.zone-art-verge_marsh { background-image: url("project://database/Assets/UI/Art/Zones/verge_marsh.jpg"); }
+.zone-art-verge_thicket { background-image: url("project://database/Assets/UI/Art/Zones/verge_thicket.jpg"); }
+.zone-art-belt_stone { background-image: url("project://database/Assets/UI/Art/Zones/belt_stone.jpg"); }
+.zone-art-heart_root { background-image: url("project://database/Assets/UI/Art/Zones/heart_root.jpg"); }
+
 .dossier-text {
     flex-grow: 1;
+}
+
+.zone-title {
+    color: rgb(232, 214, 176);
+    font-size: 19px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+    white-space: normal;
+}
+
+.zone-meta {
+    color: rgb(168, 154, 124);
+    font-size: 12px;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.zone-text {
+    color: rgb(206, 202, 190);
+    font-size: 13px;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.zone-section-title {
+    color: rgb(160, 146, 118);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+    margin-bottom: 2px;
 }
 
 .dossier .zone-title {
@@ -374,16 +616,7 @@
     margin-top: 16px;
 }
 
-.muster {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgb(18, 20, 18);
-    border-width: 0;
-    padding: 28px;
-}
+/* ---- Сбор отряда ---- */
 
 .muster-columns {
     flex-direction: row;
@@ -432,8 +665,7 @@
     border-color: rgb(96, 88, 70);
     background-color: rgb(44, 46, 40);
     padding: 6px;
-    margin-right: 8px;
-    margin-bottom: 8px;
+    margin: 0 8px 8px 0;
 }
 
 .guild-tile.status-ok { border-color: rgb(92, 118, 78); }
@@ -444,80 +676,6 @@
 .guild-tile .portrait {
     width: 56px;
     height: 56px;
-}
-
-.guild-tile .person-info {
-    margin-left: 6px;
-}
-
-.guild-tile .person-name {
-    white-space: normal;
-    color: rgb(226, 214, 190);
-    font-size: 12px;
-}
-
-.guild-tile .person-note {
-    color: rgb(168, 154, 124);
-    font-size: 10px;
-    white-space: normal;
-}
-
-.person-card {
-    flex-direction: row;
-    align-items: center;
-    border-width: 2px;
-    border-color: rgb(96, 88, 70);
-    background-color: rgb(44, 46, 40);
-    padding: 6px 8px;
-    margin-bottom: 4px;
-}
-
-.person-card.status-ok { border-color: rgb(92, 118, 78); }
-.person-card.status-wounded { border-color: rgb(198, 148, 72); background-color: rgb(48, 42, 32); }
-.person-card.status-dead { border-color: rgb(118, 68, 62); background-color: rgb(36, 32, 32); opacity: 0.55; }
-.person-card.in-squad { border-color: rgb(240, 190, 90); border-width: 3px; background-color: rgb(54, 48, 34); }
-.person-card.busy { opacity: 0.45; }
-
-.portrait {
-    width: 64px;
-    height: 64px;
-    border-width: 2px;
-    border-color: rgb(88, 82, 68);
-    -unity-background-scale-mode: scale-and-crop;
-    background-color: rgb(24, 26, 22);
-}
-
-.portrait-small {
-    width: 40px;
-    height: 40px;
-    border-width: 1px;
-}
-
-.portrait-brunni { background-image: url("project://database/Assets/UI/Art/Portraits/brunni.jpg"); }
-.portrait-skadi { background-image: url("project://database/Assets/UI/Art/Portraits/skadi.jpg"); }
-.portrait-hilda { background-image: url("project://database/Assets/UI/Art/Portraits/hilda.jpg"); }
-.portrait-orn { background-image: url("project://database/Assets/UI/Art/Portraits/orn.jpg"); }
-.portrait-leya { background-image: url("project://database/Assets/UI/Art/Portraits/leya.jpg"); }
-.portrait-tove { background-image: url("project://database/Assets/UI/Art/Portraits/tove.jpg"); }
-.portrait-run { background-image: url("project://database/Assets/UI/Art/Portraits/run.jpg"); }
-.portrait-valda { background-image: url("project://database/Assets/UI/Art/Portraits/valda.jpg"); }
-
-.person-info {
-    flex-direction: column;
-    flex-grow: 1;
-    margin-left: 8px;
-}
-
-.person-card .person-name {
-    color: rgb(226, 214, 190);
-    font-size: 13px;
-    white-space: nowrap;
-}
-
-.person-card .person-note {
-    color: rgb(176, 166, 142);
-    font-size: 10px;
-    white-space: normal;
 }
 
 .muster-tray {
@@ -550,20 +708,15 @@
     height: 56px;
 }
 
-.tray-slot .person-info {
-    margin-left: 6px;
-}
-
-.tray-slot .person-name {
-    white-space: normal;
-    color: rgb(226, 208, 170);
-    font-size: 12px;
-}
-
-.tray-slot .person-note {
-    color: rgb(168, 154, 124);
+.tray-role {
+    height: 22px;
     font-size: 10px;
-    white-space: normal;
+    margin-top: 4px;
+    padding: 0;
+    color: rgb(226, 208, 170);
+    background-color: rgb(56, 58, 50);
+    border-width: 1px;
+    border-color: rgb(96, 88, 70);
 }
 
 .tray-remove {
@@ -576,17 +729,6 @@
     background-color: rgb(60, 40, 34);
     border-width: 1px;
     border-color: rgb(150, 90, 70);
-}
-
-.tray-role {
-    height: 22px;
-    font-size: 10px;
-    margin-top: 4px;
-    padding: 0;
-    color: rgb(226, 208, 170);
-    background-color: rgb(56, 58, 50);
-    border-width: 1px;
-    border-color: rgb(96, 88, 70);
 }
 
 .muster-orders {
@@ -616,360 +758,26 @@
     font-size: 12px;
 }
 
+/* ---- модал приказа ---- */
+
+.modal {
+    position: absolute;
+    left: 360px;
+    right: 360px;
+    top: 120px;
+    bottom: 120px;
+    background-color: rgb(18, 20, 18);
+    border-width: 2px;
+    border-color: rgb(196, 150, 90);
+    padding: 20px;
+}
+
+.modal-buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
 .modal-buttons .action {
     margin-left: 8px;
     width: 220px;
-}
-
-.panel.right {
-    right: 0;
-    width: 420px;
-    border-left-width: 2px;
-    border-right-width: 0;
-}
-
-.zone-card {
-    flex-grow: 1;
-}
-
-.zone-art {
-    height: 186px;
-    margin-bottom: 10px;
-    border-width: 2px;
-    border-color: rgb(120, 104, 74);
-    -unity-background-scale-mode: scale-and-crop;
-    background-color: rgb(20, 22, 20);
-}
-
-.zone-art-verge_meadow { background-image: url("project://database/Assets/UI/Art/Zones/verge_meadow.jpg"); }
-.zone-art-verge_springs { background-image: url("project://database/Assets/UI/Art/Zones/verge_springs.jpg"); }
-.zone-art-verge_marsh { background-image: url("project://database/Assets/UI/Art/Zones/verge_marsh.jpg"); }
-.zone-art-verge_thicket { background-image: url("project://database/Assets/UI/Art/Zones/verge_thicket.jpg"); }
-.zone-art-belt_stone { background-image: url("project://database/Assets/UI/Art/Zones/belt_stone.jpg"); }
-.zone-art-heart_root { background-image: url("project://database/Assets/UI/Art/Zones/heart_root.jpg"); }
-
-.zone-title {
-    color: rgb(232, 214, 176);
-    font-size: 19px;
-    -unity-font-style: bold;
-    margin-bottom: 4px;
-    white-space: normal;
-}
-
-.zone-meta {
-    color: rgb(168, 154, 124);
-    font-size: 12px;
-    margin-bottom: 10px;
-    white-space: normal;
-}
-
-.zone-text {
-    color: rgb(206, 202, 190);
-    font-size: 13px;
-    margin-bottom: 10px;
-    white-space: normal;
-}
-
-.zone-section-title {
-    color: rgb(160, 146, 118);
-    font-size: 11px;
-    -unity-font-style: bold;
-    margin-top: 8px;
-    margin-bottom: 2px;
-}
-
-.debug-toggle {
-    color: rgb(168, 154, 124);
-    font-size: 12px;
-    margin-right: 12px;
-}
-
-.panel-title {
-    color: rgb(226, 208, 170);
-    font-size: 17px;
-    -unity-font-style: bold;
-    margin-bottom: 10px;
-    white-space: normal;
-}
-
-.panel-subtitle {
-    color: rgb(160, 146, 118);
-    font-size: 11px;
-    -unity-font-style: bold;
-    margin-top: 6px;
-    margin-bottom: 4px;
-}
-
-.behavior-row {
-    flex-direction: row;
-    margin-bottom: 8px;
-}
-
-.behavior {
-    flex-grow: 1;
-    height: 26px;
-    font-size: 10px;
-    margin-right: 3px;
-    padding: 0;
-    color: rgb(206, 198, 178);
-    background-color: rgb(44, 46, 40);
-    border-width: 1px;
-    border-color: rgb(90, 84, 70);
-}
-
-.behavior.selected {
-    background-color: rgb(96, 78, 42);
-    border-color: rgb(226, 190, 110);
-    color: rgb(245, 232, 200);
-}
-
-.button-row {
-    flex-direction: row;
-}
-
-.button-row .action {
-    flex-grow: 1;
-    margin-right: 4px;
-    height: 34px;
-    font-size: 12px;
-}
-
-.parties {
-    max-height: 176px;
-}
-
-.party-row {
-    flex-direction: row;
-    align-items: center;
-    margin-bottom: 3px;
-}
-
-.party-row .party-text {
-    flex-grow: 1;
-    color: rgb(206, 198, 178);
-    font-size: 11px;
-    white-space: normal;
-}
-
-.party-row .party-remove {
-    width: 22px;
-    height: 22px;
-    font-size: 11px;
-    padding: 0;
-    color: rgb(226, 170, 140);
-    background-color: rgb(58, 40, 34);
-    border-width: 1px;
-    border-color: rgb(150, 90, 70);
-}
-
-.zone-info {
-    color: rgb(196, 196, 184);
-    font-size: 13px;
-    white-space: normal;
-    margin-bottom: 6px;
-}
-
-.roster {
-    flex-grow: 1;
-    max-height: 264px;
-    margin-bottom: 8px;
-}
-
-.roster .unity-button {
-    height: 28px;
-    margin-bottom: 3px;
-    font-size: 11px;
-    background-color: rgb(48, 50, 44);
-    color: rgb(214, 208, 190);
-    border-width: 1px;
-    border-color: rgb(90, 84, 70);
-    -unity-text-align: middle-left;
-    padding-left: 8px;
-    white-space: nowrap;
-}
-
-.roster .unity-button.selected {
-    background-color: rgb(92, 74, 40);
-    border-color: rgb(226, 190, 110);
-    color: rgb(245, 232, 200);
-}
-
-.roster .unity-button.busy {
-    opacity: 0.45;
-    color: rgb(160, 154, 138);
-}
-
-.village-node {
-    position: absolute;
-    width: 130px;
-    height: 152px;
-    background-color: rgba(0, 0, 0, 0);
-    justify-content: flex-start;
-    align-items: center;
-    padding: 0;
-}
-
-.village-icon {
-    width: 96px;
-    height: 96px;
-    border-radius: 10px;
-    border-width: 3px;
-    border-color: rgb(196, 150, 90);
-    background-image: url("project://database/Assets/UI/Art/Icons/village.png");
-    -unity-background-scale-mode: scale-and-crop;
-}
-
-.village-node.selected .village-icon {
-    border-color: rgb(240, 190, 90);
-    border-width: 4px;
-}
-
-.village-node .village-name {
-    margin-top: 3px;
-    color: rgb(238, 220, 184);
-    font-size: 12px;
-    -unity-font-style: bold;
-    -unity-text-align: middle-center;
-}
-
-.village-node .village-state {
-    color: rgb(200, 170, 130);
-    font-size: 10px;
-    -unity-text-align: middle-center;
-}
-
-.bottom {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 96px;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 20px;
-    padding-right: 20px;
-    background-color: rgb(34, 36, 32);
-    border-top-width: 2px;
-    border-color: rgb(150, 128, 88);
-}
-
-.day-label {
-    color: rgb(226, 208, 170);
-    font-size: 22px;
-    -unity-font-style: bold;
-}
-
-.action {
-    height: 40px;
-    padding-left: 16px;
-    padding-right: 16px;
-    font-size: 14px;
-    color: rgb(240, 230, 205);
-    background-color: rgb(62, 64, 54);
-    border-width: 2px;
-    border-color: rgb(150, 128, 88);
-}
-
-.action.primary {
-    background-color: rgb(150, 96, 40);
-    border-color: rgb(226, 190, 110);
-}
-
-.zone-node {
-    position: absolute;
-    width: 120px;
-    height: 152px;
-    background-color: rgba(0, 0, 0, 0);
-    justify-content: flex-start;
-    align-items: center;
-    padding: 0;
-}
-
-.zone-icon {
-    width: 96px;
-    height: 96px;
-    border-radius: 48px;
-    border-width: 3px;
-    border-color: rgb(150, 128, 88);
-    -unity-background-scale-mode: scale-and-crop;
-    background-color: rgb(24, 26, 22);
-}
-
-.zone-node.selected .zone-icon {
-    border-color: rgb(240, 190, 90);
-    border-width: 4px;
-}
-
-.zone-node.danger .zone-icon {
-    border-color: rgb(178, 96, 60);
-}
-
-.icon-verge_meadow { background-image: url("project://database/Assets/UI/Art/Icons/zone_meadow.png"); }
-.icon-verge_springs { background-image: url("project://database/Assets/UI/Art/Icons/zone_springs.png"); }
-.icon-verge_marsh { background-image: url("project://database/Assets/UI/Art/Icons/zone_marsh.png"); }
-.icon-verge_thicket { background-image: url("project://database/Assets/UI/Art/Icons/zone_thicket.png"); }
-.icon-belt_stone { background-image: url("project://database/Assets/UI/Art/Icons/zone_stone.png"); }
-.icon-heart_root { background-image: url("project://database/Assets/UI/Art/Icons/zone_heart.png"); }
-
-.zone-node-name {
-    margin-top: 3px;
-    color: rgb(228, 214, 180);
-    font-size: 11px;
-    -unity-text-align: middle-center;
-    white-space: normal;
-}
-
-.zone-node-state {
-    color: rgb(180, 150, 110);
-    font-size: 10px;
-    -unity-text-align: middle-center;
-}
-
-.report {
-    position: absolute;
-    left: 270px;
-    right: 440px;
-    top: 20px;
-    bottom: 140px;
-    background-color: rgb(16, 18, 16);
-    border-width: 2px;
-    border-color: rgb(150, 128, 88);
-    padding: 16px;
-}
-
-.report-close {
-    width: 170px;
-    align-self: flex-start;
-}
-
-.report-lines {
-    flex-grow: 1;
-    margin-bottom: 10px;
-}
-
-.report-lines .unity-label {
-    color: rgb(206, 206, 192);
-    font-size: 13px;
-    white-space: normal;
-    margin-bottom: 3px;
-}
-
-.toast {
-    position: absolute;
-    left: 250px;
-    right: 440px;
-    bottom: 106px;
-    padding: 8px 12px;
-    background-color: rgb(46, 42, 32);
-    border-width: 2px;
-    border-color: rgb(196, 150, 90);
-    color: rgb(240, 226, 194);
-    font-size: 13px;
-    -unity-text-align: middle-center;
-    white-space: normal;
-}
-
-.hidden {
-    display: none;
 }

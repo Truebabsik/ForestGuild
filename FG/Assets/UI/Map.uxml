@@ -8,9 +8,6 @@
     <ui:VisualElement name="left-panel" class="panel left">
       <ui:Label text="ОТРЯДЫ" class="panel-title" />
       <ui:VisualElement name="squads" class="squads" />
-
-      <ui:Label text="РАБОТЫ В ДЕРЕВНЕ" class="panel-subtitle" />
-      <ui:VisualElement name="works" class="works" />
     </ui:VisualElement>
 
     <ui:VisualElement name="bottom-bar" class="bottom">
@@ -22,6 +19,16 @@
       <ui:Label name="pane-title" text="" class="panel-title" />
       <ui:ScrollView name="pane-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
+    </ui:VisualElement>
+
+    <ui:VisualElement name="village" class="village hidden">
+      <ui:Label name="village-title" text="ДЕРЕВНЯ" class="panel-title" />
+      <ui:Label name="village-palisade" text="" class="zone-text" />
+      <ui:Label text="РАБОТЫ" class="panel-subtitle" />
+      <ui:VisualElement name="village-works" class="works" />
+      <ui:Label text="КТО ГДЕ" class="panel-subtitle" />
+      <ui:ScrollView name="village-people" class="village-people" horizontal-scroller-visibility="Hidden" />
+      <ui:Button name="village-close" text="ГОТОВО ↩" class="action primary pane-button" />
     </ui:VisualElement>
 
     <ui:VisualElement name="startday" class="startday hidden">

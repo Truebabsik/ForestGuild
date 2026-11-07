@@ -31,6 +31,7 @@ namespace ForestGuild.Game
         public DossierScreen Dossier;
         public EveningScreen Evening;
         public StartOfDayScreen StartDay;
+        public VillageScreen Village;
 
         private UIDocument _document;
         private DayFlow _flow;
@@ -80,6 +81,7 @@ namespace ForestGuild.Game
             Map = new MapController(root.Q<VisualElement>("map"));
             Map.Build(Tables);
             Map.ZoneSelected += zoneId => Dossier.Open(zoneId, Tables, World, _phase == Phase.Morning);
+            Map.VillageClicked += () => Village.Open(Tables, World, _plan);
 
             _hud = new HudView(root.Q<Label>("hud"), Tables, World);
 
@@ -98,11 +100,13 @@ namespace ForestGuild.Game
             root.Q<Button>("modal-cancel").clicked += () => _modal.AddToClassList("hidden");
             root.Q<Button>("modal-confirm").clicked += ConfirmOrder;
 
-            Board = new MorningBoard(Tables, World, _plan,
+            Board = new MorningBoard(Tables, World,
                 root.Q<VisualElement>("squads"),
-                root.Q<VisualElement>("works"),
                 _warnings);
             Board.Active = World.Squads[0];
+
+            Village = new VillageScreen(root);
+            Village.Closed += () => Board.Rebuild();
 
             Muster = new MusterScreen(root);
             Board.EditRequested += squad => Muster.Open(squad, Tables, World, _plan);
@@ -145,6 +149,7 @@ namespace ForestGuild.Game
             {
                 Muster.Close();
                 Dossier.Close();
+                Village.Close();
             }
 
             if (phase != Phase.Evening) Evening.Close();

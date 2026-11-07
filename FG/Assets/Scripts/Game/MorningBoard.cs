@@ -7,37 +7,31 @@ using UnityEngine.UIElements;
 namespace ForestGuild.Game
 {
     /// <summary>
-    /// Доска приказов (ui.md §4.1): карточки отрядов-пресетов, работы в деревне, люди, предупреждения.
-    /// Считает не здесь: цифры берутся из `Briefing`, работы — из `DayPlan`.
+    /// Экран планирования (ui.md §4.1): карточки отрядов-пресетов и предупреждения.
+    /// Работы в деревне живут в отдельном окне (`VillageScreen`), люди — в Сборе.
     /// </summary>
     public sealed class MorningBoard
     {
         private readonly Tables _tables;
         private readonly World _world;
-        private readonly DayPlan _plan;
         private readonly VisualElement _squads;
-        private readonly VisualElement _works;
         private readonly Label _warnings;
 
         public Squad Active;
         public event Action Changed;
         public event Action<Squad> EditRequested;
 
-        public MorningBoard(Tables tables, World world, DayPlan plan,
-            VisualElement squads, VisualElement works, Label warnings)
+        public MorningBoard(Tables tables, World world, VisualElement squads, Label warnings)
         {
             _tables = tables;
             _world = world;
-            _plan = plan;
             _squads = squads;
-            _works = works;
             _warnings = warnings;
         }
 
         public void Rebuild()
         {
             BuildSquads();
-            BuildWorks();
             BuildWarnings();
         }
 
@@ -75,17 +69,16 @@ namespace ForestGuild.Game
                 head.Add(zoneButton);
                 card.Add(head);
 
-                var members = squad.Members.Count == 0
-                    ? "никого — жми «настроить…»"
-                    : "";
-
                 var body = new VisualElement();
                 body.AddToClassList("squad-body");
 
                 var left = new VisualElement();
                 left.AddToClassList("squad-left");
 
-                if (members.Length > 0) left.Add(Line("squad-members", members));
+                if (squad.Members.Count == 0)
+                {
+                    left.Add(Line("squad-members", "никого — жми «настроить…»"));
+                }
 
                 left.Add(Line("squad-line",
                     string.IsNullOrEmpty(squad.ZoneId)
@@ -163,88 +156,6 @@ namespace ForestGuild.Game
             squad.ZoneId = zones[0].Id;
         }
 
-        // ---- работы ----
-
-        private void BuildWorks()
-        {
-            _works.Clear();
-            AddWork("починка частокола", _plan.VillageWorkers, () => FirstFree(), true);
-            AddWork("постели", _plan.Beds, () => FirstWounded(), false);
-            AddWork("заготовка", _plan.Foragers, () => FirstFree(), true);
-        }
-
-        private void AddWork(string title, List<string> pool, Func<string> pick, bool canAdd)
-        {
-            var row = new VisualElement();
-            row.AddToClassList("work-row");
-
-            var label = new Label(title);
-            label.AddToClassList("work-label");
-            row.Add(label);
-
-            var count = new Label(pool.Count.ToString());
-            count.AddToClassList("work-count");
-            row.Add(count);
-
-            var minus = new Button(() =>
-            {
-                if (pool.Count > 0) pool.RemoveAt(pool.Count - 1);
-                Rebuild();
-                Changed?.Invoke();
-            });
-            minus.text = "−";
-            minus.AddToClassList("work-button");
-            row.Add(minus);
-
-            var plus = new Button(() =>
-            {
-                if (!canAdd) return;
-                var personId = pick();
-                if (personId == null)
-                {
-                    Changed?.Invoke();
-                    return;
-                }
-
-                pool.Add(personId);
-                Rebuild();
-                Changed?.Invoke();
-            });
-            plus.text = "+";
-            plus.AddToClassList("work-button");
-            row.Add(plus);
-
-            _works.Add(row);
-        }
-
-        private string FirstFree()
-        {
-            foreach (var person in _tables.Roster.All)
-            {
-                if (!IsFree(person.Id)) continue;
-                return person.Id;
-            }
-
-            return null;
-        }
-
-        private string FirstWounded()
-        {
-            foreach (var person in _tables.Roster.All)
-            {
-                if (_world.ConditionOf(person.Id) != PersonCondition.Wounded) continue;
-                if (_plan.Beds.Contains(person.Id)) continue;
-                return person.Id;
-            }
-
-            return null;
-        }
-
-        public bool IsFree(string personId)
-        {
-            return Assignment.IsFree(_world, _plan, null, personId);
-        }
-
         // ---- предупреждения ----
 
         private void BuildWarnings()
@@ -259,10 +170,10 @@ namespace ForestGuild.Game
                 foreach (var warning in briefing.Warnings) lines.Add("«" + squad.Name + "»: " + warning);
             }
 
-            if (_world.Squads[0].Members.Count == 0 && _world.Squads[1].Members.Count == 0)
-                lines.Add("Никто не идёт в лес");
+            var anyMembers = _world.Squads[0].Members.Count + _world.Squads[1].Members.Count > 0;
+            if (!anyMembers) lines.Add("Никто не идёт в лес");
 
-            _warnings.text = lines.Count == 0 ? "" : string.Join("  ·  ", lines);
+            _warnings.text = string.Join("  ·  ", lines);
         }
 
         private static Label Line(string className, string text)
