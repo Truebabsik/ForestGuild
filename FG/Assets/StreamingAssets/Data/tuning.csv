@@ -1,6 +1,6 @@
 id;value;note
 schema_version;1;версия схемы таблиц
-hours_per_day;6;рабочих часов в сутках
+hours_per_day;10;рабочих часов в сутках
 slots_per_person;4;слотов груза на человека
 stamina_per_person;4;выносливости на человека
 encounter_per_hour;0.25;шанс встречи за час на единицу плотности

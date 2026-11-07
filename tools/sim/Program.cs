@@ -110,9 +110,13 @@ internal static class Program
         {
             var t = DataLoader.Load(DataDir());
             var w = World.Create(t);
+
+            // День — 10 часов, но один человек выдыхается за четыре: выносливость важнее часов.
+            var briefing = Briefing.Compute(w, t, new[] { "leya" }, "verge_meadow", Behavior.Gather);
             var party = Party("verge_meadow", "leya");
             var r = ExpeditionSim.Resolve(w, t, party, new Rng(7));
-            return r.HoursUsed == 4 && r.ZoneId == "verge_meadow";
+
+            return briefing.WorkHours == 9 && r.HoursUsed == 4 && r.ZoneId == "verge_meadow";
         });
 
         checks.Check("expedition finds something over many seeds", () =>
@@ -249,7 +253,7 @@ internal static class Program
             var three = Briefing.Compute(w, t, new[] { "brunni", "leya", "tove" }, "verge_springs", Behavior.Clean);
 
             return one.Slots == 5                      // 4 + «Крепкий»
-                && one.WorkHours == 3
+                && one.WorkHours == 8
                 && three.Warnings.Count >= 2;          // сверх двух + зона не разведана
         });
 
@@ -397,6 +401,13 @@ internal static class Program
             for (var i = 0; i < 20 && !expedition.Finished; i++) expedition.Advance();
 
             return expedition.Finished;
+        });
+
+        checks.Check("day is ten hours and the meadow is half an hour away", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            return t.Tuning.GetInt("hours_per_day") == 10
+                && t.Zones.Get("verge_meadow").TravelHours == 0.5f;
         });
 
         return checks.Report() ? 0 : 1;

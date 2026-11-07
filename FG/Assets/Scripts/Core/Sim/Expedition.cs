@@ -112,9 +112,6 @@ namespace ForestGuild.Core.Sim
                 return false;
             }
 
-            _hour++;
-            Result.HoursUsed = _hour;
-
             if (Result.Stamina <= 0)
             {
                 _leaving = true;
@@ -122,6 +119,8 @@ namespace ForestGuild.Core.Sim
                 return true;
             }
 
+            _hour++;
+            Result.HoursUsed = _hour;
             Result.Stamina--;
 
             Find();
