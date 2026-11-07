@@ -195,6 +195,135 @@
     justify-content: flex-end;
 }
 
+.muster {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgb(18, 20, 18);
+    border-width: 0;
+    padding: 28px;
+}
+
+.muster-columns {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.muster-column {
+    width: 44%;
+    margin-right: 14px;
+}
+
+.muster-column.wide {
+    width: 56%;
+    margin-right: 0;
+}
+
+.muster-free {
+    flex-grow: 1;
+}
+
+.person-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-width: 1px;
+    border-color: rgb(96, 88, 70);
+    background-color: rgb(44, 46, 40);
+    padding: 6px 8px;
+    margin-bottom: 4px;
+}
+
+.person-card.busy {
+    opacity: 0.45;
+}
+
+.person-card .person-name {
+    color: rgb(216, 208, 190);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.person-card .person-note {
+    color: rgb(168, 154, 124);
+    font-size: 11px;
+}
+
+.muster-tray {
+    flex-direction: row;
+    min-height: 120px;
+    border-width: 2px;
+    border-color: rgb(110, 96, 70);
+    background-color: rgb(30, 32, 28);
+    padding: 8px;
+    margin-bottom: 8px;
+}
+
+.muster-tray.accepting {
+    border-color: rgb(240, 190, 90);
+    background-color: rgb(52, 48, 34);
+}
+
+.tray-slot {
+    width: 178px;
+    height: 108px;
+    border-width: 1px;
+    border-color: rgb(84, 78, 64);
+    margin-right: 8px;
+    padding: 6px;
+}
+
+.tray-slot .person-name {
+    white-space: normal;
+    color: rgb(226, 208, 170);
+}
+
+.tray-slot .person-note {
+    color: rgb(168, 154, 124);
+    font-size: 10px;
+    white-space: normal;
+}
+
+.tray-role {
+    height: 22px;
+    font-size: 10px;
+    margin-top: 4px;
+    padding: 0;
+    color: rgb(226, 208, 170);
+    background-color: rgb(56, 58, 50);
+    border-width: 1px;
+    border-color: rgb(96, 88, 70);
+}
+
+.muster-orders {
+    flex-direction: row;
+}
+
+.order-button {
+    flex-grow: 1;
+    height: 30px;
+    font-size: 10px;
+    margin-right: 4px;
+    padding: 0 4px;
+    color: rgb(206, 198, 178);
+    background-color: rgb(44, 46, 40);
+    border-width: 1px;
+    border-color: rgb(90, 84, 70);
+    white-space: normal;
+}
+
+.drag-ghost {
+    position: absolute;
+    padding: 4px 10px;
+    background-color: rgb(70, 62, 44);
+    border-width: 2px;
+    border-color: rgb(240, 190, 90);
+    color: rgb(245, 232, 200);
+    font-size: 12px;
+}
+
 .modal-buttons .action {
     margin-left: 8px;
     width: 220px;

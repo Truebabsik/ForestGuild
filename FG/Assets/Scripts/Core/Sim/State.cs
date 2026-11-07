@@ -22,6 +22,9 @@ namespace ForestGuild.Core.Sim
     public enum WoundedOrder { Ask, Carry, Leave }
     public enum BagOrder { Ask, ReplaceCheapest, Skip }
 
+    /// <summary>Роль охотника в отряде (ui.md §4.3).</summary>
+    public enum HunterRole { Guard, Gather, Track }
+
     /// <summary>Наказы на развилки (ui.md §5.5): политика решений вместо кликов.</summary>
     public sealed class StandingOrders
     {
@@ -47,16 +50,31 @@ namespace ForestGuild.Core.Sim
         public Behavior Behavior = Behavior.Gather;
         public readonly StandingOrders Orders = new StandingOrders();
 
+        /// <summary>Роль охотника в отряде; по умолчанию «охраняю».</summary>
+        public readonly Dictionary<string, HunterRole> Roles =
+            new Dictionary<string, HunterRole>(StringComparer.Ordinal);
+
         public Squad(string id, string name)
         {
             Id = id;
             Name = name;
         }
 
+        public HunterRole RoleOf(string personId)
+        {
+            return Roles.TryGetValue(personId, out var role) ? role : HunterRole.Guard;
+        }
+
+        public void SetRole(string personId, HunterRole role)
+        {
+            Roles[personId] = role;
+        }
+
         public Squad Clone()
         {
             var clone = new Squad(Id, Name) { ZoneId = ZoneId, Behavior = Behavior };
             clone.Members.AddRange(Members);
+            foreach (var pair in Roles) clone.Roles[pair.Key] = pair.Value;
             clone.Orders.Encounter = Orders.Encounter;
             clone.Orders.Carcass = Orders.Carcass;
             clone.Orders.Wounded = Orders.Wounded;

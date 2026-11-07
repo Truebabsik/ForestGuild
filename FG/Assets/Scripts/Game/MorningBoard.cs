@@ -22,6 +22,7 @@ namespace ForestGuild.Game
 
         public Squad Active;
         public event Action Changed;
+        public event Action<Squad> EditRequested;
 
         public MorningBoard(Tables tables, World world, DayPlan plan,
             VisualElement squads, VisualElement works, VisualElement roster, Label warnings)
@@ -113,6 +114,15 @@ namespace ForestGuild.Game
                 clear.text = "распустить";
                 clear.AddToClassList("action");
                 actions.Add(clear);
+
+                var edit = new Button(() =>
+                {
+                    Active = squad;
+                    EditRequested?.Invoke(squad);
+                });
+                edit.text = "настроить…";
+                edit.AddToClassList("action");
+                actions.Add(edit);
 
                 card.Add(actions);
 

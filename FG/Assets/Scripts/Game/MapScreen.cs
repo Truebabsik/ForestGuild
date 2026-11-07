@@ -26,6 +26,7 @@ namespace ForestGuild.Game
         public World World;
         public MapController Map;
         public MorningBoard Board;
+        public MusterScreen Muster;
 
         private UIDocument _document;
         private DayFlow _flow;
@@ -109,6 +110,14 @@ namespace ForestGuild.Game
             Board.Active = World.Squads[0];
             Board.Changed += ShowActiveSquadZone;
 
+            Muster = new MusterScreen(root);
+            Board.EditRequested += squad => Muster.Open(squad, Tables, World, _plan);
+            Muster.Closed += () =>
+            {
+                Board.Rebuild();
+                ShowActiveSquadZone();
+            };
+
             var debugToggle = root.Q<Toggle>("debug-toggle");
             if (debugToggle != null)
             {
@@ -141,6 +150,7 @@ namespace ForestGuild.Game
             _bottomBar.EnableInClassList("hidden", !morning);
             _pane.EnableInClassList("hidden", morning);
             _modal.AddToClassList("hidden");
+            if (!morning) Muster?.Close();
 
             UpdateHud();
         }
