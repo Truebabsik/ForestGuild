@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.fbx binary
+*.wav binary
+*.mp3 binary
+*.unity -text
+*.prefab -text
+*.asset -text
