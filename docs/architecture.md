@@ -129,3 +129,19 @@ tools/
 | Сцена | `FG/Assets/Scenes/Main.unity` | Play Mode, день 1 → отчёт → день 2 |
 
 Сборка сцены — скриптом `FG/AgentScripts/BuildScene.cs` через `unity command script run` (файл вне `Assets/`, поэтому не тянет импорт). Ссылку `PanelSettings` пришлось ставить через `SerializedObject`: сеттер `UIDocument.panelSettings` в скриптовой сборке сцены не сериализовался (`m_PanelSettings: {fileID: 0}`), из-за чего экран был чёрным.
+
+### Слои UI-кода
+
+`Assets/Scripts/Game` разделён по одной ответственности:
+
+| Класс | Что делает |
+|---|---|
+| `MapScreen` | только фазы и связка: SetPhase, приказ, переходы |
+| `HudView` | верхняя строка (день, фаза, частокол, волна, склад, здоровы) |
+| `ZoneCardView` | короткая карточка зоны в правой панели и «выберите зону» |
+| `DossierScreen` | полноэкранное досье зоны |
+| `MorningBoard` | доска приказов: карточки отрядов, работы, предупреждения |
+| `MusterScreen` | Сбор отряда: гильдии, лоток, наказы |
+| `EveningScreen` | вечер: склад с дельтой, постели, сон |
+| `Assignment` | кто где занят — одно место правды для доски и Сбора |
+| `MapController` + `ZoneNodeView` + `EdgeLine` | карта: узлы по `map_x/map_y`, рёбра, деревня |

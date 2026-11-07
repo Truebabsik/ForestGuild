@@ -69,17 +69,5 @@ namespace ForestGuild.Core.Sim
         {
             Roles[personId] = role;
         }
-
-        public Squad Clone()
-        {
-            var clone = new Squad(Id, Name) { ZoneId = ZoneId, Behavior = Behavior };
-            clone.Members.AddRange(Members);
-            foreach (var pair in Roles) clone.Roles[pair.Key] = pair.Value;
-            clone.Orders.Encounter = Orders.Encounter;
-            clone.Orders.Carcass = Orders.Carcass;
-            clone.Orders.Wounded = Orders.Wounded;
-            clone.Orders.BagFull = Orders.BagFull;
-            return clone;
-        }
     }
 }

@@ -88,9 +88,11 @@ namespace ForestGuild.Game
                 if (members.Length > 0) left.Add(Line("squad-members", members));
 
                 left.Add(Line("squad-line",
-                    briefing.WorkHours > 0
-                        ? "дорога " + briefing.TravelHours.ToString("0.#") + " ч · в лесу " + briefing.WorkHours + " ч"
-                        : "дорога " + briefing.TravelHours.ToString("0.#") + " ч · работы не будет"));
+                    string.IsNullOrEmpty(squad.ZoneId)
+                        ? "зона не выбрана — нажми кнопку зоны"
+                        : briefing.WorkHours > 0
+                            ? "дорога " + briefing.TravelHours.ToString("0.#") + " ч · в лесу " + briefing.WorkHours + " ч"
+                            : "дорога " + briefing.TravelHours.ToString("0.#") + " ч · работы не будет"));
 
                 var actions = new VisualElement();
                 actions.AddToClassList("squad-actions");
@@ -243,15 +245,7 @@ namespace ForestGuild.Game
 
         public bool IsFree(string personId)
         {
-            if (_world.ConditionOf(personId) != PersonCondition.Healthy) return false;
-            if (_plan.IsBusy(personId)) return false;
-
-            foreach (var squad in _world.Squads)
-            {
-                if (squad.Members.Contains(personId)) return false;
-            }
-
-            return true;
+            return Assignment.IsFree(_world, _plan, null, personId);
         }
 
         // ---- предупреждения ----

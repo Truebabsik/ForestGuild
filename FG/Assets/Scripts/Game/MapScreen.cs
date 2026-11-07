@@ -17,7 +17,8 @@ namespace ForestGuild.Game
 
     /// <summary>
     /// Каркас цикла суток (docs/ui.md §3): HUD + фазы Утро → День → Вечер → Ночь.
-    /// Утро — доска приказов (§4). Правила — в ядре, здесь показ и ввод.
+    /// Здесь только переключение фаз и связка экранов; показ вынесен в HudView,
+    /// ZoneCardView, DossierScreen, MusterScreen, EveningScreen.
     /// </summary>
     [RequireComponent(typeof(UIDocument))]
     public sealed class MapScreen : MonoBehaviour
@@ -34,12 +35,12 @@ namespace ForestGuild.Game
         private DayFlow _flow;
         private DayPlan _plan = new DayPlan();
         private Rng _rng;
-        private bool _debug;
         private Phase _phase = Phase.Morning;
         private DayReport _dayReport;
         private Action _paneAction;
 
-        private Label _hud;
+        private HudView _hud;
+        private ZoneCardView _zoneCard;
         private Label _warnings;
         private Label _paneTitle;
         private VisualElement _pane;
@@ -51,9 +52,6 @@ namespace ForestGuild.Game
         private VisualElement _modal;
         private Label _modalTitle;
         private VisualElement _modalLines;
-        private ScrollView _zoneCard;
-        private Label _toast;
-        private IVisualElementScheduledItem _toastHide;
 
         private void Awake()
         {
@@ -84,12 +82,14 @@ namespace ForestGuild.Game
             Map.Build(Tables);
             Map.ZoneSelected += zoneId =>
             {
-                ShowZone(zoneId);
-                Dossier?.Open(zoneId, Tables, World, _phase == Phase.Morning);
+                _zoneCard.ShowZone(zoneId);
+                Dossier.Open(zoneId, Tables, World, _phase == Phase.Morning);
             };
-            Map.VillageClicked += ShowVillage;
+            Map.VillageClicked += () => _zoneCard.ShowVillage();
 
-            _hud = root.Q<Label>("hud");
+            _hud = new HudView(root.Q<Label>("hud"), Tables, World);
+            _zoneCard = new ZoneCardView(root.Q<ScrollView>("zone-card"), Tables, World);
+
             _warnings = root.Q<Label>("warnings");
             _pane = root.Q<VisualElement>("pane");
             _paneTitle = root.Q<Label>("pane-title");
@@ -99,8 +99,6 @@ namespace ForestGuild.Game
             _leftPanel = root.Q<VisualElement>("left-panel");
             _rightPanel = root.Q<VisualElement>("right-panel");
             _bottomBar = root.Q<VisualElement>("bottom-bar");
-            _zoneCard = root.Q<ScrollView>("zone-card");
-            _toast = root.Q<Label>("toast");
 
             _modal = root.Q<VisualElement>("modal");
             _modalTitle = root.Q<Label>("modal-title");
@@ -129,7 +127,7 @@ namespace ForestGuild.Game
                 if (Board.Active == null) Board.Active = World.Squads[0];
                 Board.Active.ZoneId = zoneId;
                 Board.Rebuild();
-                ShowZone(zoneId);
+                _zoneCard.ShowZone(zoneId);
             };
 
             Evening = new EveningScreen(root);
@@ -141,16 +139,16 @@ namespace ForestGuild.Game
                 debugToggle.value = false;
                 debugToggle.RegisterValueChangedCallback(e =>
                 {
-                    _debug = e.newValue;
-                    if (Map.Selected != null) ShowZone(Map.Selected);
-                    else if (Map.VillageSelected) ShowVillage();
+                    _zoneCard.Debug = e.newValue;
+                    if (Map.Selected != null) _zoneCard.ShowZone(Map.Selected);
+                    else if (Map.VillageSelected) _zoneCard.ShowVillage();
                 });
             }
 
             root.Q<Button>("sign-button").clicked += OpenOrder;
 
             Map.RefreshStates(World);
-            ShowHint();
+            _zoneCard.ShowHint();
             Board.Rebuild();
             ShowActiveSquadZone();
             SetPhase(Phase.Morning);
@@ -168,92 +166,25 @@ namespace ForestGuild.Game
             _bottomBar.EnableInClassList("hidden", !morning);
             _pane.EnableInClassList("hidden", morning);
             _modal.AddToClassList("hidden");
+
             if (!morning)
             {
-                Muster?.Close();
-                Dossier?.Close();
+                Muster.Close();
+                Dossier.Close();
             }
 
-            if (phase != Phase.Evening) Evening?.Close();
+            if (phase != Phase.Evening) Evening.Close();
 
-            UpdateHud();
+            _hud.Update(_phase);
         }
-
-        private void UpdateHud()
-        {
-            var waveIn = Tables.Tuning.GetInt("wave_day") - World.Day;
-            if (waveIn < 0) waveIn = 0;
-
-            var shownDay = _phase == Phase.Night ? World.Day - 1 : World.Day;
-            _hud.text = "ДЕНЬ " + shownDay + " · " + PhaseName(_phase)
-                + "    |    частокол " + World.PalisadeHp + "/" + World.PalisadeMax
-                + "    |    до волны: " + waveIn + " дн."
-                + "    |    " + StoreLine()
-                + "    |    здоровы " + HealthyCount() + "/" + Tables.Roster.All.Count;
-        }
-
-        /// Склад в HUD (ui.md §8): до трёх позиций по количеству, короткими именами.
-        private string StoreLine()
-        {
-            var entries = new List<KeyValuePair<string, int>>();
-            foreach (var pair in World.Store)
-            {
-                if (pair.Value > 0) entries.Add(pair);
-            }
-
-            if (entries.Count == 0) return "склад пуст";
-
-            entries.Sort((a, b) => b.Value.CompareTo(a.Value));
-
-            var parts = new List<string>();
-            for (var i = 0; i < entries.Count && i < 3; i++)
-            {
-                var key = entries[i].Key;
-                var label = key == Works.ForageStoreKey
-                    ? "корм"
-                    : Tables.Items.TryGet(key, out var item)
-                        ? (string.IsNullOrEmpty(item.Short) ? item.Name : item.Short)
-                        : key;
-
-                parts.Add(label + " " + entries[i].Value);
-            }
-
-            if (entries.Count > 3) parts.Add("ещё " + (entries.Count - 3));
-
-            return "склад: " + string.Join(" · ", parts);
-        }
-
-        private int HealthyCount()
-        {
-            var count = 0;
-            foreach (var person in Tables.Roster.All)
-            {
-                if (World.ConditionOf(person.Id) == PersonCondition.Healthy) count++;
-            }
-
-            return count;
-        }
-
-        private string PhaseName(Phase phase)
-        {
-            switch (phase)
-            {
-                case Phase.Day: return "ДЕНЬ";
-                case Phase.Evening: return "ВЕЧЕР";
-                case Phase.Night: return "НОЧЬ";
-                default: return "УТРО";
-            }
-        }
-
-        // ---- приказ ----
 
         private void ShowActiveSquadZone()
         {
             if (Board.Active != null && !string.IsNullOrEmpty(Board.Active.ZoneId))
-            {
-                ShowZone(Board.Active.ZoneId);
-            }
+                _zoneCard.ShowZone(Board.Active.ZoneId);
         }
+
+        // ---- приказ ----
 
         private void OpenOrder()
         {
@@ -281,10 +212,7 @@ namespace ForestGuild.Game
                 foreach (var warning in briefing.Warnings) lines.Add("   ⚠ " + warning);
             }
 
-            if (_plan.Parties.Count == 0)
-            {
-                lines.Add("В лес никто не идёт.");
-            }
+            if (_plan.Parties.Count == 0) lines.Add("В лес никто не идёт.");
 
             lines.Add("");
             lines.Add("В ДЕРЕВНЕ: починка " + _plan.VillageWorkers.Count
@@ -349,8 +277,7 @@ namespace ForestGuild.Game
                 {
                     label.AddToClassList("link");
                     var zoneId = entry.ZoneId;
-                    label.RegisterCallback<ClickEvent>(_ =>
-                        Dossier.Open(zoneId, Tables, World, false));
+                    label.RegisterCallback<ClickEvent>(_ => Dossier.Open(zoneId, Tables, World, false));
                 }
 
                 _paneLines.Add(label);
@@ -372,7 +299,7 @@ namespace ForestGuild.Game
             SetPhase(Phase.Morning);
             Map.RefreshStates(World);
             Board.Rebuild();
-            ShowHint();
+            _zoneCard.ShowHint();
             if (_warnings != null) _warnings.text = "";
         }
 
@@ -385,48 +312,6 @@ namespace ForestGuild.Game
                 var level = People.SkillLevel(Tables, person, profession.SkillsAllowed[0]);
                 yield return person.Name + " " + level;
             }
-        }
-
-        private List<string> EveningLines()
-        {
-            var lines = new List<string>();
-            if (_dayReport == null) return lines;
-
-            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
-            var wounded = new List<string>();
-
-            foreach (var party in _dayReport.Parties)
-            {
-                if (party.Wounded && party.WoundedPersonId != null)
-                    wounded.Add(Tables.Roster.Get(party.WoundedPersonId).Name);
-
-                foreach (var found in party.Found)
-                {
-                    counts.TryGetValue(found.Key, out var current);
-                    counts[found.Key] = current + found.Value;
-                }
-            }
-
-            lines.Add("Отрядов в лесу: " + _dayReport.Parties.Count);
-
-            if (counts.Count == 0)
-            {
-                lines.Add("Добыча: пусто");
-            }
-            else
-            {
-                foreach (var pair in counts)
-                {
-                    lines.Add("Склад: " + Tables.Items.Get(pair.Key).Name + " +" + pair.Value);
-                }
-            }
-
-            lines.Add(wounded.Count == 0
-                ? "Все вернулись целыми"
-                : "Раненые: " + string.Join(", ", wounded));
-
-            lines.Add("Частокол: " + World.PalisadeHp + "/" + World.PalisadeMax);
-            return lines;
         }
 
         private void ShowPane(string title, List<string> lines, string buttonText, Action action)
@@ -454,128 +339,6 @@ namespace ForestGuild.Game
                 case Behavior.Clean: return "чистка";
                 default: return "сбор";
             }
-        }
-
-        // ---- досье ----
-
-        private void ShowZone(string zoneId)
-        {
-            var zone = Tables.Zones.Get(zoneId);
-            var state = World.Zones[zoneId];
-            _zoneCard.Clear();
-
-            var art = new VisualElement();
-            art.AddToClassList("zone-art");
-            art.AddToClassList("zone-art-" + zoneId);
-            _zoneCard.Add(art);
-
-            _zoneCard.Add(Text("zone-title", zone.Name));
-            _zoneCard.Add(Text("zone-meta", zone.Depth + " · дорога " + zone.TravelHours.ToString("0.#")
-                + " ч · сейчас: " + ZoneKnowledge.Mood(World, zoneId)));
-
-            if (!state.Scouted)
-            {
-                _zoneCard.Add(Text("zone-text", "Сюда ещё не ходили. Известны только дорога и соседи — "
-                    + string.Join(", ", NeighbourNames(zone)) + "."));
-                if (_debug) _zoneCard.Add(Text("zone-text", DebugLine(zoneId)));
-                return;
-            }
-
-            _zoneCard.Add(Text("zone-text", Lore(zoneId, "look")));
-            AddSection("КТО ВОДИТСЯ", Lore(zoneId, "beasts"));
-            AddSection("ЧТО НАЙТИ", Lore(zoneId, "finds"));
-            AddSection("ОСОБОЕ", Lore(zoneId, "special"));
-
-            _zoneCard.Add(Text("zone-section-title", "СЛУХИ"));
-            if (state.Sightings.Count == 0)
-            {
-                _zoneCard.Add(Text("zone-text", "Пока ничего не рассказывали."));
-            }
-            else
-            {
-                var from = Math.Max(0, state.Sightings.Count - 3);
-                for (var i = from; i < state.Sightings.Count; i++)
-                {
-                    var sighting = state.Sightings[i];
-                    _zoneCard.Add(Text("zone-text", "день " + sighting.Day + " — " + sighting.Text));
-                }
-            }
-
-            if (_debug) _zoneCard.Add(Text("zone-text", DebugLine(zoneId)));
-            _zoneCard.scrollOffset = Vector2.zero;
-        }
-
-        private void ShowVillage()
-        {
-            _zoneCard.Clear();
-
-            var art = new VisualElement();
-            art.AddToClassList("zone-art");
-            art.AddToClassList("zone-art-verge_meadow");
-            _zoneCard.Add(art);
-
-            _zoneCard.Add(Text("zone-title", "Деревня"));
-            _zoneCard.Add(Text("zone-meta", "частокол " + World.PalisadeHp + " из " + World.PalisadeMax));
-            _zoneCard.Add(Text("zone-text", "Пока стена держит, лес сюда не заходит. "
-                + "Один человеко-день даёт два очка прочности."));
-            _zoneCard.Add(Text("zone-text", "Жителей: " + Tables.Roster.All.Count));
-        }
-
-        private void ShowHint()
-        {
-            _zoneCard.Clear();
-            _zoneCard.Add(Text("zone-title", "Выберите зону"));
-            _zoneCard.Add(Text("zone-text", "Клик по узлу на карте открывает досье: что там за место, "
-                + "кто водится, что находили и что рассказывают."));
-        }
-
-        private void AddSection(string title, string body)
-        {
-            _zoneCard.Add(Text("zone-section-title", title));
-            _zoneCard.Add(Text("zone-text", body));
-        }
-
-        private string Lore(string zoneId, string field)
-        {
-            return Tables.ZoneLore.TryGet(zoneId + "|" + field, out var row) ? row.Text : "—";
-        }
-
-        private IEnumerable<string> NeighbourNames(Zone zone)
-        {
-            foreach (var id in zone.Neighbours) yield return Tables.Zones.Get(id).Name;
-        }
-
-        private string DebugLine(string zoneId)
-        {
-            var state = World.Zones[zoneId];
-            var beasts = new List<string>();
-            foreach (var pair in state.Beasts) beasts.Add(Tables.Beasts.Get(pair.Key).Name + " " + pair.Value);
-
-            return "отладка: твари " + (beasts.Count == 0 ? "нет" : string.Join(", ", beasts))
-                + " · кристаллы " + state.Crystals
-                + " · корм " + state.Forage
-                + " · опыт гнезда " + state.NestXp
-                + " · гнездо " + (state.Nest.Exists
-                    ? state.Nest.Beasts + "/" + Tables.Tuning.GetInt("nest_beasts_cap")
-                    : "нет")
-                + " · тревога " + state.AlertDays;
-        }
-
-        private Label Text(string className, string value)
-        {
-            var label = new Label(value);
-            label.AddToClassList(className);
-            return label;
-        }
-
-        private void ShowMessage(string text)
-        {
-            if (_toast == null) return;
-
-            _toast.text = text;
-            _toast.RemoveFromClassList("hidden");
-            _toastHide?.Pause();
-            _toastHide = _toast.schedule.Execute(() => _toast.AddToClassList("hidden")).StartingIn(3000);
         }
     }
 }

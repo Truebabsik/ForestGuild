@@ -82,6 +82,5 @@
       </ui:VisualElement>
     </ui:VisualElement>
 
-    <ui:Label name="toast" text="" class="toast hidden" />
   </ui:VisualElement>
 </ui:UXML>

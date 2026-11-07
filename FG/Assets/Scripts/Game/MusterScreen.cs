@@ -349,21 +349,7 @@ namespace ForestGuild.Game
         /// Где человек занят: в другом отряде, на работе, на постели, ранен, мёртв.
         private string Where(string personId)
         {
-            var condition = _world.ConditionOf(personId);
-            if (condition == PersonCondition.Dead) return "погиб";
-            if (condition == PersonCondition.Wounded) return "ранен, лечится";
-
-            foreach (var squad in _world.Squads)
-            {
-                if (ReferenceEquals(squad, _squad)) continue;
-                if (squad.Members.Contains(personId)) return "в отряде «" + squad.Name + "»";
-            }
-
-            if (_plan.VillageWorkers.Contains(personId)) return "на частоколе";
-            if (_plan.Beds.Contains(personId)) return "на постели";
-            if (_plan.Foragers.Contains(personId)) return "на заготовке";
-
-            return null;
+            return Assignment.Where(_world, _plan, _squad, personId);
         }
 
         private void AddMember(string personId)
