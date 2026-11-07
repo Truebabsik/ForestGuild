@@ -79,13 +79,14 @@
 
     <ui:VisualElement name="muster" class="muster hidden">
       <ui:Label name="muster-title" text="СБОР ОТРЯДА" class="panel-title" />
+      <ui:VisualElement name="muster-squads" class="muster-squads" />
       <ui:VisualElement class="muster-columns">
         <ui:VisualElement class="muster-column">
           <ui:Label text="СВОБОДНЫЕ ЛЮДИ" class="panel-subtitle" />
           <ui:ScrollView name="muster-free" class="muster-free" horizontal-scroller-visibility="Hidden" />
         </ui:VisualElement>
         <ui:VisualElement class="muster-column wide">
-          <ui:Label text="СОСТАВ (до трёх)" class="panel-subtitle" />
+          <ui:Label text="СОСТАВ ОТРЯДА" class="panel-subtitle" />
           <ui:VisualElement name="muster-tray" class="muster-tray" />
           <ui:Label name="muster-summary" text="" class="squad-line" />
           <ui:Label text="НАКАЗЫ НА ВЫЛАЗКУ" class="panel-subtitle" />

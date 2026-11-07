@@ -17,6 +17,7 @@ namespace ForestGuild.Game
         private readonly VisualElement _panel;
         private readonly VisualElement _free;
         private readonly VisualElement _tray;
+        private readonly VisualElement _tabs;
         private readonly VisualElement _orders;
         private readonly Label _title;
         private readonly Label _summary;
@@ -37,6 +38,7 @@ namespace ForestGuild.Game
             _panel = root.Q<VisualElement>("muster");
             _free = root.Q<VisualElement>("muster-free");
             _tray = root.Q<VisualElement>("muster-tray");
+            _tabs = root.Q<VisualElement>("muster-squads");
             _orders = root.Q<VisualElement>("muster-orders");
             _title = root.Q<Label>("muster-title");
             _summary = root.Q<Label>("muster-summary");
@@ -75,13 +77,35 @@ namespace ForestGuild.Game
         {
             if (_squad == null) return;
 
-            var zone = string.IsNullOrEmpty(_squad.ZoneId) ? "зона не выбрана" : _tables.Zones.Get(_squad.ZoneId).Name;
-            _title.text = "СБОР ОТРЯДА «" + _squad.Name + "» · " + zone;
+            _title.text = "СБОР ОТРЯДА «" + _squad.Name + "»";
 
+            BuildSquadTabs();
             BuildFree();
             BuildTray();
             BuildOrders();
             BuildSummary();
+        }
+
+        /// Оба отряда собираются здесь: переключатель между ними.
+        private void BuildSquadTabs()
+        {
+            _tabs.Clear();
+
+            foreach (var squad in _world.Squads)
+            {
+                var captured = squad;
+                var button = new Button(() =>
+                {
+                    _squad = captured;
+                    Rebuild();
+                });
+
+                button.text = "ОТРЯД «" + squad.Name + "» · " + squad.Members.Count
+                    + "/" + _tables.Tuning.GetInt("party_max");
+                button.AddToClassList("squad-tab");
+                if (ReferenceEquals(squad, _squad)) button.AddToClassList("selected");
+                _tabs.Add(button);
+            }
         }
 
         private void BuildFree()
@@ -188,7 +212,8 @@ namespace ForestGuild.Game
         {
             _tray.Clear();
 
-            for (var i = 0; i < 3; i++)
+            var max = _tables.Tuning.GetInt("party_max");
+            for (var i = 0; i < max; i++)
             {
                 var slot = new VisualElement();
                 slot.AddToClassList("tray-slot");
@@ -344,7 +369,7 @@ namespace ForestGuild.Game
         private void AddMember(string personId)
         {
             if (_squad.Members.Contains(personId)) return;
-            if (_squad.Members.Count >= 3) return;
+            if (_squad.Members.Count >= _tables.Tuning.GetInt("party_max")) return;
             if (_world.ConditionOf(personId) != PersonCondition.Healthy) return;
 
             _squad.Members.Add(personId);

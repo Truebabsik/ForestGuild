@@ -22,11 +22,8 @@ namespace ForestGuild.Core.Sim
             var tuning = tables.Tuning;
             var briefing = new SquadBriefing();
 
-            if (string.IsNullOrEmpty(zoneId))
-            {
-                briefing.Warnings.Add("Зона не выбрана");
-                return briefing;
-            }
+            // Зона выбирается на экране планирования, а не в Сборе: здесь про неё молчим.
+            if (string.IsNullOrEmpty(zoneId)) return briefing;
 
             var zone = tables.Zones.Get(zoneId);
             briefing.TravelHours = zone.TravelHours;
@@ -56,9 +53,14 @@ namespace ForestGuild.Core.Sim
                 briefing.Warnings.Add("Один в лесу: прикрыть некому");
             }
 
-            if (members.Count > 2)
+            if (members.Count == 3)
             {
                 briefing.Warnings.Add("Втроём в лесу шумно — твари замечают раньше");
+            }
+
+            if (members.Count > 3)
+            {
+                briefing.Warnings.Add("Вчетвером в лесу очень шумно — твари идут на звук");
             }
 
             if (behavior == Behavior.Clean && !brave)

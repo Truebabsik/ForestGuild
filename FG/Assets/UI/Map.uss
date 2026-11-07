@@ -736,6 +736,28 @@
 
 /* ---- Сбор отряда ---- */
 
+.muster-squads {
+    flex-direction: row;
+    margin-bottom: 8px;
+}
+
+.squad-tab {
+    height: 30px;
+    font-size: 12px;
+    margin-right: 6px;
+    padding: 0 14px;
+    color: rgb(212, 202, 178);
+    background-color: rgb(44, 46, 40);
+    border-width: 1px;
+    border-color: rgb(96, 88, 70);
+}
+
+.squad-tab.selected {
+    background-color: rgb(92, 78, 44);
+    border-color: rgb(226, 190, 110);
+    color: rgb(244, 232, 200);
+}
+
 .muster-columns {
     flex-direction: row;
     flex-grow: 1;
