@@ -466,6 +466,74 @@
 
 /* ---- деревня ---- */
 
+.expedition {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 56px;
+    bottom: 40px;
+    background-color: rgb(16, 18, 16);
+    border-width: 2px;
+    border-color: rgb(150, 128, 88);
+    padding: 20px;
+}
+
+.expedition-head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.expedition-log {
+    flex-grow: 1;
+    margin: 10px 0;
+    border-width: 1px;
+    border-color: rgb(70, 66, 56);
+    padding: 8px;
+}
+
+.expedition-log .unity-label {
+    color: rgb(208, 204, 190);
+    font-size: 13px;
+    white-space: normal;
+    margin-bottom: 3px;
+}
+
+.decision-card {
+    border-width: 2px;
+    border-color: rgb(226, 190, 110);
+    background-color: rgb(28, 26, 20);
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.decision-title {
+    color: rgb(240, 214, 160);
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-bottom: 6px;
+}
+
+.decision-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.decision-option {
+    flex-grow: 1;
+    min-width: 200px;
+    height: 32px;
+    font-size: 12px;
+    margin: 0 6px 6px 0;
+    padding: 0 8px;
+    color: rgb(232, 222, 196);
+    background-color: rgb(62, 54, 36);
+    border-width: 1px;
+    border-color: rgb(196, 150, 90);
+    white-space: normal;
+}
+
 .village {
     left: 180px;
     right: 180px;

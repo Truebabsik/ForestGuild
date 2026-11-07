@@ -21,6 +21,23 @@
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
     </ui:VisualElement>
 
+    <ui:VisualElement name="expedition" class="expedition hidden">
+      <ui:VisualElement class="expedition-head">
+        <ui:Label name="expedition-title" text="ПОХОД" class="panel-title" />
+        <ui:Label name="expedition-hour" text="" class="zone-meta" />
+      </ui:VisualElement>
+      <ui:ScrollView name="expedition-log" class="expedition-log" horizontal-scroller-visibility="Hidden" />
+      <ui:VisualElement name="expedition-card" class="decision-card hidden">
+        <ui:Label name="decision-title" text="" class="decision-title" />
+        <ui:Label name="decision-body" text="" class="zone-text" />
+        <ui:VisualElement name="decision-options" class="decision-options" />
+      </ui:VisualElement>
+      <ui:VisualElement class="modal-buttons">
+        <ui:Button name="expedition-skip" text="ДОМОТАТЬ" class="action" />
+        <ui:Button name="expedition-pause" text="ПАУЗА" class="action primary" />
+      </ui:VisualElement>
+    </ui:VisualElement>
+
     <ui:VisualElement name="village" class="village hidden">
       <ui:Label name="village-title" text="ДЕРЕВНЯ" class="panel-title" />
       <ui:Label name="village-palisade" text="" class="zone-text" />

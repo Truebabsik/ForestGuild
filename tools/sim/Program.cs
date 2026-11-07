@@ -353,6 +353,52 @@ internal static class Program
             return report.Wave != null && report.Wave.PalisadeDamage > 0 && w.PalisadeHp < before;
         });
 
+        checks.Check("expedition pauses on encounter with ask orders", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+
+            var zone = w.Zones["verge_springs"];
+            zone.Beasts.Clear();
+            zone.Beasts["beast_spark"] = 6;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            var party = Party("verge_springs", "brunni");
+            party.Orders = new StandingOrders { Encounter = EncounterOrder.Ask };
+
+            var expedition = new Expedition(w, t, party, new Rng(4));
+            var paused = false;
+
+            for (var i = 0; i < 20 && !expedition.Finished; i++)
+            {
+                if (expedition.HasDecision) { paused = true; break; }
+                expedition.Advance();
+            }
+
+            return paused && expedition.Pending.Kind == DecisionKind.Encounter;
+        });
+
+        checks.Check("order resolves encounter without pause", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+
+            var zone = w.Zones["verge_springs"];
+            zone.Beasts.Clear();
+            zone.Beasts["beast_spark"] = 6;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            var party = Party("verge_springs", "brunni");
+            party.Orders = new StandingOrders { Encounter = EncounterOrder.Retreat };
+
+            var expedition = new Expedition(w, t, party, new Rng(4));
+            for (var i = 0; i < 20 && !expedition.Finished; i++) expedition.Advance();
+
+            return expedition.Finished;
+        });
+
         return checks.Report() ? 0 : 1;
     }
 

@@ -17,6 +17,9 @@ namespace ForestGuild.Core.Sim
         public string ZoneId;
         public readonly List<string> PersonIds = new List<string>();
         public Behavior Behavior = Behavior.Gather;
+
+        /// <summary>Наказы отряда: политика решений вместо кликов (ui.md §5.5).</summary>
+        public StandingOrders Orders;
     }
 
     /// <summary>План дня: отряды в лес и работы в деревне (ui.md §4.1).</summary>

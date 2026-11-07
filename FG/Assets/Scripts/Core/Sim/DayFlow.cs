@@ -34,16 +34,19 @@ namespace ForestGuild.Core.Sim
             _rng = rng;
         }
 
-        /// Фаза «День»: работы в деревне и вылазки. Ночь не наступает, день не меняется.
-        public DayReport RunExpeditions(DayPlan plan)
+        /// Фаза «День»: работы в деревне. Походы идут отдельно — по шагам (UI) или разом (`RunExpeditions`).
+        public DayReport BeginDay(DayPlan plan)
         {
             var report = new DayReport();
-
             RunWorks(plan, report);
+            return report;
+        }
 
-            foreach (var party in plan.Parties)
+        /// Итог походов: добыча в склад, строки в отчёт.
+        public void FinishExpeditions(DayReport report, IReadOnlyList<ExpeditionResult> results)
+        {
+            foreach (var result in results)
             {
-                var result = ExpeditionSim.Resolve(_world, _tables, party, _rng);
                 report.Parties.Add(result);
                 report.Lines.AddRange(result.Log);
 
@@ -53,12 +56,26 @@ namespace ForestGuild.Core.Sim
                 }
             }
 
-            if (plan.Parties.Count == 0)
+            if (report.Parties.Count == 0)
             {
                 report.Lines.Add("В лес никто не пошёл");
             }
 
             CollectLoot(report);
+        }
+
+        /// Весь день разом — для консольных прогонов и тестов.
+        public DayReport RunExpeditions(DayPlan plan)
+        {
+            var report = BeginDay(plan);
+
+            var results = new List<ExpeditionResult>();
+            foreach (var party in plan.Parties)
+            {
+                results.Add(ExpeditionSim.Resolve(_world, _tables, party, _rng));
+            }
+
+            FinishExpeditions(report, results);
             return report;
         }
 

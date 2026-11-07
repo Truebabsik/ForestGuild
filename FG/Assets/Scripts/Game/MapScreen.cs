@@ -32,6 +32,7 @@ namespace ForestGuild.Game
         public EveningScreen Evening;
         public StartOfDayScreen StartDay;
         public VillageScreen Village;
+        public ExpeditionScreen Expedition;
 
         private UIDocument _document;
         private DayFlow _flow;
@@ -123,6 +124,13 @@ namespace ForestGuild.Game
             Evening = new EveningScreen(root);
             Evening.Slept += GoToNight;
 
+            Expedition = new ExpeditionScreen(root);
+            Expedition.Finished += results =>
+            {
+                _flow.FinishExpeditions(_dayReport, results);
+                GoToEvening();
+            };
+
             StartDay = new StartOfDayScreen(root);
             StartDay.Continued += EnterPlanning;
 
@@ -142,8 +150,9 @@ namespace ForestGuild.Game
 
             _leftPanel.EnableInClassList("hidden", !planning);
             _bottomBar.EnableInClassList("hidden", !planning);
-            _pane.EnableInClassList("hidden", phase != Phase.Day && phase != Phase.Night);
+            _pane.EnableInClassList("hidden", phase != Phase.Night);
             _modal.AddToClassList("hidden");
+            if (phase != Phase.Day) Expedition?.Close();
 
             if (!planning)
             {
@@ -182,7 +191,12 @@ namespace ForestGuild.Game
             {
                 if (squad.Members.Count == 0 || string.IsNullOrEmpty(squad.ZoneId)) continue;
 
-                var party = new PartyAssignment { ZoneId = squad.ZoneId, Behavior = squad.Behavior };
+                var party = new PartyAssignment
+                {
+                    ZoneId = squad.ZoneId,
+                    Behavior = squad.Behavior,
+                    Orders = squad.Orders,
+                };
                 party.PersonIds.AddRange(squad.Members);
                 _plan.Parties.Add(party);
 
@@ -222,13 +236,10 @@ namespace ForestGuild.Game
         {
             _modal.AddToClassList("hidden");
 
-            _dayReport = _flow.RunExpeditions(_plan);
-
-            var lines = new List<string>(_dayReport.Lines);
-            if (lines.Count == 0) lines.Add("День прошёл без событий");
+            _dayReport = _flow.BeginDay(_plan);
 
             SetPhase(Phase.Day);
-            ShowPane("ДЕНЬ " + World.Day + " · ПОХОД", lines, "К ВЕЧЕРУ →", GoToEvening);
+            Expedition.Open(Tables, World, _plan, _rng);
         }
 
         private void GoToEvening()
@@ -313,23 +324,6 @@ namespace ForestGuild.Game
                 var level = People.SkillLevel(Tables, person, profession.SkillsAllowed[0]);
                 yield return person.Name + " " + level;
             }
-        }
-
-        private void ShowPane(string title, List<string> lines, string buttonText, Action action)
-        {
-            _paneTitle.text = title;
-            _paneButton.text = buttonText;
-            _paneAction = action;
-
-            _paneLines.Clear();
-            foreach (var line in lines)
-            {
-                var label = new Label(line.Length == 0 ? " " : "· " + line);
-                label.AddToClassList("pane-line");
-                _paneLines.Add(label);
-            }
-
-            _paneLines.scrollOffset = Vector2.zero;
         }
 
         private static string BehaviorName(Behavior behavior)
