@@ -811,7 +811,15 @@
 .guild-tile.status-ok { border-color: rgb(92, 118, 78); }
 .guild-tile.status-wounded { border-color: rgb(198, 148, 72); background-color: rgb(48, 42, 32); }
 .guild-tile.status-dead { border-color: rgb(118, 68, 62); background-color: rgb(36, 32, 32); opacity: 0.55; }
-.guild-tile.busy { opacity: 0.45; }
+.guild-tile.busy {
+    opacity: 1;
+    border-color: rgb(126, 104, 70);
+    background-color: rgb(38, 40, 34);
+}
+
+.guild-tile.busy .person-note {
+    color: rgb(214, 170, 118);
+}
 
 .guild-tile .portrait {
     width: 56px;

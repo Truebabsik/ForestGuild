@@ -200,8 +200,13 @@ namespace ForestGuild.Game
 
             tile.RegisterCallback<ClickEvent>(_ =>
             {
-                if (busy) return;
-                AddMember(personId);
+                if (!busy)
+                {
+                    AddMember(personId);
+                    return;
+                }
+
+                TakeFromOtherSquad(personId);
             });
 
             if (!busy) EnableDrag(tile, personId);
@@ -374,6 +379,23 @@ namespace ForestGuild.Game
 
             _squad.Members.Add(personId);
             Rebuild();
+        }
+
+        /// Человек из второго отряда: забираем сюда, если есть место.
+        private void TakeFromOtherSquad(string personId)
+        {
+            if (_squad.Members.Count >= _tables.Tuning.GetInt("party_max")) return;
+            if (_world.ConditionOf(personId) != PersonCondition.Healthy) return;
+
+            foreach (var squad in _world.Squads)
+            {
+                if (ReferenceEquals(squad, _squad)) continue;
+                if (!squad.Members.Remove(personId)) continue;
+
+                _squad.Members.Add(personId);
+                Rebuild();
+                return;
+            }
         }
 
         // ---- драг ----
