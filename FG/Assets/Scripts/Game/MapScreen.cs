@@ -56,6 +56,7 @@ namespace ForestGuild.Game
         private VisualElement _menu;
         private bool _inMenu;
         private bool _demoMuster;
+        private bool _demoExpedition;
 
         private void Awake()
         {
@@ -138,6 +139,15 @@ namespace ForestGuild.Game
             Expedition.Finished += results =>
             {
                 _flow.FinishExpeditions(_dayReport, results);
+
+                if (_demoExpedition)
+                {
+                    _demoExpedition = false;
+                    _plan = new DayPlan();
+                    ShowMenu();
+                    return;
+                }
+
                 GoToEvening();
             };
 
@@ -152,6 +162,7 @@ namespace ForestGuild.Game
             _menu = root.Q<VisualElement>("menu");
             root.Q<Button>("menu-play").clicked += StartGame;
             root.Q<Button>("menu-sim").clicked += StartMusterDemo;
+            root.Q<Button>("menu-expedition").clicked += StartExpeditionDemo;
             ShowMenu();
         }
 
@@ -242,25 +253,51 @@ namespace ForestGuild.Game
             Board.Rebuild();
         }
 
+        /// Симуляция похода: два отряда сразу в лесу, без утра и приказа — смотреть, как живут в лесу.
+        private void StartExpeditionDemo()
+        {
+            _menu.AddToClassList("hidden");
+
+            var a = World.Squads[0];
+            a.Members.Clear();
+            a.Members.Add("brunni");
+            a.Members.Add("skadi");
+            a.ZoneId = "verge_springs";
+            a.Behavior = Behavior.Gather;
+            a.Orders.Encounter = EncounterOrder.Ask;
+
+            var b = World.Squads[1];
+            b.Members.Clear();
+            b.Members.Add("hilda");
+            b.Members.Add("orn");
+            b.ZoneId = "verge_thicket";
+            b.Behavior = Behavior.Clean;
+            b.Orders.Encounter = EncounterOrder.Ask;
+
+            Board.Rebuild();
+
+            SetPhase(Phase.Day);
+            _leftPanel.AddToClassList("hidden");
+            _bottomBar.AddToClassList("hidden");
+
+            _demoExpedition = true;
+            _plan = new DayPlan();
+            BuildParties();
+            _dayReport = _flow.BeginDay(_plan);
+
+            Expedition.Open(Tables, World, _plan, _rng);
+        }
+
         // ---- приказ ----
 
         private void OpenOrder()
         {
-            _plan.Parties.Clear();
             _modalLines.Clear();
+            BuildParties();
 
             foreach (var squad in World.Squads)
             {
                 if (squad.Members.Count == 0 || string.IsNullOrEmpty(squad.ZoneId)) continue;
-
-                var party = new PartyAssignment
-                {
-                    ZoneId = squad.ZoneId,
-                    Behavior = squad.Behavior,
-                    Orders = squad.Orders,
-                };
-                party.PersonIds.AddRange(squad.Members);
-                _plan.Parties.Add(party);
 
                 var zone = Tables.Zones.Get(squad.ZoneId);
                 var briefing = Briefing.Compute(World, Tables, squad.Members, squad.ZoneId, squad.Behavior);
@@ -290,6 +327,26 @@ namespace ForestGuild.Game
 
             _modalTitle.text = "ДЕНЬ " + World.Day + " · ПРИКАЗ";
             _modal.RemoveFromClassList("hidden");
+        }
+
+        /// Отряды-пресеты → партии дня. Одно место, откуда берут и приказ, и симуляция похода.
+        private void BuildParties()
+        {
+            _plan.Parties.Clear();
+
+            foreach (var squad in World.Squads)
+            {
+                if (squad.Members.Count == 0 || string.IsNullOrEmpty(squad.ZoneId)) continue;
+
+                var party = new PartyAssignment
+                {
+                    ZoneId = squad.ZoneId,
+                    Behavior = squad.Behavior,
+                    Orders = squad.Orders,
+                };
+                party.PersonIds.AddRange(squad.Members);
+                _plan.Parties.Add(party);
+            }
         }
 
         private void AddModalLine(string text, string extraClass = null)
