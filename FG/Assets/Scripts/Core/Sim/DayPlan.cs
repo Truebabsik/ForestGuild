@@ -19,13 +19,17 @@ namespace ForestGuild.Core.Sim
         public Behavior Behavior = Behavior.Gather;
     }
 
-    /// <summary>План дня: кто куда идёт и кто остаётся в деревне.</summary>
+    /// <summary>План дня: отряды в лес и работы в деревне (ui.md §4.1).</summary>
     public sealed class DayPlan
     {
         public const int MaxParties = 2;
 
         public readonly List<PartyAssignment> Parties = new List<PartyAssignment>();
-        public readonly List<string> VillageWorkers = new List<string>();
+
+        /// <summary>Работы в деревне: три стока рабочей силы.</summary>
+        public readonly List<string> VillageWorkers = new List<string>(); // починка частокола
+        public readonly List<string> Beds = new List<string>();           // постели
+        public readonly List<string> Foragers = new List<string>();       // заготовка
 
         public bool IsBusy(string personId)
         {
@@ -33,7 +37,7 @@ namespace ForestGuild.Core.Sim
                 foreach (var id in party.PersonIds)
                     if (id == personId) return true;
 
-            return VillageWorkers.Contains(personId);
+            return VillageWorkers.Contains(personId) || Beds.Contains(personId) || Foragers.Contains(personId);
         }
 
         public int PartyOf(string personId)
@@ -43,6 +47,8 @@ namespace ForestGuild.Core.Sim
 
             return -1;
         }
+
+        public int WorkingCount => Parties.Count + VillageWorkers.Count + Beds.Count + Foragers.Count;
     }
 
     /// <summary>Навыки жителя: override из ростера важнее пресета класса.</summary>

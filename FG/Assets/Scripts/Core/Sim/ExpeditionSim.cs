@@ -14,6 +14,7 @@ namespace ForestGuild.Core.Sim
         public int Stamina;
         public bool Encountered;
         public bool Wounded;
+        public string WoundedPersonId;
     }
 
     /// <summary>
@@ -113,6 +114,9 @@ namespace ForestGuild.Core.Sim
                 }
 
                 result.Wounded = true;
+                var victim = party.PersonIds[rng.Next(party.PersonIds.Count)];
+                result.WoundedPersonId = victim;
+                Works.Wound(world, victim);
                 result.Log.Add(zone.Name + ": бой — ранение, отряд возвращается");
                 state.AddSighting(world.Day, zone.Name + ": " + beastName + " — ранили человека");
                 break;

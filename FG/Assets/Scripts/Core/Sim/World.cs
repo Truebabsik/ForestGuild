@@ -48,11 +48,28 @@ namespace ForestGuild.Core.Sim
         public readonly Dictionary<string, ZoneState> Zones =
             new Dictionary<string, ZoneState>(StringComparer.Ordinal);
 
+        /// <summary>Состояние жителей: ранен, на постели, мёртв.</summary>
+        public readonly Dictionary<string, PersonState> People =
+            new Dictionary<string, PersonState>(StringComparer.Ordinal);
+
+        /// <summary>Склад деревни: itemId → количество. `forage` — подножный корм.</summary>
+        public readonly Dictionary<string, int> Store =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+
+        /// <summary>Отряды-пресеты: два, живут между днями (ui.md §4.2).</summary>
+        public readonly List<Squad> Squads = new List<Squad>();
+
         public static World Create(Tables tables)
         {
             var w = new World();
             w.PalisadeMax = tables.Tuning.GetInt("palisade_hp");
             w.PalisadeHp = w.PalisadeMax;
+
+            foreach (var person in tables.Roster.All)
+                w.People[person.Id] = new PersonState();
+
+            w.Squads.Add(new Squad("A", "А"));
+            w.Squads.Add(new Squad("B", "Б"));
 
             foreach (var z in tables.Zones.All)
                 w.Zones[z.Id] = new ZoneState { ZoneId = z.Id, Forage = z.ForagePerDay };
@@ -65,6 +82,21 @@ namespace ForestGuild.Core.Sim
             }
 
             return w;
+        }
+
+        public PersonCondition ConditionOf(string personId)
+        {
+            return People.TryGetValue(personId, out var state) ? state.Condition : PersonCondition.Dead;
+        }
+
+        public Squad SquadOf(string personId)
+        {
+            foreach (var squad in Squads)
+            {
+                if (squad.Members.Contains(personId)) return squad;
+            }
+
+            return null;
         }
 
         public int TotalCrystals()

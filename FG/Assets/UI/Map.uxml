@@ -6,23 +6,14 @@
     <ui:VisualElement name="map" class="map" />
 
     <ui:VisualElement name="left-panel" class="panel left">
-      <ui:Label text="ЖИТЕЛИ" class="panel-title" />
+      <ui:Label text="ОТРЯДЫ" class="panel-title" />
+      <ui:VisualElement name="squads" class="squads" />
+
+      <ui:Label text="РАБОТЫ В ДЕРЕВНЕ" class="panel-subtitle" />
+      <ui:VisualElement name="works" class="works" />
+
+      <ui:Label text="ЛЮДИ" class="panel-subtitle" />
       <ui:ScrollView name="roster" class="roster" horizontal-scroller-visibility="Hidden" />
-
-      <ui:Label text="НАМЕРЕНИЕ" class="panel-subtitle" />
-      <ui:VisualElement name="behaviors" class="behavior-row">
-        <ui:Button name="behavior-gather" text="Сбор" class="behavior" />
-        <ui:Button name="behavior-avoid" text="Избегание" class="behavior" />
-        <ui:Button name="behavior-clean" text="Чистка" class="behavior" />
-      </ui:VisualElement>
-
-      <ui:VisualElement class="button-row">
-        <ui:Button name="send-button" text="В ЛЕС" class="action" />
-        <ui:Button name="village-button" text="В ДЕРЕВНЮ" class="action" />
-      </ui:VisualElement>
-
-      <ui:Label text="ПЛАН ДНЯ" class="panel-subtitle" />
-      <ui:ScrollView name="parties" class="parties" horizontal-scroller-visibility="Hidden" />
     </ui:VisualElement>
 
     <ui:VisualElement name="right-panel" class="panel right">
@@ -30,7 +21,7 @@
     </ui:VisualElement>
 
     <ui:VisualElement name="bottom-bar" class="bottom">
-      <ui:Label name="queue-label" text="" class="zone-info" />
+      <ui:Label name="warnings" text="" class="warnings" />
       <ui:Toggle name="debug-toggle" label="числа" class="debug-toggle" />
       <ui:Button name="sign-button" text="ПОДПИСАТЬ ПРИКАЗ" class="action primary" />
     </ui:VisualElement>
@@ -39,6 +30,15 @@
       <ui:Label name="pane-title" text="" class="panel-title" />
       <ui:ScrollView name="pane-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
       <ui:Button name="pane-button" text="ДАЛЬШЕ" class="action primary pane-button" />
+    </ui:VisualElement>
+
+    <ui:VisualElement name="modal" class="modal hidden">
+      <ui:Label name="modal-title" text="ПРИКАЗ НА ВЫЛАЗКУ" class="panel-title" />
+      <ui:ScrollView name="modal-lines" class="pane-lines" horizontal-scroller-visibility="Hidden" />
+      <ui:VisualElement class="modal-buttons">
+        <ui:Button name="modal-cancel" text="НЕ ПОКА, ДОПОЛНЮ" class="action" />
+        <ui:Button name="modal-confirm" text="ПОДПИСАТЬ" class="action primary" />
+      </ui:VisualElement>
     </ui:VisualElement>
 
     <ui:Label name="toast" text="" class="toast hidden" />

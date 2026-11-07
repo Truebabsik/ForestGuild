@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ForestGuild.Core.Data;
 
 namespace ForestGuild.Core.Sim
@@ -13,7 +14,7 @@ namespace ForestGuild.Core.Sim
     }
 
     /// <summary>
-    /// День по фазам: вылазки (День) и жизнь леса (Ночь) разделены, как в UI (docs/ui.md §3).
+    /// День по фазам: вылазки и работы (День) и жизнь леса (Ночь) разделены, как в UI (docs/ui.md §3).
     /// `RunDay` остаётся для консольных прогонов и тестов.
     /// </summary>
     public sealed class DayFlow
@@ -34,7 +35,7 @@ namespace ForestGuild.Core.Sim
         {
             var report = new DayReport();
 
-            RepairPalisade(plan, report);
+            RunWorks(plan, report);
 
             foreach (var party in plan.Parties)
             {
@@ -56,10 +57,37 @@ namespace ForestGuild.Core.Sim
             return report;
         }
 
-        /// Фаза «Ночь»: лес живёт, день сменяется.
+        private void RunWorks(DayPlan plan, DayReport report)
+        {
+            if (plan.VillageWorkers.Count > 0)
+            {
+                report.Repaired = Works.RepairPalisade(_world, plan.VillageWorkers.Count);
+                var workers = plan.VillageWorkers.Count + " человеко-дн.";
+                report.Lines.Add(report.Repaired == 0
+                    ? "Частокол и так цел: " + _world.PalisadeHp + "/" + _world.PalisadeMax + " (" + workers + ")"
+                    : "Частокол: " + _world.PalisadeHp + "/" + _world.PalisadeMax
+                      + " (+" + report.Repaired + " за " + workers + ")");
+            }
+
+            var forage = Works.Forage(_world, plan.Foragers.Count);
+            if (forage > 0) report.Lines.Add("Заготовка: +" + forage + " корма в склад");
+
+            foreach (var personId in plan.Beds) Works.PutToBed(_world, personId);
+        }
+
+        /// Фаза «Ночь»: лес живёт, день сменяется, постели делают своё дело.
         public NightReport RunNight()
         {
-            return NightSim.AdvanceNight(_world, _tables, _rng);
+            var report = NightSim.AdvanceNight(_world, _tables, _rng);
+
+            var healed = Works.Recover(_world);
+            if (healed.Count > 0)
+            {
+                var names = healed.Select(id => _tables.Roster.Get(id).Name);
+                report.Add("К утру встали с постели: " + string.Join(", ", names));
+            }
+
+            return report;
         }
 
         /// Один день целиком — для консольных прогонов и тестов.
@@ -69,21 +97,6 @@ namespace ForestGuild.Core.Sim
             report.Night = RunNight();
             report.Lines.AddRange(report.Night.Lines);
             return report;
-        }
-
-        private void RepairPalisade(DayPlan plan, DayReport report)
-        {
-            if (plan.VillageWorkers.Count == 0) return;
-
-            var before = _world.PalisadeHp;
-            _world.PalisadeHp = Math.Min(_world.PalisadeMax, _world.PalisadeHp + plan.VillageWorkers.Count * 2);
-            report.Repaired = _world.PalisadeHp - before;
-
-            var workers = plan.VillageWorkers.Count + " человеко-дн.";
-            report.Lines.Add(report.Repaired == 0
-                ? "Частокол и так цел: " + _world.PalisadeHp + "/" + _world.PalisadeMax + " (" + workers + ")"
-                : "Частокол: " + _world.PalisadeHp + "/" + _world.PalisadeMax
-                  + " (+" + report.Repaired + " за " + workers + ")");
         }
     }
 }

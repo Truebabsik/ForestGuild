@@ -1,0 +1,83 @@
+using System;
+using System.Collections.Generic;
+
+namespace ForestGuild.Core.Sim
+{
+    /// <summary>
+    /// Работы в деревне (ui.md §4.6): починка частокола, постели, заготовка.
+    /// Все они — сток рабочей силы, а не ресурсов.
+    /// </summary>
+    public static class Works
+    {
+        public const string ForageStoreKey = "forage";
+
+        public static int RepairPalisade(World world, int workers)
+        {
+            if (workers <= 0) return 0;
+
+            var before = world.PalisadeHp;
+            world.PalisadeHp = Math.Min(world.PalisadeMax, world.PalisadeHp + workers * 2);
+            return world.PalisadeHp - before;
+        }
+
+        public static int Forage(World world, int workers)
+        {
+            if (workers <= 0) return 0;
+
+            world.Store.TryGetValue(ForageStoreKey, out var current);
+            world.Store[ForageStoreKey] = current + workers;
+            return workers;
+        }
+
+        /// Положить раненого на постель: к утру он здоров.
+        public static bool PutToBed(World world, string personId)
+        {
+            if (!world.People.TryGetValue(personId, out var state)) return false;
+            if (state.Condition != PersonCondition.Wounded) return false;
+
+            state.InBedDays = 1;
+            return true;
+        }
+
+        /// Утро: кто пролежал ночь — встаёт.
+        public static List<string> Recover(World world)
+        {
+            var healed = new List<string>();
+
+            foreach (var pair in world.People)
+            {
+                var state = pair.Value;
+                if (state.Condition != PersonCondition.Wounded) continue;
+                if (state.InBedDays <= 0) continue;
+
+                state.InBedDays--;
+                if (state.InBedDays > 0) continue;
+
+                state.Condition = PersonCondition.Healthy;
+                healed.Add(pair.Key);
+            }
+
+            return healed;
+        }
+
+        public static void Wound(World world, string personId)
+        {
+            if (!world.People.TryGetValue(personId, out var state)) return;
+            if (state.Condition == PersonCondition.Dead) return;
+
+            state.Condition = PersonCondition.Wounded;
+            state.InBedDays = 0;
+        }
+
+        public static void Kill(World world, string personId)
+        {
+            if (!world.People.TryGetValue(personId, out var state)) return;
+            state.Condition = PersonCondition.Dead;
+        }
+
+        public static bool IsAvailable(World world, string personId)
+        {
+            return world.People.TryGetValue(personId, out var state) && state.Condition == PersonCondition.Healthy;
+        }
+    }
+}

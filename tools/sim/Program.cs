@@ -203,6 +203,56 @@ internal static class Program
             return dayAfter == 1 && w.Day == 2 && day.Parties.Count == 1 && night.Lines.Count > 0;
         });
 
+        checks.Check("foragers fill the store", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var plan = new DayPlan();
+            plan.Foragers.Add("run");
+            plan.Foragers.Add("valda");
+            new DayFlow(w, t, new Rng(1)).RunExpeditions(plan);
+            return w.Store[Works.ForageStoreKey] == 2;
+        });
+
+        checks.Check("wounded recovers after a night in bed", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            Works.Wound(w, "leya");
+
+            var plan = new DayPlan();
+            plan.Beds.Add("leya");
+
+            var flow = new DayFlow(w, t, new Rng(2));
+            flow.RunExpeditions(plan);
+            flow.RunNight();
+            return w.ConditionOf("leya") == PersonCondition.Healthy;
+        });
+
+        checks.Check("wounded without bed stays wounded", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            Works.Wound(w, "leya");
+
+            var flow = new DayFlow(w, t, new Rng(2));
+            flow.RunExpeditions(new DayPlan());
+            flow.RunNight();
+            return w.ConditionOf("leya") == PersonCondition.Wounded;
+        });
+
+        checks.Check("briefing counts slots and warns", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var one = Briefing.Compute(w, t, new[] { "brunni" }, "verge_springs", Behavior.Gather);
+            var three = Briefing.Compute(w, t, new[] { "brunni", "leya", "tove" }, "verge_springs", Behavior.Clean);
+
+            return one.Slots == 5                      // 4 + «Крепкий»
+                && one.WorkHours == 3
+                && three.Warnings.Count >= 2;          // сверх двух + зона не разведана
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
