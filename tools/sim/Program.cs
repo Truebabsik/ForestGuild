@@ -500,6 +500,54 @@ internal static class Program
                 && expedition.Pending.Options.Count >= 1;
         });
 
+        checks.Check("странствующая тварь называется по виду", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+
+            // Тварь пришла в зону, где своих видов нет: раньше она становилась безымянной «тварью».
+            w.Zones["verge_meadow"].Beasts["beast_ash"] = 2;
+
+            for (var seed = 0; seed < 40; seed++)
+            {
+                var party = Party("verge_meadow", "leya");
+                party.Behavior = Behavior.Clean;
+
+                var expedition = new Expedition(w, t, party, new Rng(seed));
+                for (var i = 0; i < 30 && !expedition.Finished; i++)
+                {
+                    if (expedition.HasDecision) break;
+                    expedition.Advance();
+                }
+
+                if (expedition.Pending == null || expedition.Pending.Kind != DecisionKind.Encounter) continue;
+
+                return expedition.Pending.BeastId == "beast_ash"
+                    && expedition.Pending.Title.Contains("Пепельный вор");
+            }
+
+            return false;
+        });
+
+        checks.Check("у каждой твари есть арт поиска и туши", () =>
+        {
+            var monsters = Path.Combine(Path.GetDirectoryName(DataDir().TrimEnd(Path.DirectorySeparatorChar)),
+                "..", "UI", "Art", "Monsters");
+
+            foreach (var beast in DataLoader.Load(DataDir()).Beasts.All)
+            {
+                if (string.IsNullOrEmpty(beast.Art)) return false;
+
+                foreach (var state in new[] { "search", "dead" })
+                {
+                    var file = Path.Combine(monsters, beast.Art + "_" + state + ".jpg");
+                    if (!File.Exists(Path.GetFullPath(file))) return false;
+                }
+            }
+
+            return true;
+        });
+
         checks.Check("drops respect min_skill", () =>
         {
             var t = DataLoader.Load(DataDir());

@@ -16,7 +16,7 @@ Unity 6000.6.6f1, URP 17.6.0.0, Input System 1.20.0 (только новый). U
 
 Быстрые команды из корня:
 
-- проверки ядра: `dotnet run --project tools/sim -- --selfcheck` (должно быть «все проверки прошли (44)», код 0);
+- проверки ядра: `dotnet run --project tools/sim -- --selfcheck` (должно быть «все проверки прошли (46)», код 0);
 - пассивный прогон леса: `dotnet run --project tools/sim -- --days 21` — таблица дней;
 - новый эпизод для ручной проверки — строка в `scenarios.csv` + `scenario_parties.csv` (сид, день, стартовый экран, отряды), меню строится из них;
 - открыть редактор: `Start_editor.bat` (или `unity open FG --args -automated`).

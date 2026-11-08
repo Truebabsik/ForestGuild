@@ -40,6 +40,7 @@ namespace ForestGuild.Game
 
         private Expedition _current;
         private IVisualElementScheduledItem _tick;
+        private string _artClass = "";
         private bool _paused;
 
         public event Action<List<ExpeditionResult>> Finished;
@@ -85,18 +86,23 @@ namespace ForestGuild.Game
             _pause.text = "ПАУЗА";
             _panel.RemoveFromClassList("hidden");
 
-            _tick = _panel.schedule.Execute(Tick).Every(TickMs);
+            _tick ??= _panel.schedule.Execute(Tick).Every(TickMs);
+            _tick.Resume();
             StartNext();
         }
 
         public void Close()
         {
             _tick?.Pause();
+            HideDecisions();
             _panel.AddToClassList("hidden");
         }
 
         private void TogglePause()
         {
+            // Пока открыта развилка, тик и так стоит: кнопка не должна взводить вторую паузу.
+            if (_current != null && _current.HasDecision) return;
+
             _paused = !_paused;
             _pause.text = _paused ? "ПРОДОЛЖИТЬ" : "ПАУЗА";
         }
@@ -193,14 +199,19 @@ namespace ForestGuild.Game
 
         private void ShowMonsterDecision(ExpeditionDecision decision)
         {
-            var beast = _tables.Beasts.Get(decision.BeastId);
+            if (!_tables.Beasts.TryGet(decision.BeastId, out var beast) || string.IsNullOrEmpty(beast.Art))
+            {
+                // Вид неизвестен или у него нет арта — показываем обычную карточку, а не пустую плашку.
+                ShowInlineDecision(decision);
+                return;
+            }
+
             var state = decision.Kind == DecisionKind.Encounter ? "search" : "dead";
 
-            _monsterArt.ClearClassList();
-            _monsterArt.AddToClassList("monster-art");
-
-            if (!string.IsNullOrEmpty(beast.Art))
-                _monsterArt.AddToClassList("monster-art-" + beast.Art + "-" + state);
+            _monsterArt.RemoveFromClassList("monster-art-" + _artClass);
+            _artClass = beast.Art + "-" + state;
+            if (!_monsterArt.ClassListContains("monster-art")) _monsterArt.AddToClassList("monster-art");
+            _monsterArt.AddToClassList("monster-art-" + _artClass);
 
             _monsterTitle.text = decision.Title;
             _monsterBody.text = decision.Body;
@@ -251,6 +262,7 @@ namespace ForestGuild.Game
             if (_current.Finished)
             {
                 _results.Add(_current.Result);
+                _tick.Resume();
                 StartNext();
                 return;
             }

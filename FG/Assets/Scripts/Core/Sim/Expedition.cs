@@ -731,19 +731,42 @@ namespace ForestGuild.Core.Sim
             return Math.Min(0.95, 0.35 + 0.12 * best);
         }
 
+        /// Кто именно встретился: берём фактических тварей зоны, а не статичный список видов.
+        /// Иначе зашедшая мимо своей зоны тварь превращается в безымянную «тварь» без дропа.
         private string PickBeast()
         {
+            var live = _state.Beasts.Where(x => x.Value > 0).ToList();
+
+            if (live.Count > 0)
+            {
+                var totalLive = live.Sum(x => x.Value);
+                var roll = _rng.Next(totalLive);
+
+                foreach (var entry in live)
+                {
+                    roll -= entry.Value;
+                    if (roll >= 0) continue;
+
+                    _lastBeastId = entry.Key;
+                    return _tables.Beasts.Get(entry.Key).Name;
+                }
+
+                var lastLive = live[live.Count - 1].Key;
+                _lastBeastId = lastLive;
+                return _tables.Beasts.Get(lastLive).Name;
+            }
+
             var pool = _tables.ZoneBeasts.All.Where(x => x.ZoneId == _zone.Id).ToList();
             if (pool.Count == 0) return "тварь";
 
             var total = pool.Sum(x => x.Weight);
             if (total <= 0) return "тварь";
 
-            var roll = _rng.Next(total);
+            var rollStatic = _rng.Next(total);
             foreach (var entry in pool)
             {
-                roll -= entry.Weight;
-                if (roll >= 0) continue;
+                rollStatic -= entry.Weight;
+                if (rollStatic >= 0) continue;
 
                 _lastBeastId = entry.BeastId;
                 return _tables.Beasts.Get(entry.BeastId).Name;
