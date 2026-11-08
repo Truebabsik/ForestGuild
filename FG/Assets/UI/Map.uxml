@@ -38,6 +38,13 @@
       </ui:VisualElement>
     </ui:VisualElement>
 
+    <ui:VisualElement name="monster-modal" class="monster-modal hidden">
+      <ui:VisualElement name="monster-art" class="monster-art" />
+      <ui:Label name="monster-title" text="" class="monster-title" />
+      <ui:Label name="monster-body" text="" class="zone-text" />
+      <ui:VisualElement name="monster-options" class="decision-options" />
+    </ui:VisualElement>
+
     <ui:VisualElement name="village" class="village hidden">
       <ui:Label name="village-title" text="ДЕРЕВНЯ" class="panel-title" />
       <ui:Label name="village-palisade" text="" class="zone-text" />

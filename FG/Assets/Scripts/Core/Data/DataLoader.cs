@@ -83,6 +83,7 @@ namespace ForestGuild.Core.Data
                 Speed = I(r, p, "speed"),
                 FoodNeed = I(r, p, "food_need"),
                 NestCapable = Get(r, p, "nest_capable") == "1",
+                Art = Opt(r, "art") ?? "",
             }, x => x.Id);
 
             t.Professions = Read(dir, "professions.csv", (r, p) => new Profession

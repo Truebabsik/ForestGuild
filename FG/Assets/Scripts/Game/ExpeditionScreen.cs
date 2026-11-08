@@ -24,6 +24,12 @@ namespace ForestGuild.Game
         private readonly VisualElement _options;
         private readonly Button _pause;
 
+        private readonly VisualElement _monsterModal;
+        private readonly VisualElement _monsterArt;
+        private readonly Label _monsterTitle;
+        private readonly Label _monsterBody;
+        private readonly VisualElement _monsterOptions;
+
         private Tables _tables;
         private World _world;
         private DayPlan _plan;
@@ -50,6 +56,12 @@ namespace ForestGuild.Game
             _options = root.Q<VisualElement>("decision-options");
             _pause = root.Q<Button>("expedition-pause");
 
+            _monsterModal = root.Q<VisualElement>("monster-modal");
+            _monsterArt = root.Q<VisualElement>("monster-art");
+            _monsterTitle = root.Q<Label>("monster-title");
+            _monsterBody = root.Q<Label>("monster-body");
+            _monsterOptions = root.Q<VisualElement>("monster-options");
+
             _pause.clicked += TogglePause;
             root.Q<Button>("expedition-skip").clicked += SkipAll;
         }
@@ -68,7 +80,7 @@ namespace ForestGuild.Game
             foreach (var party in plan.Parties) _queue.Enqueue(party);
 
             _log.Clear();
-            _card.AddToClassList("hidden");
+            HideDecisions();
             _paused = false;
             _pause.text = "ПАУЗА";
             _panel.RemoveFromClassList("hidden");
@@ -165,10 +177,51 @@ namespace ForestGuild.Game
         private void ShowDecision(ExpeditionDecision decision)
         {
             _tick.Pause();
+
+            HideDecisions();
+
+            if (UsesMonsterArt(decision)) ShowMonsterDecision(decision);
+            else ShowInlineDecision(decision);
+        }
+
+        /// Встреча и туша показываются модалом с артом твари; раненый и мешок — нижней карточкой.
+        private bool UsesMonsterArt(ExpeditionDecision decision)
+        {
+            if (decision.Kind != DecisionKind.Encounter && decision.Kind != DecisionKind.Carcass) return false;
+            return !string.IsNullOrEmpty(decision.BeastId);
+        }
+
+        private void ShowMonsterDecision(ExpeditionDecision decision)
+        {
+            var beast = _tables.Beasts.Get(decision.BeastId);
+            var state = decision.Kind == DecisionKind.Encounter ? "search" : "dead";
+
+            _monsterArt.ClearClassList();
+            _monsterArt.AddToClassList("monster-art");
+
+            if (!string.IsNullOrEmpty(beast.Art))
+                _monsterArt.AddToClassList("monster-art-" + beast.Art + "-" + state);
+
+            _monsterTitle.text = decision.Title;
+            _monsterBody.text = decision.Body;
+
+            BuildOptions(_monsterOptions, decision);
+            _monsterModal.RemoveFromClassList("hidden");
+        }
+
+        private void ShowInlineDecision(ExpeditionDecision decision)
+        {
             _decisionTitle.text = decision.Title;
             _decisionBody.text = decision.Body;
 
-            _options.Clear();
+            BuildOptions(_options, decision);
+            _card.RemoveFromClassList("hidden");
+        }
+
+        private void BuildOptions(VisualElement container, ExpeditionDecision decision)
+        {
+            container.Clear();
+
             foreach (var option in decision.Options)
             {
                 var id = option.Id;
@@ -178,15 +231,19 @@ namespace ForestGuild.Game
                     + (string.IsNullOrEmpty(option.Note) ? "" : " — " + option.Note);
 
                 button.AddToClassList("decision-option");
-                _options.Add(button);
+                container.Add(button);
             }
+        }
 
-            _card.RemoveFromClassList("hidden");
+        private void HideDecisions()
+        {
+            _card.AddToClassList("hidden");
+            _monsterModal.AddToClassList("hidden");
         }
 
         private void Choose(string optionId)
         {
-            _card.AddToClassList("hidden");
+            HideDecisions();
             var before = _current.Result.Log.Count;
             _current.Decide(optionId);
             AppendNew(before);
@@ -218,7 +275,7 @@ namespace ForestGuild.Game
         private void SkipAll()
         {
             _tick?.Pause();
-            _card.AddToClassList("hidden");
+            HideDecisions();
 
             if (_current != null && !_current.Finished)
             {

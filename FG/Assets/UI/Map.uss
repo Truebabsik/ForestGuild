@@ -570,6 +570,43 @@
     white-space: normal;
 }
 
+.monster-modal {
+    position: absolute;
+    left: 300px;
+    right: 300px;
+    top: 64px;
+    background-color: rgb(16, 18, 16);
+    border-width: 2px;
+    border-color: rgb(228, 96, 70);
+    padding: 14px;
+}
+
+.monster-art {
+    height: 300px;
+    border-width: 1px;
+    border-color: rgb(120, 84, 60);
+    -unity-background-scale-mode: scale-and-crop;
+    background-color: rgb(24, 22, 20);
+}
+
+.monster-title {
+    color: rgb(240, 214, 160);
+    font-size: 24px;
+    -unity-font-style: bold;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.monster-art-spark-search { background-image: url("project://database/Assets/UI/Art/Monsters/spark_search.jpg"); }
+.monster-art-bone-search { background-image: url("project://database/Assets/UI/Art/Monsters/bone_search.jpg"); }
+.monster-art-ash-search { background-image: url("project://database/Assets/UI/Art/Monsters/ash_search.jpg"); }
+.monster-art-spark-dead { background-image: url("project://database/Assets/UI/Art/Monsters/spark_dead.jpg"); }
+.monster-art-bone-dead { background-image: url("project://database/Assets/UI/Art/Monsters/bone_dead.jpg"); }
+.monster-art-ash-dead { background-image: url("project://database/Assets/UI/Art/Monsters/ash_dead.jpg"); }
+.monster-art-spark-attack { background-image: url("project://database/Assets/UI/Art/Monsters/spark_attack.jpg"); }
+.monster-art-bone-attack { background-image: url("project://database/Assets/UI/Art/Monsters/bone_attack.jpg"); }
+.monster-art-ash-attack { background-image: url("project://database/Assets/UI/Art/Monsters/ash_attack.jpg"); }
+
 .village {
     left: 180px;
     right: 180px;

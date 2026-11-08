@@ -68,7 +68,7 @@ tools/
 | `items.csv` | `id; name; category; slots; value; tags; short` — `material`, `consumable`, `weapon`, `armor`, `tool`, `trophy`; `short` — имя для HUD |
 | `zones.csv` | `id; name; depth; travel_hours; crystals_per_day; forage_per_day; neighbours; env_rule; map_x; map_y` — координаты карты нормализованы 0..1 |
 | `zone_resources.csv` | `zone_id; item_id; abundance` |
-| `beasts.csv` | `id; name; strength; speed; food_need; nest_capable` |
+| `beasts.csv` | `id; name; strength; speed; food_need; nest_capable; art` — `art` задаёт префикс картинок в `UI/Art/Monsters` |
 | `zone_beasts.csv` | `zone_id; beast_id; weight; initial_count` |
 | `drops.csv` | `beast_id; item_id; chance; min_skill` |
 | `skills.csv` | `id; name; kind; max_level` — `kind`: `field` / `craft` |

@@ -27,6 +27,9 @@ namespace ForestGuild.Core.Sim
         /// <summary>О каком предмете речь (для полного мешка).</summary>
         public string ItemId;
 
+        /// <summary>Какая тварь (для арта встречи и туши).</summary>
+        public string BeastId;
+
         public readonly List<ExpeditionOption> Options = new List<ExpeditionOption>();
 
         public ExpeditionOption Option(string id)
@@ -306,6 +309,7 @@ namespace ForestGuild.Core.Sim
                 Kind = DecisionKind.Encounter,
                 Title = "ВСТРЕЧА: " + beast,
                 Body = "Проскочить — тихо, если повезёт. Отойти — час долой. Бой — туша или рана.",
+                BeastId = _lastBeastId,
             };
 
             decision.Options.Add(new ExpeditionOption
@@ -417,6 +421,7 @@ namespace ForestGuild.Core.Sim
                 Kind = DecisionKind.Carcass,
                 Title = "ТУША",
                 Body = "Тварь убита. Что с ней делать?",
+                BeastId = _lastBeastId,
             };
 
             decision.Options.Add(new ExpeditionOption

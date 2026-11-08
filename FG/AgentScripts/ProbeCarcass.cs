@@ -46,12 +46,12 @@ public static class ProbeCarcass
         var secondKind = pending != null ? pending.GetType().GetField("Kind").GetValue(pending).ToString() : "none";
 
         var root = screen.GetComponent<UIDocument>().rootVisualElement;
-        var card = root.Q<VisualElement>("expedition-card");
-        var title = root.Q<Label>("decision-title");
+        var modal = root.Q<VisualElement>("monster-modal");
+        var title = root.Q<Label>("monster-title");
 
         return "first=" + firstKind + " " + hit
             + " second=" + secondKind
-            + " cardShown=" + (card != null && !card.ClassListContains("hidden"))
+            + " modalShown=" + (modal != null && !modal.ClassListContains("hidden"))
             + " title=[" + (title != null ? title.text : "?") + "]";
     }
 }

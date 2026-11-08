@@ -34,6 +34,10 @@ namespace ForestGuild.Core.Data
     public sealed class Beast
     {
         public string Id, Name;
+
+        /// <summary>Префикс арта в `UI/Art/Monsters`: spark / bone / ash.</summary>
+        public string Art;
+
         public int Strength, Speed, FoodNeed;
         public bool NestCapable;
     }
