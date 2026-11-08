@@ -1,6 +1,9 @@
 # Внешние исходники (кит интерфейса, референсы) — не в git
 /ext/
 
+# Сборки handoff — пересобираются, в git не нужны
+/docs/handoff/*.zip
+
 # Unity
 [Ll]ibrary/
 [Tt]emp/

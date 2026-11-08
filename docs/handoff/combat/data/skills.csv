@@ -1,0 +1,7 @@
+id;name;kind;max_level
+gathering;Собирательство;field;5
+hunting;Охота;field;5
+butchering;Разделка;field;5
+smithing;Кузнечное дело;craft;5
+alchemy;Алхимия;craft;5
+tanning;Кожевенное дело;craft;5
