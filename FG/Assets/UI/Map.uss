@@ -255,11 +255,36 @@
     background-color: rgb(12, 14, 12);
 }
 
+/* ---- кит из ext: золотая плашка под заголовки ---- */
+
+.kit-plate {
+    background-image: url("project://database/Assets/UI/Art/Kit/plate.png");
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    -unity-background-scale-mode: stretch-to-fill;
+}
+
+.kit-title {
+    width: 560px;
+    height: 104px;
+    align-items: center;
+    justify-content: center;
+    background-image: url("project://database/Assets/UI/Art/Kit/plate.png");
+    -unity-slice-left: 18;
+    -unity-slice-right: 18;
+    -unity-slice-top: 18;
+    -unity-slice-bottom: 18;
+    -unity-background-scale-mode: stretch-to-fill;
+    margin-bottom: 8px;
+}
+
 .menu-title {
-    color: rgb(238, 216, 170);
-    font-size: 46px;
+    color: rgb(52, 36, 20);
+    font-size: 40px;
     -unity-font-style: bold;
-    margin-bottom: 6px;
+    margin: 0;
 }
 
 .menu-subtitle {
@@ -983,4 +1008,50 @@
 .modal-buttons .action {
     margin-left: 8px;
     width: 220px;
+}
+
+/* ---- палитра кита: бирюза и золото ---- */
+
+.pane,
+.evening,
+.dossier,
+.muster,
+.village,
+.startday,
+.monster-modal,
+.modal,
+.expedition {
+    background-color: rgb(17, 27, 32);
+    border-color: rgb(201, 154, 90);
+}
+
+.action {
+    background-color: rgb(19, 82, 94);
+    color: rgb(240, 224, 190);
+    border-width: 2px;
+    border-color: rgb(201, 154, 90);
+    border-top-color: rgb(232, 194, 126);
+    border-bottom-color: rgb(110, 78, 42);
+}
+
+.action:hover {
+    background-color: rgb(27, 106, 118);
+    border-color: rgb(232, 194, 126);
+}
+
+.action.primary {
+    background-color: rgb(26, 138, 124);
+    border-color: rgb(240, 204, 126);
+}
+
+.action.primary:hover {
+    background-color: rgb(34, 160, 144);
+}
+
+.menu-title {
+    color: rgb(244, 222, 170);
+}
+
+.menu-subtitle {
+    color: rgb(196, 178, 142);
 }

@@ -115,7 +115,9 @@
     </ui:VisualElement>
 
     <ui:VisualElement name="menu" class="menu">
-      <ui:Label text="ЛЕСНАЯ ГИЛЬДИЯ" class="menu-title" />
+      <ui:VisualElement class="kit-title">
+        <ui:Label text="ЛЕСНАЯ ГИЛЬДИЯ" class="menu-title" />
+      </ui:VisualElement>
       <ui:Label text="деревня на краю магического леса" class="menu-subtitle" />
       <ui:VisualElement name="menu-items" class="menu-buttons" />
     </ui:VisualElement>

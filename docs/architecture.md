@@ -131,6 +131,7 @@ tools/
 | Загрузчик с валидацией внешних ключей | `FG/Assets/Scripts/Core/Data/` | проверки «сломанный сосед», «неизвестный предмет», «чужая schema_version» |
 | Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `ExpeditionResult`, `DayFlow`, `WaveSim`, `Briefing`, `Works`, `ZoneKnowledge`, `State` | `FG/Assets/Scripts/Core/Sim/` | 34 проверки в `tools/sim`, ядро без `UnityEngine` |
 | Карта, досье зоны, экраны цикла, отчёт | `FG/Assets/UI/`, `FG/Assets/Scripts/Game/` | скриншоты `docs/images/ui/step1/` |
+| Кит интерфейса: золотая плашка, палитра | `FG/Assets/UI/Art/Kit/`, `Map.uss` | скриншоты меню и модала встречи |
 | Сцена | `FG/Assets/Scenes/Main.unity` | Play Mode, день 1 → отчёт → день 2 |
 
 Сборка сцены — скриптом `FG/AgentScripts/BuildScene.cs` через `unity command script run` (файл вне `Assets/`, поэтому не тянет импорт). Ссылку `PanelSettings` пришлось ставить через `SerializedObject`: сеттер `UIDocument.panelSettings` в скриптовой сборке сцены не сериализовался (`m_PanelSettings: {fileID: 0}`), из-за чего экран был чёрным.
