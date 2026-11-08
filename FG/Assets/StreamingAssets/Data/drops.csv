@@ -1,6 +1,8 @@
 beast_id;item_id;chance;min_skill
 beast_spark;sulfur_nodule;0.5;0
 beast_spark;bone_plate;0.2;2
+beast_spark;crystal_fire;0.5;0
 beast_bone;bone_plate;0.8;0
 beast_bone;hide_rough;0.4;1
+beast_bone;crystal_fire;0.5;0
 beast_ash;crystal_fire;0.6;0

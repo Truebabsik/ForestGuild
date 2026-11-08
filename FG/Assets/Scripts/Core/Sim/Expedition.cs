@@ -24,6 +24,9 @@ namespace ForestGuild.Core.Sim
         /// <summary>Кого касается решение (для раненого).</summary>
         public string PersonId;
 
+        /// <summary>О каком предмете речь (для полного мешка).</summary>
+        public string ItemId;
+
         public readonly List<ExpeditionOption> Options = new List<ExpeditionOption>();
 
         public ExpeditionOption Option(string id)
@@ -56,6 +59,9 @@ namespace ForestGuild.Core.Sim
         private float _freeSlots;
         private int _hour;
         private bool _leaving;
+
+        /// Последняя встреченная тварь: из неё потом достаётся добыча.
+        private string _lastBeastId;
 
         public ExpeditionDecision Pending { get; private set; }
         public bool Finished { get; private set; }
@@ -119,8 +125,7 @@ namespace ForestGuild.Core.Sim
                 return true;
             }
 
-            _hour++;
-            Result.HoursUsed = _hour;
+            SpendHour();
             Result.Stamina--;
 
             Find();
@@ -164,11 +169,7 @@ namespace ForestGuild.Core.Sim
 
                 if (_freeSlots < item.Slots)
                 {
-                    if (!TryMakeRoom(item))
-                    {
-                        Result.Log.Add(person.Name + ": мешок полон, " + item.Name + " брошено");
-                        continue;
-                    }
+                    if (!MakeRoomOrAsk(person, item)) continue;
                 }
 
                 _freeSlots -= item.Slots;
@@ -177,11 +178,76 @@ namespace ForestGuild.Core.Sim
             }
         }
 
-        /// Наказ «мешок»: если велено менять, выбрасываем самую дешёвую находку ради новой.
-        private bool TryMakeRoom(Item incoming)
+        /// Мешок полон: либо решаем наказом, либо спрашиваем игрока.
+        /// true — место освободилось, можно брать; false — предмет брошен.
+        private bool MakeRoomOrAsk(Person person, Item item)
         {
             var orders = Party.Orders ?? new StandingOrders();
-            if (orders.BagFull != BagOrder.ReplaceCheapest) return false;
+
+            if (orders.BagFull == BagOrder.ReplaceCheapest)
+            {
+                if (TryMakeRoom(item, true)) return true;
+
+                Result.Log.Add(person.Name + ": мешок полон, " + item.Name + " брошено");
+                return false;
+            }
+
+            if (orders.BagFull == BagOrder.Skip)
+            {
+                Result.Log.Add(person.Name + ": мешок полон, " + item.Name + " брошено");
+                return false;
+            }
+
+            var cheapest = Cheapest();
+            var decision = new ExpeditionDecision
+            {
+                Kind = DecisionKind.BagFull,
+                Title = "МЕШОК ПОЛОН",
+                Body = person.Name + " нашёл: " + item.Name + ". Места нет — решай, что важнее.",
+                ItemId = item.Id,
+                PersonId = person.Id,
+            };
+
+            if (cheapest.HasValue && cheapest.Value.Value < item.Value)
+            {
+                decision.Options.Add(new ExpeditionOption
+                {
+                    Id = "replace",
+                    Label = "взять вместо " + _tables.Items.Get(cheapest.Value.Key).Name,
+                    Chance = 1.0,
+                });
+            }
+
+            decision.Options.Add(new ExpeditionOption
+            {
+                Id = "skip",
+                Label = "не брать",
+                Chance = 1.0,
+            });
+
+            Pending = decision;
+            return false;
+        }
+
+        private KeyValuePair<string, int>? Cheapest()
+        {
+            KeyValuePair<string, int>? best = null;
+
+            foreach (var found in Result.Found)
+            {
+                var value = _tables.Items.Get(found.Key).Value;
+                if (best.HasValue && value >= _tables.Items.Get(best.Value.Key).Value) continue;
+                best = found;
+            }
+
+            return best;
+        }
+
+        /// Наказ «мешок»: если велено менять, выбрасываем самую дешёвую находку ради новой.
+        private bool TryMakeRoom(Item incoming, bool force = false)
+        {
+            var orders = Party.Orders ?? new StandingOrders();
+            if (!force && orders.BagFull != BagOrder.ReplaceCheapest) return false;
 
             var worstIndex = -1;
             var worstValue = int.MaxValue;
@@ -206,6 +272,21 @@ namespace ForestGuild.Core.Sim
             Result.Log.Add("выбросили " + _tables.Items.Get(droppedId).Name + " ради " + incoming.Name);
 
             return _freeSlots >= incoming.Slots;
+        }
+
+        private void ResolveBagFull(string option, ExpeditionDecision decision)
+        {
+            var item = _tables.Items.Get(decision.ItemId);
+
+            if (option == "replace" && TryMakeRoom(item, true))
+            {
+                _freeSlots -= item.Slots;
+                AddFound(item.Id);
+                Result.Log.Add("взяли " + item.Name);
+                return;
+            }
+
+            Result.Log.Add("мешок полон, " + item.Name + " брошено");
         }
 
         private void Meet()
@@ -276,6 +357,10 @@ namespace ForestGuild.Core.Sim
                 case DecisionKind.Wounded:
                     ResolveWounded(option.Id, decision.PersonId);
                     break;
+
+                case DecisionKind.BagFull:
+                    ResolveBagFull(option.Id, decision);
+                    break;
             }
         }
 
@@ -293,7 +378,7 @@ namespace ForestGuild.Core.Sim
             {
                 if (success)
                 {
-                    _hour++;
+                    SpendHour();
                     Result.Log.Add(_zone.Name + ": отошли, потеряли час");
                     LoseSomeLoot();
                 }
@@ -373,17 +458,17 @@ namespace ForestGuild.Core.Sim
 
                 _freeSlots -= 3f;
                 Result.Log.Add("тушу утащили целиком");
-                Result.Found.Add(new KeyValuePair<string, int>("crystal_fire", 1));
+                TakeDrops(success: true);
                 return;
             }
 
             if (option == "butcher")
             {
-                _hour++;
+                SpendHour();
                 if (success)
                 {
-                    AddFound("crystal_fire");
-                    Result.Log.Add("освежевали: кристалл и части в мешке");
+                    Result.Log.Add("освежевали");
+                    TakeDrops(success: true);
                 }
                 else
                 {
@@ -395,6 +480,72 @@ namespace ForestGuild.Core.Sim
 
             _state.Forage++;
             Result.Log.Add("тушу бросили");
+        }
+
+        /// Что нашлось в туше: роллы из `drops.csv` по убитому зверю и навыку разделки.
+        private void TakeDrops(bool success)
+        {
+            if (!success) return;
+
+            var drops = RollDrops(_tables, _lastBeastId, BestButcherLevel(), _rng);
+            if (drops.Count == 0)
+            {
+                Result.Log.Add("в туше ничего стоящего");
+                return;
+            }
+
+            foreach (var drop in drops)
+            {
+                var item = _tables.Items.Get(drop.Key);
+                if (_freeSlots < item.Slots)
+                {
+                    Result.Log.Add("в туше: " + item.Name + " — не влезло");
+                    continue;
+                }
+
+                _freeSlots -= item.Slots;
+                AddFound(drop.Key);
+                Result.Log.Add("в туше: " + item.Name);
+            }
+        }
+
+        /// Ролл добычи зверя. Публичный — чтобы проверять данные и вкус без боя.
+        public static List<KeyValuePair<string, int>> RollDrops(Tables tables, string beastId, int skill, Rng rng)
+        {
+            var found = new List<KeyValuePair<string, int>>();
+            if (string.IsNullOrEmpty(beastId)) return found;
+
+            foreach (var drop in tables.Drops.All)
+            {
+                if (drop.BeastId != beastId) continue;
+                if (skill < drop.MinSkill) continue;
+                if (!rng.Chance(drop.Chance)) continue;
+
+                var index = found.FindIndex(x => x.Key == drop.ItemId);
+                if (index >= 0) found[index] = new KeyValuePair<string, int>(drop.ItemId, found[index].Value + 1);
+                else found.Add(new KeyValuePair<string, int>(drop.ItemId, 1));
+            }
+
+            return found;
+        }
+
+        private int BestButcherLevel()
+        {
+            var best = 0;
+            foreach (var personId in Party.PersonIds)
+            {
+                var level = People.SkillLevel(_tables, _tables.Roster.Get(personId), "butchering");
+                if (level > best) best = level;
+            }
+
+            return best;
+        }
+
+        /// Час в лесу: единственное место, где растёт и `_hour`, и `HoursUsed`.
+        private void SpendHour()
+        {
+            _hour++;
+            Result.HoursUsed = _hour;
         }
 
         /// Слова вместо процентов: игрок прикидывает шансы, а не читает таблицу.
@@ -587,10 +738,15 @@ namespace ForestGuild.Core.Sim
             foreach (var entry in pool)
             {
                 roll -= entry.Weight;
-                if (roll < 0) return _tables.Beasts.Get(entry.BeastId).Name;
+                if (roll >= 0) continue;
+
+                _lastBeastId = entry.BeastId;
+                return _tables.Beasts.Get(entry.BeastId).Name;
             }
 
-            return _tables.Beasts.Get(pool[pool.Count - 1].BeastId).Name;
+            var last = pool[pool.Count - 1].BeastId;
+            _lastBeastId = last;
+            return _tables.Beasts.Get(last).Name;
         }
 
         private string PickResource()

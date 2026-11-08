@@ -473,6 +473,51 @@ internal static class Program
             return marsh.Nest.Beasts == 0 && w.BeastCount("verge_marsh") == 0;
         });
 
+        checks.Check("full bag asks before dropping", () =>
+        {
+            var dir = CopyDataWithReplacements("tuning.csv",
+                "find_base;1;тест", "slots_per_person;1;тест");
+
+            var t = DataLoader.Load(dir);
+            var w = World.Create(t);
+
+            var party = Party("verge_meadow", "leya");
+            party.Orders = new StandingOrders { BagFull = BagOrder.Ask };
+
+            var expedition = new Expedition(w, t, party, new Rng(3));
+            for (var i = 0; i < 20 && !expedition.Finished; i++)
+            {
+                if (expedition.HasDecision) break;
+                expedition.Advance();
+            }
+
+            return expedition.Pending != null
+                && expedition.Pending.Kind == DecisionKind.BagFull
+                && expedition.Pending.ItemId != null
+                && expedition.Pending.Options.Count >= 1;
+        });
+
+        checks.Check("drops respect min_skill", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            var noviceHide = false;
+            var skilledHide = false;
+            var noviceBone = false;
+
+            for (var seed = 0; seed < 40; seed++)
+            {
+                var novice = Expedition.RollDrops(t, "beast_bone", 0, new Rng(seed));
+                var skilled = Expedition.RollDrops(t, "beast_bone", 3, new Rng(seed));
+
+                if (novice.Any(x => x.Key == "hide_rough")) noviceHide = true;
+                if (skilled.Any(x => x.Key == "hide_rough")) skilledHide = true;
+                if (novice.Any(x => x.Key == "bone_plate")) noviceBone = true;
+            }
+
+            return !noviceHide && skilledHide && noviceBone;
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
@@ -530,6 +575,31 @@ internal static class Program
     }
 
     /// Копирует справочники во временную папку и дописывает строку-порчу в один файл.
+    /// Копия данных с заменой строк по ключу первой колонки — для проверок, которым нужен другой тюнинг.
+    private static string CopyDataWithReplacements(string file, params string[] replacedLines)
+    {
+        var tmp = Path.Combine(Path.GetTempPath(), "fg_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tmp);
+
+        foreach (var f in Directory.GetFiles(DataDir(), "*.csv"))
+            File.Copy(f, Path.Combine(tmp, Path.GetFileName(f)));
+
+        var path = Path.Combine(tmp, file);
+        var lines = File.ReadAllLines(path);
+
+        foreach (var replacement in replacedLines)
+        {
+            var key = replacement.Split(';')[0] + ";";
+            for (var i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].StartsWith(key, StringComparison.Ordinal)) lines[i] = replacement;
+            }
+        }
+
+        File.WriteAllLines(path, lines);
+        return tmp;
+    }
+
     private static string CopyDataWithMutation(string file, string badLine)
     {
         var tmp = Path.Combine(Path.GetTempPath(), "fg_" + Guid.NewGuid().ToString("N"));
