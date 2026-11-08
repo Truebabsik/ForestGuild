@@ -631,6 +631,16 @@
 .monster-art-spark-attack { background-image: url("project://database/Assets/UI/Art/Monsters/spark_attack.jpg"); }
 .monster-art-bone-attack { background-image: url("project://database/Assets/UI/Art/Monsters/bone_attack.jpg"); }
 .monster-art-ash-attack { background-image: url("project://database/Assets/UI/Art/Monsters/ash_attack.jpg"); }
+.monster-art-angler-search { background-image: url("project://database/Assets/UI/Art/Monsters/angler_search.jpg"); }
+.monster-art-angler-attack { background-image: url("project://database/Assets/UI/Art/Monsters/angler_attack.jpg"); }
+.monster-art-angler-dead { background-image: url("project://database/Assets/UI/Art/Monsters/angler_dead.jpg"); }
+.monster-art-climber-search { background-image: url("project://database/Assets/UI/Art/Monsters/climber_search.jpg"); }
+.monster-art-climber-attack { background-image: url("project://database/Assets/UI/Art/Monsters/climber_attack.jpg"); }
+.monster-art-climber-dead { background-image: url("project://database/Assets/UI/Art/Monsters/climber_dead.jpg"); }
+.monster-art-fang-search { background-image: url("project://database/Assets/UI/Art/Monsters/fang_search.jpg"); }
+.monster-art-fang-attack { background-image: url("project://database/Assets/UI/Art/Monsters/fang_attack.jpg"); }
+.monster-art-fang-dead { background-image: url("project://database/Assets/UI/Art/Monsters/fang_dead.jpg"); }
+.monster-art-mole-search { background-image: url("project://database/Assets/UI/Art/Monsters/mole_search.jpg"); }
 
 .village {
     left: 180px;

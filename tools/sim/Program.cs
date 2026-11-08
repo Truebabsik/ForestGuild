@@ -30,7 +30,7 @@ internal static class Program
             return t.Zones.All.Count == 6
                 && t.Roster.All.Count == 8
                 && t.Items.All.Count == 15
-                && t.Beasts.All.Count == 3;
+                && t.Beasts.All.Count == 5;
         });
 
         checks.Check("unknown neighbour zone fails", () =>
