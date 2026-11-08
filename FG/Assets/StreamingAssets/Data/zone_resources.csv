@@ -1,6 +1,8 @@
 zone_id;item_id;abundance
 verge_meadow;moss_common;3
 verge_meadow;herb_ash_lichen;2
+verge_meadow;mushroom_ash_cap;2
+verge_meadow;resin_pine;1
 verge_springs;herb_fire_leaf;3
 verge_springs;herb_ash_lichen;1
 verge_springs;ore_obsidian;2

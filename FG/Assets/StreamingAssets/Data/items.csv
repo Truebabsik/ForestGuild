@@ -6,5 +6,7 @@ ore_obsidian;Обсидиановая руда;material;2;8;heavy;Обсидиа
 sulfur_nodule;Серный натёк;material;1;5;fire;Сера
 crystal_fire;Кристалл огня;material;1;25;crystal;Кристалл
 moss_common;Обычный мох;material;0.5;1;;Мох
+mushroom_ash_cap;Пепельный груздь;material;0.5;2;food;Груздь
+resin_pine;Сосновая смола;material;0.5;6;fire;Смола
 bone_plate;Костяная пластина;trophy;1;12;bone;Кость
 hide_rough;Грубая шкура;trophy;1;6;hide;Шкура

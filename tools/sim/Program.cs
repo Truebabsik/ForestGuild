@@ -29,7 +29,7 @@ internal static class Program
             var t = DataLoader.Load(DataDir());
             return t.Zones.All.Count == 6
                 && t.Roster.All.Count == 8
-                && t.Items.All.Count == 9
+                && t.Items.All.Count == 11
                 && t.Beasts.All.Count == 3;
         });
 
