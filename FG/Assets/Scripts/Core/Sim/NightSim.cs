@@ -186,15 +186,17 @@ namespace ForestGuild.Core.Sim
             {
                 if (!state.Nest.Exists) continue;
 
+                var nestBeast = tables.ZoneBeasts.All
+                    .FirstOrDefault(x => x.ZoneId == state.ZoneId && tables.Beasts.Get(x.BeastId).NestCapable);
+
+                // Некому расти (в зоне нет вида, способного вить гнездо): таймер не тикает и счётчик не врёт.
+                if (nestBeast == null) continue;
+
                 state.Nest.DaysSinceSpawn++;
                 if (state.Nest.DaysSinceSpawn < spawnDays || state.Nest.Beasts >= cap) continue;
 
                 state.Nest.DaysSinceSpawn = 0;
                 state.Nest.Beasts++;
-
-                var nestBeast = tables.ZoneBeasts.All
-                    .FirstOrDefault(x => x.ZoneId == state.ZoneId && tables.Beasts.Get(x.BeastId).NestCapable);
-                if (nestBeast == null) continue;
 
                 state.Beasts.TryGetValue(nestBeast.BeastId, out var current);
                 state.Beasts[nestBeast.BeastId] = current + 1;

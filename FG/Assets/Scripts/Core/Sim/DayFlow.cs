@@ -140,28 +140,15 @@ namespace ForestGuild.Core.Sim
             return report;
         }
 
-        /// Кто остался в деревне: все, кроме ушедших в лес.
+        /// Кто встречает волну: все, кто жив к ночи. Отряды к ночи уже вернулись из леса,
+        /// поэтому «ушёл в поход» защитника не снимает.
         private List<string> Defenders(DayPlan plan)
         {
             var home = new List<string>();
 
             foreach (var person in _tables.Roster.All)
             {
-                var inForest = false;
-
-                if (plan != null)
-                {
-                    foreach (var party in plan.Parties)
-                    {
-                        if (party.PersonIds.Contains(person.Id))
-                        {
-                            inForest = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!inForest) home.Add(person.Id);
+                home.Add(person.Id);
             }
 
             return home;

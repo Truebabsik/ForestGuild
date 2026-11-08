@@ -437,6 +437,42 @@ internal static class Program
                 && Expedition.MasteryWord(1) == "новичок";
         });
 
+        checks.Check("hunters who went to the forest still defend at night", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            var withParty = World.Create(t);
+            withParty.Day = 21;
+            withParty.NextWaveDay = 21;
+            var plan = new DayPlan();
+            plan.Parties.Add(Party("verge_meadow", "brunni", "skadi", "hilda", "orn"));
+            var a = new DayFlow(withParty, t, new Rng(11)).RunNight(plan);
+
+            var withoutParty = World.Create(t);
+            withoutParty.Day = 21;
+            withoutParty.NextWaveDay = 21;
+            var b = new DayFlow(withoutParty, t, new Rng(11)).RunNight(new DayPlan());
+
+            return a.Wave != null && b.Wave != null
+                && a.Wave.Killed > 0
+                && a.Wave.Killed == b.Wave.Killed;
+        });
+
+        checks.Check("nest without a nest-capable beast does not grow", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+
+            var marsh = w.Zones["verge_marsh"];
+            marsh.Nest.Exists = true;
+            marsh.Nest.Beasts = 0;
+            marsh.Nest.DaysSinceSpawn = 0;
+
+            for (var i = 0; i < 10; i++) NightSim.AdvanceNight(w, t, new Rng(i));
+
+            return marsh.Nest.Beasts == 0 && w.BeastCount("verge_marsh") == 0;
+        });
+
         return checks.Report() ? 0 : 1;
     }
 
