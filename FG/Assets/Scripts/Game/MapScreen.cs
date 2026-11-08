@@ -58,6 +58,9 @@ namespace ForestGuild.Game
         private bool _demoMuster;
         private bool _demoExpedition;
 
+        /// Отдельный мир для тестовых режимов: настоящий не портится.
+        private World _demoWorld;
+
         private void Awake()
         {
             _document = GetComponent<UIDocument>();
@@ -121,6 +124,7 @@ namespace ForestGuild.Game
                 if (_demoMuster)
                 {
                     _demoMuster = false;
+                    _demoWorld = null;
                     ShowMenu();
                 }
             };
@@ -138,16 +142,16 @@ namespace ForestGuild.Game
             Expedition = new ExpeditionScreen(root);
             Expedition.Finished += results =>
             {
-                _flow.FinishExpeditions(_dayReport, results);
-
+                // Демо живёт в своём мире: результат никуда не переносим.
                 if (_demoExpedition)
                 {
                     _demoExpedition = false;
-                    _plan = new DayPlan();
+                    _demoWorld = null;
                     ShowMenu();
                     return;
                 }
 
+                _flow.FinishExpeditions(_dayReport, results);
                 GoToEvening();
             };
 
@@ -196,22 +200,20 @@ namespace ForestGuild.Game
         {
             _menu.AddToClassList("hidden");
 
-            var squad = World.Squads[0];
-            if (squad.Members.Count == 0)
-            {
-                squad.Members.Add("brunni");
-                squad.Members.Add("leya");
-            }
+            // Демо собирается в отдельном мире: настоящие отряды не трогаем.
+            _demoWorld = World.Create(Tables);
+            var squad = _demoWorld.Squads[0];
+            squad.Members.Add("brunni");
+            squad.Members.Add("leya");
 
             SetPhase(Phase.Morning);
-            Board.Rebuild();
 
             // Симуляция — это только экран Сбора: планирование и низ убираем, чтобы не мешали.
             _leftPanel.AddToClassList("hidden");
             _bottomBar.AddToClassList("hidden");
 
             _demoMuster = true;
-            Muster.Open(squad, Tables, World, _plan);
+            Muster.Open(squad, Tables, _demoWorld, new DayPlan());
         }
 
         // ---- фазы ----
@@ -254,38 +256,37 @@ namespace ForestGuild.Game
         }
 
         /// Симуляция похода: два отряда сразу в лесу, без утра и приказа — смотреть, как живут в лесу.
+        /// Идёт в отдельном мире: добыча, раны и смерти демо не попадают в настоящую игру.
         private void StartExpeditionDemo()
         {
             _menu.AddToClassList("hidden");
 
-            var a = World.Squads[0];
-            a.Members.Clear();
+            _demoWorld = World.Create(Tables);
+
+            var a = _demoWorld.Squads[0];
             a.Members.Add("brunni");
             a.Members.Add("skadi");
             a.ZoneId = "verge_springs";
             a.Behavior = Behavior.Gather;
             a.Orders.Encounter = EncounterOrder.Ask;
 
-            var b = World.Squads[1];
-            b.Members.Clear();
+            var b = _demoWorld.Squads[1];
             b.Members.Add("hilda");
             b.Members.Add("orn");
             b.ZoneId = "verge_thicket";
             b.Behavior = Behavior.Clean;
             b.Orders.Encounter = EncounterOrder.Ask;
 
-            Board.Rebuild();
-
             SetPhase(Phase.Day);
             _leftPanel.AddToClassList("hidden");
             _bottomBar.AddToClassList("hidden");
 
             _demoExpedition = true;
-            _plan = new DayPlan();
-            BuildParties();
-            _dayReport = _flow.BeginDay(_plan);
 
-            Expedition.Open(Tables, World, _plan, _rng);
+            var plan = new DayPlan();
+            BuildParties(_demoWorld, plan);
+
+            Expedition.Open(Tables, _demoWorld, plan, new Rng(4242));
         }
 
         // ---- приказ ----
@@ -332,9 +333,14 @@ namespace ForestGuild.Game
         /// Отряды-пресеты → партии дня. Одно место, откуда берут и приказ, и симуляция похода.
         private void BuildParties()
         {
-            _plan.Parties.Clear();
+            BuildParties(World, _plan);
+        }
 
-            foreach (var squad in World.Squads)
+        private static void BuildParties(World world, DayPlan plan)
+        {
+            plan.Parties.Clear();
+
+            foreach (var squad in world.Squads)
             {
                 if (squad.Members.Count == 0 || string.IsNullOrEmpty(squad.ZoneId)) continue;
 
@@ -346,7 +352,7 @@ namespace ForestGuild.Game
                     Orders = squad.Orders,
                 };
                 party.PersonIds.AddRange(squad.Members);
-                _plan.Parties.Add(party);
+                plan.Parties.Add(party);
             }
         }
 
