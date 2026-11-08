@@ -10,7 +10,7 @@ public static class ProbeParty
     public static string Run()
     {
         var screen = Object.FindAnyObjectByType<ForestGuild.Game.MapScreen>();
-        screen.GetType().GetMethod("StartMusterDemo", Flags).Invoke(screen, null);
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "muster" });
 
         var type = screen.Muster.GetType();
         var root = screen.GetComponent<UIDocument>().rootVisualElement;

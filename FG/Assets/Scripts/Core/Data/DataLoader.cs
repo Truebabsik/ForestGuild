@@ -154,6 +154,27 @@ namespace ForestGuild.Core.Data
                 Chance = F(r, p, "chance"),
             }, x => x.RecipeId + "|" + x.MinSkill);
 
+            t.Scenarios = Read(dir, "scenarios.csv", (r, p) => new Scenario
+            {
+                Id = Get(r, p, "id"),
+                Title = Get(r, p, "title"),
+                Seed = I(r, p, "seed"),
+                Day = I(r, p, "day"),
+                StartScreen = Get(r, p, "start_screen"),
+                OnFinish = Opt(r, "on_finish") ?? "continue",
+                Notes = Opt(r, "notes"),
+            }, x => x.Id);
+
+            t.ScenarioParties = Read(dir, "scenario_parties.csv", (r, p) => new ScenarioParty
+            {
+                ScenarioId = Get(r, p, "scenario_id"),
+                Squad = Get(r, p, "squad"),
+                Zone = Opt(r, "zone") ?? "",
+                Behavior = Opt(r, "behavior") ?? "gather",
+                EncounterOrder = Opt(r, "encounter_order") ?? "ask",
+                Members = Opt(r, "members") ?? "",
+            }, x => x.ScenarioId + "|" + x.Squad);
+
             Validate(t);
             return t;
         }
@@ -192,6 +213,8 @@ namespace ForestGuild.Core.Data
             RequireRefs(t.RecipeQuality.All.Select(x => x.RecipeId), t.Recipes, "recipe_quality.csv", "recipe_id");
             RequireRefs(t.RecipeQuality.All.Select(x => x.OutputId), t.Items, "recipe_quality.csv", "output_id");
 
+            ValidateScenarios(t);
+
             var fields = new[] { "look", "beasts", "finds", "special" };
             foreach (var zone in t.Zones.All)
             {
@@ -199,6 +222,55 @@ namespace ForestGuild.Core.Data
                 {
                     if (!t.ZoneLore.TryGet(zone.Id + "|" + field, out _))
                         throw new DataException("zone_lore.csv", "у зоны " + zone.Id + " нет поля " + field);
+                }
+            }
+        }
+
+        /// <summary>Сценарии: ссылки на отряды, зоны и живых людей должны существовать.</summary>
+        private static void ValidateScenarios(Tables t)
+        {
+            var screens = new[] { "campaign", "muster", "expedition" };
+            var finishes = new[] { "continue", "menu" };
+            var squads = new[] { "A", "B" };
+            var behaviors = new[] { "gather", "avoid", "clean" };
+            var orders = new[] { "ask", "hide", "retreat", "fight" };
+
+            if (t.Scenarios.All.Count == 0)
+                throw new DataException("scenarios.csv", "нет ни одного сценария");
+
+            foreach (var scenario in t.Scenarios.All)
+            {
+                if (System.Array.IndexOf(screens, scenario.StartScreen) < 0)
+                    throw new DataException("scenarios.csv", "неизвестный start_screen " + scenario.StartScreen);
+
+                if (System.Array.IndexOf(finishes, scenario.OnFinish) < 0)
+                    throw new DataException("scenarios.csv", "неизвестный on_finish " + scenario.OnFinish);
+
+                if (scenario.Day < 1)
+                    throw new DataException("scenarios.csv", "день должен быть >= 1 у " + scenario.Id);
+            }
+
+            foreach (var party in t.ScenarioParties.All)
+            {
+                if (!t.Scenarios.TryGet(party.ScenarioId, out _))
+                    throw new DataException("scenario_parties.csv", "неизвестный сценарий " + party.ScenarioId);
+
+                if (System.Array.IndexOf(squads, party.Squad) < 0)
+                    throw new DataException("scenario_parties.csv", "неизвестный отряд " + party.Squad);
+
+                if (!string.IsNullOrEmpty(party.Zone) && !t.Zones.TryGet(party.Zone, out _))
+                    throw new DataException("scenario_parties.csv", "неизвестная зона " + party.Zone);
+
+                if (System.Array.IndexOf(behaviors, party.Behavior) < 0)
+                    throw new DataException("scenario_parties.csv", "неизвестное намерение " + party.Behavior);
+
+                if (System.Array.IndexOf(orders, party.EncounterOrder) < 0)
+                    throw new DataException("scenario_parties.csv", "неизвестный наказ " + party.EncounterOrder);
+
+                foreach (var member in SplitList(party.Members))
+                {
+                    if (!t.Roster.TryGet(member, out _))
+                        throw new DataException("scenario_parties.csv", "неизвестный житель " + member);
                 }
             }
         }

@@ -588,6 +588,46 @@ internal static class Program
             return !a.Members.Contains(dead) && !a.Members.Contains(wounded);
         });
 
+        checks.Check("scenario builds an episode with its squads", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var episode = EpisodeBuilder.Build(t, "expedition");
+
+            var a = episode.World.Squads[0];
+            var b = episode.World.Squads[1];
+
+            return episode.Scenario.StartScreen == "expedition"
+                && episode.World.Day == 1
+                && a.ZoneId == "verge_springs" && a.Members.Count == 2
+                && b.ZoneId == "verge_thicket" && b.Members.Count == 2
+                && a.Behavior == Behavior.Gather && b.Behavior == Behavior.Clean;
+        });
+
+        checks.Check("unknown scenario is a data error", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            try
+            {
+                EpisodeBuilder.Build(t, "no_such_scenario");
+                return false;
+            }
+            catch (DataException)
+            {
+                return true;
+            }
+        });
+
+        checks.Check("campaign starts on day one with empty squads", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var episode = EpisodeBuilder.Build(t, "campaign");
+
+            return episode.World.Day == 1
+                && episode.World.Squads[0].Members.Count == 0
+                && episode.World.Squads[1].Members.Count == 0
+                && episode.Scenario.OnFinish == "continue";
+        });
+
         return checks.Report() ? 0 : 1;
     }
 

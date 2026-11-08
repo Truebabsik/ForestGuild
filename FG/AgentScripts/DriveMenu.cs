@@ -18,12 +18,12 @@ public static class DriveMenu
 
         var menuVisible = menu != null && !menu.ClassListContains("hidden");
 
-        type.GetMethod("StartGame", Flags).Invoke(screen, null);
+        type.GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "campaign" });
         var gameOk = startday != null && !startday.ClassListContains("hidden");
         var menuHidden = menu.ClassListContains("hidden");
 
         type.GetMethod("ShowMenu", Flags).Invoke(screen, null);
-        type.GetMethod("StartMusterDemo", Flags).Invoke(screen, null);
+        type.GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "muster" });
         var musterOk = screen.Muster.IsOpen;
 
         return "menuVisible=" + menuVisible

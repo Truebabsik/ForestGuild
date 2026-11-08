@@ -54,8 +54,7 @@ namespace ForestGuild.Core.Data
     }
 
     /// <summary>Строка zone_lore.csv: нарратив досье зоны.</summary>
-    public sealed class ZoneLore
-    {
+    public sealed class ZoneLore    {
         public string ZoneId, Field, Text;
     }
 
@@ -111,5 +110,20 @@ namespace ForestGuild.Core.Data
         public string RecipeId, OutputId;
         public int MinSkill, Qty;
         public double Chance;
+    }
+
+    /// <summary>Строка scenarios.csv: с какими входными данными запускать мир.</summary>
+    public sealed class Scenario
+    {
+        public string Id, Title, StartScreen, OnFinish, Notes;
+        public int Seed, Day;
+    }
+
+    /// <summary>Строка scenario_parties.csv: кто и куда идёт в этом сценарии.</summary>
+    public sealed class ScenarioParty
+    {
+        public string ScenarioId, Squad, Zone, Behavior;
+        public string EncounterOrder = "ask";
+        public string Members; // a|b|c
     }
 }

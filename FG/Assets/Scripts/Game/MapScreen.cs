@@ -43,6 +43,8 @@ namespace ForestGuild.Game
         private Action _paneAction;
 
         private HudView _hud;
+        private Label _hudLabel;
+        private VisualElement _squadsElement;
         private Label _warnings;
         private Label _paneTitle;
         private VisualElement _pane;
@@ -54,12 +56,9 @@ namespace ForestGuild.Game
         private Label _modalTitle;
         private VisualElement _modalLines;
         private VisualElement _menu;
-        private bool _inMenu;
-        private bool _demoMuster;
-        private bool _demoExpedition;
-
-        /// Отдельный мир для тестовых режимов: настоящий не портится.
-        private World _demoWorld;
+        private VisualElement _menuItems;
+        private bool _scenarioMuster;
+        private Episode _episode;
 
         private void Awake()
         {
@@ -70,9 +69,6 @@ namespace ForestGuild.Game
             {
                 var dataDir = System.IO.Path.Combine(Application.streamingAssetsPath, "Data");
                 Tables = DataLoader.Load(dataDir);
-                World = World.Create(Tables);
-                _rng = new Rng(12345);
-                _flow = new DayFlow(World, Tables, _rng);
             }
             catch (Exception e)
             {
@@ -91,7 +87,8 @@ namespace ForestGuild.Game
             Map.ZoneSelected += zoneId => Dossier.Open(zoneId, Tables, World, _phase == Phase.Morning);
             Map.VillageClicked += () => Village.Open(Tables, World, _plan);
 
-            _hud = new HudView(root.Q<Label>("hud"), Tables, World);
+            _hudLabel = root.Q<Label>("hud");
+            _squadsElement = root.Q<VisualElement>("squads");
 
             _warnings = root.Q<Label>("warnings");
             _pane = root.Q<VisualElement>("pane");
@@ -108,23 +105,18 @@ namespace ForestGuild.Game
             root.Q<Button>("modal-cancel").clicked += () => _modal.AddToClassList("hidden");
             root.Q<Button>("modal-confirm").clicked += ConfirmOrder;
 
-            Board = new MorningBoard(Tables, World,
-                root.Q<VisualElement>("squads"),
-                _warnings);
-            Board.Active = World.Squads[0];
-
+            Board = null;
             Village = new VillageScreen(root);
-            Village.Closed += () => Board.Rebuild();
+            Village.Closed += () => Board?.Rebuild();
 
             Muster = new MusterScreen(root);
-            Board.EditRequested += squad => Muster.Open(squad, Tables, World, _plan);
             Muster.Closed += () =>
             {
-                Board.Rebuild();
-                if (_demoMuster)
+                Board?.Rebuild();
+
+                if (_scenarioMuster)
                 {
-                    _demoMuster = false;
-                    _demoWorld = null;
+                    _scenarioMuster = false;
                     ShowMenu();
                 }
             };
@@ -132,6 +124,7 @@ namespace ForestGuild.Game
             Dossier = new DossierScreen(root);
             Dossier.GatherRequested += zoneId =>
             {
+                if (Board == null) return;
                 if (Board.Active == null) Board.Active = World.Squads[0];
                 Board.Active.ZoneId = zoneId;
                 Board.Rebuild();
@@ -142,11 +135,8 @@ namespace ForestGuild.Game
             Expedition = new ExpeditionScreen(root);
             Expedition.Finished += results =>
             {
-                // Демо живёт в своём мире: результат никуда не переносим.
-                if (_demoExpedition)
+                if (_episode != null && _episode.EndsInMenu)
                 {
-                    _demoExpedition = false;
-                    _demoWorld = null;
                     ShowMenu();
                     return;
                 }
@@ -160,23 +150,33 @@ namespace ForestGuild.Game
 
             root.Q<Button>("sign-button").clicked += OpenOrder;
 
-            Map.RefreshStates(World);
-            Board.Rebuild();
-
             _menu = root.Q<VisualElement>("menu");
-            root.Q<Button>("menu-play").clicked += StartGame;
-            root.Q<Button>("menu-sim").clicked += StartMusterDemo;
-            root.Q<Button>("menu-expedition").clicked += StartExpeditionDemo;
+            _menuItems = root.Q<VisualElement>("menu-items");
+            BuildMenu();
             ShowMenu();
         }
 
         // ---- стартовое меню ----
 
+        /// Меню — список сценариев из CSV: добавить эпизод = добавить строку, без кода.
+        private void BuildMenu()
+        {
+            _menuItems.Clear();
+
+            foreach (var scenario in EpisodeBuilder.All(Tables))
+            {
+                var id = scenario.Id;
+                var button = new Button(() => StartScenario(id));
+                button.text = scenario.Title;
+                button.AddToClassList("action");
+                button.AddToClassList("menu-button");
+                if (scenario.StartScreen == "campaign") button.AddToClassList("primary");
+                _menuItems.Add(button);
+            }
+        }
+
         private void ShowMenu()
         {
-            if (_inMenu) return;
-            _inMenu = true;
-
             _menu.RemoveFromClassList("hidden");
             _leftPanel.AddToClassList("hidden");
             _bottomBar.AddToClassList("hidden");
@@ -184,36 +184,58 @@ namespace ForestGuild.Game
             StartDay.Close();
             Evening.Close();
             Expedition?.Close();
+            Muster.Close();
+            Village.Close();
             Dossier.Close();
-
-            _inMenu = false;
+            _scenarioMuster = false;
         }
 
-        private void StartGame()
+        /// Любой запуск мира — это эпизод по сценарию: игра и тесты идут одним путём.
+        private void StartScenario(string id)
         {
+            _episode = EpisodeBuilder.Build(Tables, id);
+            World = _episode.World;
+            _rng = _episode.Rng;
+            _flow = new DayFlow(World, Tables, _rng);
+            _plan = new DayPlan();
+            _dayReport = null;
+
+            CreateBoardAndHud();
+            Map.RefreshStates(World);
+
             _menu.AddToClassList("hidden");
-            BeginDay();
+
+            switch (_episode.Scenario.StartScreen)
+            {
+                case "muster":
+                    SetPhase(Phase.Morning);
+                    _leftPanel.AddToClassList("hidden");
+                    _bottomBar.AddToClassList("hidden");
+                    _scenarioMuster = true;
+                    Muster.Open(World.Squads[0], Tables, World, _plan);
+                    break;
+
+                case "expedition":
+                    SetPhase(Phase.Day);
+                    _leftPanel.AddToClassList("hidden");
+                    _bottomBar.AddToClassList("hidden");
+                    BuildParties(World, _plan);
+                    Expedition.Open(Tables, World, _plan, _rng);
+                    break;
+
+                default:
+                    BeginDay();
+                    break;
+            }
         }
 
-        /// Симуляция экрана поиска отряда: Сбор без прогона дня, для показа и правок.
-        private void StartMusterDemo()
+        private void CreateBoardAndHud()
         {
-            _menu.AddToClassList("hidden");
-
-            // Демо собирается в отдельном мире: настоящие отряды не трогаем.
-            _demoWorld = World.Create(Tables);
-            var squad = _demoWorld.Squads[0];
-            squad.Members.Add("brunni");
-            squad.Members.Add("leya");
-
-            SetPhase(Phase.Morning);
-
-            // Симуляция — это только экран Сбора: планирование и низ убираем, чтобы не мешали.
-            _leftPanel.AddToClassList("hidden");
-            _bottomBar.AddToClassList("hidden");
-
-            _demoMuster = true;
-            Muster.Open(squad, Tables, _demoWorld, new DayPlan());
+            _hud = new HudView(_hudLabel, Tables, World);
+            Board = new MorningBoard(Tables, World, _squadsElement, _warnings);
+            Board.Active = World.Squads[0];
+            Board.EditRequested += squad => Muster.Open(squad, Tables, World, _plan);
+            Board.Rebuild();
         }
 
         // ---- фазы ----
@@ -239,7 +261,7 @@ namespace ForestGuild.Game
             if (phase != Phase.Evening) Evening.Close();
             if (phase != Phase.StartOfDay) StartDay.Close();
 
-            _hud.Update(_phase);
+            _hud?.Update(_phase);
         }
 
         /// Окно начала дня: номер дня и кто в каком состоянии.
@@ -253,40 +275,6 @@ namespace ForestGuild.Game
         {
             SetPhase(Phase.Morning);
             Board.Rebuild();
-        }
-
-        /// Симуляция похода: два отряда сразу в лесу, без утра и приказа — смотреть, как живут в лесу.
-        /// Идёт в отдельном мире: добыча, раны и смерти демо не попадают в настоящую игру.
-        private void StartExpeditionDemo()
-        {
-            _menu.AddToClassList("hidden");
-
-            _demoWorld = World.Create(Tables);
-
-            var a = _demoWorld.Squads[0];
-            a.Members.Add("brunni");
-            a.Members.Add("skadi");
-            a.ZoneId = "verge_springs";
-            a.Behavior = Behavior.Gather;
-            a.Orders.Encounter = EncounterOrder.Ask;
-
-            var b = _demoWorld.Squads[1];
-            b.Members.Add("hilda");
-            b.Members.Add("orn");
-            b.ZoneId = "verge_thicket";
-            b.Behavior = Behavior.Clean;
-            b.Orders.Encounter = EncounterOrder.Ask;
-
-            SetPhase(Phase.Day);
-            _leftPanel.AddToClassList("hidden");
-            _bottomBar.AddToClassList("hidden");
-
-            _demoExpedition = true;
-
-            var plan = new DayPlan();
-            BuildParties(_demoWorld, plan);
-
-            Expedition.Open(Tables, _demoWorld, plan, new Rng(4242));
         }
 
         // ---- приказ ----

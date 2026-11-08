@@ -1,0 +1,4 @@
+scenario_id;squad;zone;behavior;encounter_order;members
+muster;A;;gather;ask;brunni|leya
+expedition;A;verge_springs;gather;ask;brunni|skadi
+expedition;B;verge_thicket;clean;ask;hilda|orn

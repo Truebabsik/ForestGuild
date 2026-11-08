@@ -9,7 +9,7 @@ public static class ProbeEncounter
     public static string Run()
     {
         var screen = Object.FindAnyObjectByType<ForestGuild.Game.MapScreen>();
-        screen.GetType().GetMethod("StartExpeditionDemo", Flags).Invoke(screen, null);
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
 
         var expedition = screen.Expedition;
         var type = expedition.GetType();

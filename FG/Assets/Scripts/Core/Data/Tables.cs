@@ -18,5 +18,9 @@ namespace ForestGuild.Core.Data
         public Table<Station> Stations;
         public Table<Recipe> Recipes;
         public Table<RecipeQuality> RecipeQuality;
+
+        /// <summary>Эпизоды мира: с чего начинаем и с какими входными данными.</summary>
+        public Table<Scenario> Scenarios;
+        public Table<ScenarioParty> ScenarioParties;
     }
 }

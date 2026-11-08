@@ -38,6 +38,8 @@ Assets/
       recipes.csv
       recipe_quality.csv
       zone_lore.csv
+      scenarios.csv
+      scenario_parties.csv
   Scripts/
     Core/              # чистая модель, без UnityEngine
       Data/            # типы строк таблиц и загрузчик
@@ -125,7 +127,7 @@ tools/
 
 | Что | Где | Чем проверено |
 |---|---|---|
-| 15 CSV-справочников | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
+| 17 CSV-справочников (15 данных + 2 сценария) | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
 | Загрузчик с валидацией внешних ключей | `FG/Assets/Scripts/Core/Data/` | проверки «сломанный сосед», «неизвестный предмет», «чужая schema_version» |
 | Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `ExpeditionResult`, `DayFlow`, `WaveSim`, `Briefing`, `Works`, `ZoneKnowledge`, `State` | `FG/Assets/Scripts/Core/Sim/` | 34 проверки в `tools/sim`, ядро без `UnityEngine` |
 | Карта, досье зоны, экраны цикла, отчёт | `FG/Assets/UI/`, `FG/Assets/Scripts/Game/` | скриншоты `docs/images/ui/step1/` |
@@ -139,7 +141,8 @@ tools/
 
 | Класс | Что делает |
 |---|---|
-| `MapScreen` | фазы и связка: SetPhase, меню, приказ, ночной отчёт, переходы |
+| `Scenario` → `Episode` | ядро: сценарий из CSV задаёт сид, день, отряды и стартовый экран; `EpisodeBuilder.Build` собирает мир |
+| `MapScreen` | запускает эпизод, переключает фазы, показывает приказ и ночной отчёт |
 | `HudView` | верхняя строка (день, фаза, частокол, волна, склад, здоровы) |
 | `StartOfDayScreen` | окно начала дня: номер дня и статус жителей |
 | `DossierScreen` | полноэкранное досье зоны (правая панель-превью убрана) |
@@ -153,5 +156,7 @@ tools/
 | `MapController` + `ZoneNodeView` + `EdgeLine` | карта: узлы по `map_x/map_y`, рёбра, деревня |
 
 Данные: `Tables` вынесен в отдельный файл от `DataLoader` — справочники как объект и их загрузка/валидация больше не в одном месте.
+
+**Эпизоды.** Любой запуск мира — это `scenarios.csv` (+ `scenario_parties.csv`): сид, день, стартовый экран (`campaign` / `muster` / `expedition`), что делать по завершении (`continue` / `menu`) и кто куда идёт. `EpisodeBuilder.Build(tables, id)` собирает `Episode` = мир + план + сид + сценарий. «Начать игру» и тестовые пункты меню — строки одной таблицы, а не ветки кода; добавить эпизод = добавить строки, без компиляции.
 
 `AgentScripts/` (вне `Assets/`) — одноразовые пробы для проверки экранов через `unity command script run`; в игру не попадают.

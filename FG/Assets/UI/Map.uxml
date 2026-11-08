@@ -110,11 +110,7 @@
     <ui:VisualElement name="menu" class="menu">
       <ui:Label text="ЛЕСНАЯ ГИЛЬДИЯ" class="menu-title" />
       <ui:Label text="деревня на краю магического леса" class="menu-subtitle" />
-      <ui:VisualElement class="menu-buttons">
-        <ui:Button name="menu-play" text="НАЧАТЬ ИГРУ" class="action primary menu-button" />
-        <ui:Button name="menu-sim" text="СБОР ОТРЯДА (ТЕСТИРОВАНИЕ)" class="action menu-button" />
-        <ui:Button name="menu-expedition" text="ПОХОД В ЛЕСУ (ТЕСТИРОВАНИЕ)" class="action menu-button" />
-      </ui:VisualElement>
+      <ui:VisualElement name="menu-items" class="menu-buttons" />
     </ui:VisualElement>
 
   </ui:VisualElement>

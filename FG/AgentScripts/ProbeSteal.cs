@@ -18,7 +18,7 @@ public static class ProbeSteal
         var b = screen.World.Squads[1];
         b.Members.Clear();
 
-        screen.GetType().GetMethod("StartMusterDemo", Flags).Invoke(screen, null);
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "muster" });
 
         var root = screen.GetComponent<UIDocument>().rootVisualElement;
         var tabs = root.Q<VisualElement>("muster-squads");

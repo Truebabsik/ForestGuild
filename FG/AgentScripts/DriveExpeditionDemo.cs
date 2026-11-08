@@ -11,7 +11,7 @@ public static class DriveExpeditionDemo
     {
         var screen = Object.FindAnyObjectByType<ForestGuild.Game.MapScreen>();
 
-        screen.GetType().GetMethod("StartExpeditionDemo", Flags).Invoke(screen, null);
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
 
         var phase = screen.GetType().GetField("_phase", Flags).GetValue(screen);
         var plan = (ForestGuild.Core.Sim.DayPlan)screen.GetType().GetField("_plan", Flags).GetValue(screen);
