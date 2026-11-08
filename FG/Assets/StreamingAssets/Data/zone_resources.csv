@@ -9,8 +9,12 @@ verge_springs;ore_obsidian;2
 verge_springs;sulfur_nodule;1
 verge_marsh;herb_glass_stem;2
 verge_marsh;herb_ash_lichen;1
+verge_marsh;peat_block;2
+verge_marsh;bog_iron;1
 verge_thicket;moss_common;3
 verge_thicket;herb_fire_leaf;1
+verge_thicket;timber_stout;1
+verge_thicket;thorn_bundle;2
 belt_stone;ore_obsidian;3
 belt_stone;sulfur_nodule;2
 belt_stone;crystal_fire;1

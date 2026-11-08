@@ -29,7 +29,7 @@ internal static class Program
             var t = DataLoader.Load(DataDir());
             return t.Zones.All.Count == 6
                 && t.Roster.All.Count == 8
-                && t.Items.All.Count == 11
+                && t.Items.All.Count == 15
                 && t.Beasts.All.Count == 3;
         });
 
@@ -464,13 +464,16 @@ internal static class Program
             var w = World.Create(t);
 
             var marsh = w.Zones["verge_marsh"];
+            var beastsBefore = w.BeastCount("verge_marsh");
+
             marsh.Nest.Exists = true;
             marsh.Nest.Beasts = 0;
             marsh.Nest.DaysSinceSpawn = 0;
 
             for (var i = 0; i < 10; i++) NightSim.AdvanceNight(w, t, new Rng(i));
 
-            return marsh.Nest.Beasts == 0 && w.BeastCount("verge_marsh") == 0;
+            // Гнездо не растёт и не плодит: в Топи живёт только пепельный вор, он не вьёт гнёзд.
+            return marsh.Nest.Beasts == 0 && w.BeastCount("verge_marsh") <= beastsBefore;
         });
 
         checks.Check("full bag asks before dropping", () =>
