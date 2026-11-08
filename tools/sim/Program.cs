@@ -518,6 +518,76 @@ internal static class Program
             return !noviceHide && skilledHide && noviceBone;
         });
 
+        checks.Check("squad rules live in the core", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var a = w.Squads[0];
+            var b = w.Squads[1];
+
+            var added = 0;
+            foreach (var person in t.Roster.All)
+            {
+                if (w.TryAddMember(t, a, person.Id)) added++;
+            }
+
+            if (added != t.Tuning.GetInt("party_max")) return false;
+
+            // Человек занят в другом отряде — второй раз его не взять.
+            var busy = a.Members[0];
+            if (w.TryAddMember(t, b, busy)) return false;
+
+            // Но забрать из другого отряда можно, если есть место.
+            if (!w.TryTakeFromOtherSquad(t, b, busy)) return false;
+
+            return b.Members.Contains(busy) && !a.Members.Contains(busy);
+        });
+
+        checks.Check("beds limit lives in the core", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var plan = new DayPlan();
+            var limit = t.Tuning.GetInt("beds_count");
+
+            var healthy = t.Roster.All[0].Id;
+            if (plan.TryAddBed(t, w, healthy)) return false; // здоровому постель не нужна
+
+            var wounded = t.Roster.All[0].Id;
+            Works.Wound(w, wounded);
+            if (!plan.TryAddBed(t, w, wounded)) return false;
+
+            plan.TryAddBed(t, w, wounded); // повторно — не дублируется
+            if (plan.Beds.Count != 1) return false;
+
+            var second = t.Roster.All[1].Id;
+            Works.Wound(w, second);
+            if (!plan.TryAddBed(t, w, second)) return false;
+
+            var third = t.Roster.All[2].Id;
+            Works.Wound(w, third);
+            return !plan.TryAddBed(t, w, third) && plan.Beds.Count == limit;
+        });
+
+        checks.Check("morning drops the dead and wounded from squads", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var a = w.Squads[0];
+
+            var dead = t.Roster.All[0].Id;
+            var wounded = t.Roster.All[1].Id;
+            a.Members.Add(dead);
+            a.Members.Add(wounded);
+
+            Works.Kill(w, dead);
+            Works.Wound(w, wounded);
+
+            w.RemoveUnavailableFromSquads();
+
+            return !a.Members.Contains(dead) && !a.Members.Contains(wounded);
+        });
+
         return checks.Report() ? 0 : 1;
     }
 

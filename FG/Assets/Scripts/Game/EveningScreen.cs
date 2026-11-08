@@ -139,11 +139,13 @@ namespace ForestGuild.Game
                 var id = personId;
                 var button = new Button(() =>
                 {
-                    if (!_plan.Beds.Remove(id))
+                    if (_plan.Beds.Contains(id))
                     {
-                        var free = _tables.Tuning.GetInt("beds_count") - _plan.Beds.Count;
-                        if (free <= 0) return;
-                        _plan.Beds.Add(id);
+                        _plan.RemoveBed(id);
+                    }
+                    else
+                    {
+                        if (!_plan.TryAddBed(_tables, _world, id)) return;
                     }
 
                     BuildLines();

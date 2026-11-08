@@ -67,11 +67,12 @@ namespace ForestGuild.Game
             _works.Clear();
 
             AddWork("починка частокола", _plan.VillageWorkers, FirstFree);
-            AddWork("постели", _plan.Beds, FirstWounded);
+            AddWork("постели", _plan.Beds, FirstWounded, id => _plan.TryAddBed(_tables, _world, id));
             AddWork("заготовка", _plan.Foragers, FirstFree);
         }
 
-        private void AddWork(string title, List<string> pool, System.Func<string> pick)
+        private void AddWork(string title, List<string> pool, System.Func<string> pick,
+            System.Func<string, bool> add = null)
         {
             var row = new VisualElement();
             row.AddToClassList("work-row");
@@ -97,7 +98,16 @@ namespace ForestGuild.Game
             {
                 var personId = pick();
                 if (personId == null) return;
-                pool.Add(personId);
+
+                if (add != null)
+                {
+                    if (!add(personId)) return;
+                }
+                else
+                {
+                    pool.Add(personId);
+                }
+
                 Rebuild();
             });
             plus.text = "+";

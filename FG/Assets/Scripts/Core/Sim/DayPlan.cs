@@ -47,6 +47,22 @@ namespace ForestGuild.Core.Sim
             return VillageWorkers.Contains(personId) || Beds.Contains(personId) || Foragers.Contains(personId);
         }
 
+        /// <summary>Постель: только раненому и только пока есть места (`beds_count`).</summary>
+        public bool TryAddBed(Tables tables, World world, string personId)
+        {
+            if (Beds.Contains(personId)) return true;
+            if (world.ConditionOf(personId) != PersonCondition.Wounded) return false;
+            if (Beds.Count >= tables.Tuning.GetInt("beds_count")) return false;
+
+            Beds.Add(personId);
+            return true;
+        }
+
+        public void RemoveBed(string personId)
+        {
+            Beds.Remove(personId);
+        }
+
         public int PartyOf(string personId)
         {
             for (var i = 0; i < Parties.Count; i++)

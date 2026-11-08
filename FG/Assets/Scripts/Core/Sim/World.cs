@@ -103,6 +103,45 @@ namespace ForestGuild.Core.Sim
             return null;
         }
 
+        /// <summary>Правило состава: живой, свободен, в отряде есть место.</summary>
+        public bool TryAddMember(Tables tables, Squad squad, string personId)
+        {
+            if (squad == null) return false;
+            if (squad.Members.Contains(personId)) return true;
+            if (squad.Members.Count >= tables.Tuning.GetInt("party_max")) return false;
+            if (ConditionOf(personId) != PersonCondition.Healthy) return false;
+
+            var other = SquadOf(personId);
+            if (other != null) return false;
+
+            squad.Members.Add(personId);
+            return true;
+        }
+
+        /// <summary>Забрать человека из второго отряда, если в этом есть место.</summary>
+        public bool TryTakeFromOtherSquad(Tables tables, Squad target, string personId)
+        {
+            if (target == null) return false;
+            if (target.Members.Count >= tables.Tuning.GetInt("party_max")) return false;
+            if (ConditionOf(personId) != PersonCondition.Healthy) return false;
+
+            var other = SquadOf(personId);
+            if (other == null || ReferenceEquals(other, target)) return false;
+
+            other.Members.Remove(personId);
+            target.Members.Add(personId);
+            return true;
+        }
+
+        /// <summary>Утром из отрядов выпадают раненые и погибшие.</summary>
+        public void RemoveUnavailableFromSquads()
+        {
+            foreach (var squad in Squads)
+            {
+                squad.Members.RemoveAll(id => ConditionOf(id) != PersonCondition.Healthy);
+            }
+        }
+
         public int TotalCrystals()
         {
             var sum = 0;

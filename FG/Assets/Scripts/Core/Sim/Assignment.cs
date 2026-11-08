@@ -1,9 +1,8 @@
-using ForestGuild.Core.Sim;
-
-namespace ForestGuild.Game
+namespace ForestGuild.Core.Sim
 {
     /// <summary>
-    /// Кто где занят. Одно место правды для доски и Сбора: человек — одно дело в день.
+    /// Кто где занят. Правило «человек — одно дело в день» живёт в ядре,
+    /// UI только печатает причину.
     /// </summary>
     public static class Assignment
     {

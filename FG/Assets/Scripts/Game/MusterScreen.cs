@@ -368,29 +368,13 @@ namespace ForestGuild.Game
 
         private void AddMember(string personId)
         {
-            if (_squad.Members.Contains(personId)) return;
-            if (_squad.Members.Count >= _tables.Tuning.GetInt("party_max")) return;
-            if (_world.ConditionOf(personId) != PersonCondition.Healthy) return;
-
-            _squad.Members.Add(personId);
-            Rebuild();
+            if (_world.TryAddMember(_tables, _squad, personId)) Rebuild();
         }
 
         /// Человек из второго отряда: забираем сюда, если есть место.
         private void TakeFromOtherSquad(string personId)
         {
-            if (_squad.Members.Count >= _tables.Tuning.GetInt("party_max")) return;
-            if (_world.ConditionOf(personId) != PersonCondition.Healthy) return;
-
-            foreach (var squad in _world.Squads)
-            {
-                if (ReferenceEquals(squad, _squad)) continue;
-                if (!squad.Members.Remove(personId)) continue;
-
-                _squad.Members.Add(personId);
-                Rebuild();
-                return;
-            }
+            if (_world.TryTakeFromOtherSquad(_tables, _squad, personId)) Rebuild();
         }
 
         // ---- драг ----

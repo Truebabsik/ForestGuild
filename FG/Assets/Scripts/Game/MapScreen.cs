@@ -435,10 +435,7 @@ namespace ForestGuild.Game
             _plan = new DayPlan();
             _dayReport = null;
 
-            foreach (var squad in World.Squads)
-            {
-                squad.Members.RemoveAll(id => World.ConditionOf(id) != PersonCondition.Healthy);
-            }
+            World.RemoveUnavailableFromSquads();
 
             Map.RefreshStates(World);
             Board.Rebuild();
