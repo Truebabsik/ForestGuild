@@ -635,14 +635,6 @@
     margin-bottom: 4px;
 }
 
-/* Рассказ боя: строка на атаку, читается как сцена, поэтому крупнее обычного текста зоны. */
-.battle-body {
-    font-size: 15px;
-    color: rgb(228, 222, 206);
-    margin-top: 4px;
-    margin-bottom: 14px;
-    white-space: normal;
-}
 
 /* Бой: арт ниже (строк много), сам рассказ — список строк; панель 1080 по высоте, места хватает. */
 .monster-modal.battle-mode .monster-art {

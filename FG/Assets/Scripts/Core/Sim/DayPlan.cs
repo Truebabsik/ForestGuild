@@ -94,6 +94,17 @@ namespace ForestGuild.Core.Sim
             return Array.IndexOf(tables.Professions.Get(person.Profession).SkillsAllowed, skillId) >= 0;
         }
 
+        /// <summary>
+        /// Навык, которым профессия меряется в интерфейсе: охота у охотника, иначе первый доступный.
+        /// Иначе в Сборе показывался «первый навык из таблицы», а не тот, которым считается бой.
+        /// </summary>
+        public static string PrimarySkill(Tables tables, Person person)
+        {
+            var allowed = tables.Professions.Get(person.Profession).SkillsAllowed;
+            if (allowed == null || allowed.Length == 0) return "gathering";
+            return Array.IndexOf(allowed, "hunting") >= 0 ? "hunting" : allowed[0];
+        }
+
         public static int TraitSum(Tables tables, Person person, Func<Trait, int> pick)
         {
             var sum = 0;

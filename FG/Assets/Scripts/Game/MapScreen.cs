@@ -441,7 +441,7 @@ namespace ForestGuild.Game
             {
                 var person = Tables.Roster.Get(personId);
                 var profession = Tables.Professions.Get(person.Profession);
-                var level = People.SkillLevel(Tables, person, profession.SkillsAllowed[0]);
+                var level = People.SkillLevel(Tables, person, People.PrimarySkill(Tables, person));
                 yield return person.Name + " " + level;
             }
         }

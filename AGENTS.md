@@ -16,7 +16,7 @@ Unity 6000.6.6f1, URP 17.6.0.0, Input System 1.20.0 (только новый). U
 
 Быстрые команды из корня:
 
-- проверки ядра: `dotnet run --project tools/sim -- --selfcheck` (должно быть «все проверки прошли (79)», код 0);
+- проверки ядра: `dotnet run --project tools/sim -- --selfcheck` (должно быть «все проверки прошли (81)», код 0);
 - боевой прогон: `dotnet run --project tools/sim -- --battle` — победы по уровням и тварям;
 - кривая боя: `dotnet run --project tools/sim -- --curve` — проба h1–h5, та же кривая без засады, доли засад;
 - пассивный прогон леса: `dotnet run --project tools/sim -- --days 21` — таблица дней;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -17,7 +18,7 @@ public static class DriveBattle
 
     private static MapScreen Map()
     {
-        return Object.FindAnyObjectByType<MapScreen>();
+        return UnityEngine.Object.FindAnyObjectByType<MapScreen>();
     }
 
     /// <summary>Эпизод «ПОХОД В ЛЕСУ» и шаги до первой развилки.</summary>
@@ -450,6 +451,103 @@ public static class DriveBattle
         }
 
         return "no encounter of size " + count;
+    }
+
+    /// <summary>Ранение с ношей: −3 слота и более долгая дорога домой (ADR-0043).</summary>
+    public static string Carry()
+    {
+        var screen = Map();
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
+
+        var ui = screen.Expedition;
+        var plan = (DayPlan)screen.GetType().GetField("_plan", Flags).GetValue(screen);
+        var world = screen.World;
+        var zone = world.Zones["verge_springs"];
+
+        while (plan.Parties.Count > 1) plan.Parties.RemoveAt(plan.Parties.Count - 1);
+
+        for (var seed = 1; seed <= 60; seed++)
+        {
+            plan.Parties[0].PersonIds.Clear();
+            plan.Parties[0].PersonIds.Add("brunni");
+            plan.Parties[0].PersonIds.Add("hilda");
+            plan.Parties[0].ZoneId = "verge_springs";
+            plan.Parties[0].Orders = new StandingOrders
+            {
+                Encounter = EncounterOrder.Ask,
+                Wounded = WoundedOrder.Ask,
+                Carcass = CarcassOrder.Leave,
+                BagFull = BagOrder.Skip,
+            };
+
+            zone.Beasts.Clear();
+            zone.Beasts["beast_bone"] = 1;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            foreach (var person in new[] { "brunni", "hilda" })
+            {
+                world.People[person].Hp = world.People[person].HpMax;
+                world.People[person].Condition = PersonCondition.Healthy;
+            }
+
+            ui.Open(screen.Tables, world, plan, new Rng(seed * 7919 + 13));
+
+            var current = Current(ui);
+            for (var i = 0; i < 200 && current != null && !current.HasDecision; i++)
+            {
+                ui.GetType().GetMethod("Tick", Flags).Invoke(ui, null);
+                current = Current(ui);
+            }
+
+            if (current == null || !current.HasDecision || current.Pending.Kind != DecisionKind.Encounter)
+                continue;
+
+            ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "fight" });
+
+            // Бой -> карточка боя -> исход; ловим карточку ранения.
+            for (var i = 0; i < 80 && current != null; i++)
+            {
+                if (current.Finished) break;
+                if (!current.HasDecision)
+                {
+                    ui.GetType().GetMethod("Tick", Flags).Invoke(ui, null);
+                    current = Current(ui);
+                    continue;
+                }
+
+                if (current.Pending.Kind == DecisionKind.Battle)
+                {
+                    ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "next" });
+                    current = Current(ui);
+                    continue;
+                }
+
+                break;
+            }
+
+            if (current == null || !current.HasDecision || current.Pending.Kind != DecisionKind.Wounded)
+                continue;
+
+            var slotsBefore = current.FreeSlots;
+            var returnBefore = current.ReturnMinutes;
+
+            ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "carry" });
+            current = Current(ui);
+
+            var slotsAfter = current.FreeSlots;
+            var returnAfter = current.ReturnMinutes;
+
+            var menu = screen.GetComponent<UIDocument>().rootVisualElement.Q<VisualElement>("menu");
+            menu?.AddToClassList("hidden");
+
+            return "slots " + slotsBefore + " -> " + slotsAfter
+                + "; return " + returnBefore + " -> " + returnAfter
+                + "; log=[" + string.Join(" | ", current.Result.Log
+                    .Skip(Math.Max(0, current.Result.Log.Count - 4))) + "]";
+        }
+
+        return "no wound found";
     }
 
     private static string Snapshot(MapScreen screen)

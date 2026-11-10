@@ -48,7 +48,7 @@ namespace ForestGuild.Core.Sim
 
             AddDailyFood(world, tables);
 
-            var logs = Feed(world, tuning);
+            var logs = Feed(world, tables);
             ReportFeeding(world, tables, logs, report);
 
             var hungry = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -103,8 +103,8 @@ namespace ForestGuild.Core.Sim
             }
         }
 
-        /// Кормление: корм → труп → кристалл.
-        private static List<ZoneNightLog> Feed(World world, Tuning tuning)
+        /// Кормление: корм → труп → кристалл. Тварь с `food_need > 1` ест больше одной порции.
+        private static List<ZoneNightLog> Feed(World world, Tables tables)
         {
             var logs = new List<ZoneNightLog>();
 
@@ -115,24 +115,31 @@ namespace ForestGuild.Core.Sim
                 foreach (var beastId in state.Beasts.Keys.ToList())
                 {
                     var count = state.Beasts[beastId];
+                    var need = Math.Max(1, tables.Beasts.Get(beastId).FoodNeed);
+
                     for (var i = 0; i < count; i++)
                     {
-                        if (state.Forage > 0)
+                        var fed = 0;
+                        for (var bite = 0; bite < need; bite++)
                         {
-                            state.Forage--;
-                            log.ForageEaten++;
-                            continue;
+                            if (state.Forage > 0)
+                            {
+                                state.Forage--;
+                                log.ForageEaten++;
+                                fed++;
+                                continue;
+                            }
+
+                            if (state.Crystals > 0)
+                            {
+                                state.Crystals--;
+                                state.NestXp++;
+                                log.CrystalsEaten++;
+                                fed++;
+                            }
                         }
 
-                        if (state.Crystals > 0)
-                        {
-                            state.Crystals--;
-                            state.NestXp++;
-                            log.CrystalsEaten++;
-                            continue;
-                        }
-
-                        log.Starved++;
+                        if (fed < need) log.Starved++;
                     }
                 }
 

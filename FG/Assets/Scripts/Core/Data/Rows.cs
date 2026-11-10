@@ -39,7 +39,7 @@ namespace ForestGuild.Core.Data
         /// <summary>Префикс арта в `UI/Art/Monsters`: spark / bone / ash.</summary>
         public string Art;
 
-        public int Strength, Speed, FoodNeed;
+        public int FoodNeed;
         public bool NestCapable;
     }
 

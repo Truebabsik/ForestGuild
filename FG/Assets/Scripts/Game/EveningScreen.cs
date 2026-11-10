@@ -188,7 +188,7 @@ namespace ForestGuild.Game
 
         private static Label Line(string text)
         {
-            return new Label("· " + text);
+            return Ui.Text("pane-line", "· " + text);
         }
     }
 }

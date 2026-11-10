@@ -80,8 +80,6 @@ namespace ForestGuild.Core.Data
             {
                 Id = Get(r, p, "id"),
                 Name = Get(r, p, "name"),
-                Strength = I(r, p, "strength"),
-                Speed = I(r, p, "speed"),
                 FoodNeed = I(r, p, "food_need"),
                 NestCapable = Get(r, p, "nest_capable") == "1",
                 Art = Opt(r, "art") ?? "",
@@ -307,7 +305,7 @@ namespace ForestGuild.Core.Data
                         "закалка " + row.PersonId + " вне 0.." + max);
             }
 
-            var effects = new[] { "damage_bonus", "hit_bonus", "hp_bonus", "detect_bonus", "armor_pierce" };
+            var effects = new[] { "damage_bonus", "hit_bonus", "hp_bonus", "detect_bonus", "alert_bonus", "armor_pierce" };
             foreach (var skill in t.SkillsCombat.All)
             {
                 if (skill.Level < 2 || skill.Level > 5)

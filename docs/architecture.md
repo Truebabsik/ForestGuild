@@ -73,15 +73,15 @@ tools/
 |---|---|
 | `tuning.csv` | `id; value; note` — числа мира: `daylight_minutes`, слоты, шанс находки, опыт до гнезда, частокол |
 | `combat_tuning.csv` | `id; value; note` — числа боя: HP, точность, броня, закалка, минуты за раунд, стая, засада |
-| `beast_combat.csv` | `beast_id; level; hp; attack_min; attack_max; armor; damage_spread; speed; note` — боевые параметры твари |
+| `beast_combat.csv` | `beast_id; level; hp; attack_min; attack_max; armor; speed; note` — боевые параметры твари |
 | `equipment.csv` | `id; name; slot; damage_min; damage_max; armor; value; note` — `slot`: `weapon` / `armor` |
 | `roster_combat.csv` | `person_id; hardening; weapon_id; armor_id; note` — с чем человек выходит и в какой закалке |
-| `skills_combat.csv` | `id; level; name; branch; effect; param; value; note` — эффекты `damage_bonus`, `hit_bonus`, `hp_bonus`, `detect_bonus`, `armor_pierce` |
+| `skills_combat.csv` | `id; level; name; branch; effect; value; note` — эффекты `damage_bonus`, `hit_bonus`, `hp_bonus`, `detect_bonus`, `alert_bonus`, `armor_pierce` |
 | `roster_skills.csv` | `person_id; skill_id` — кто какие боевые навыки взял (стартовый набор) |
 | `items.csv` | `id; name; category; slots; value; tags; short` — `material`, `consumable`, `weapon`, `armor`, `tool`, `trophy`; `short` — имя для HUD |
 | `zones.csv` | `id; name; depth; travel_minutes; distance_km; crystals_per_day; forage_per_day; neighbours; env_rule; map_x; map_y` — координаты карты нормализованы 0..1 |
 | `zone_resources.csv` | `zone_id; item_id; abundance` |
-| `beasts.csv` | `id; name; strength; speed; food_need; nest_capable; art` — `art` задаёт префикс картинок в `UI/Art/Monsters` |
+| `beasts.csv` | `id; name; food_need; nest_capable; art` — `art` задаёт префикс картинок в `UI/Art/Monsters`; `food_need` читает ночное кормление |
 | `zone_beasts.csv` | `zone_id; beast_id; weight; initial_count` |
 | `drops.csv` | `beast_id; item_id; chance; min_skill` |
 | `skills.csv` | `id; name; kind; max_level` — `kind`: `field` / `craft` |
@@ -94,6 +94,12 @@ tools/
 | `recipe_quality.csv` | `recipe_id; min_skill; output_id; qty; chance` |
 | `scenarios.csv` | `id; title; seed; day; start_screen; on_finish; notes` — эпизод запуска |
 | `scenario_parties.csv` | `scenario_id; squad; zone; behavior; encounter_order; members` — кто куда идёт в эпизоде |
+
+**Данные без кода (задел следующего среза, читаются только валидацией):** `tuning.xp_*` / `level_xp` /
+`heart_influx_days`, `items.category` / `tags`, `skills.kind` / `max_level`, `professions.requires_trait`,
+`traits.fight_bonus`, `equipment.value`, `zones.distance_km`, `scenarios.notes`, `skills_combat.branch`,
+`stations.csv` / `recipes.csv` / `recipe_quality.csv`. Это не ошибка, но и не работающая механика: перед
+использованием — реализовать или удалить.
 
 Ресурс и предмет — **одна сущность**: трава из леса, ингредиент и груз в мешке — одна строка `items.csv`.
 
@@ -181,7 +187,7 @@ p = random() < шанс_отряда;  b = random() < шанс_твари      /
 |---|---|---|
 | 23 CSV-справочника (21 данных + 2 сценария) | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
 | Загрузчик с валидацией внешних ключей | `FG/Assets/Scripts/Core/Data/` | проверки «сломанный сосед», «неизвестный предмет», «чужая schema_version» |
-| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `ExpeditionResult`, `DayFlow`, `WaveSim`, `Briefing`, `Works`, `ZoneKnowledge`, `State`, `Battle` | `FG/Assets/Scripts/Core/Sim/` | 79 проверок в `tools/sim`, ядро без `UnityEngine` |
+| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `ExpeditionResult`, `DayFlow`, `WaveSim`, `Briefing`, `Works`, `ZoneKnowledge`, `State`, `Battle` | `FG/Assets/Scripts/Core/Sim/` | 81 проверка в `tools/sim`, ядро без `UnityEngine` |
 | Карта, досье зоны, экраны цикла, отчёт | `FG/Assets/UI/`, `FG/Assets/Scripts/Game/` | скриншоты `docs/images/ui/step1/` |
 | Кит интерфейса: золотая плашка, палитра | `FG/Assets/UI/Art/Kit/`, `Map.uss` | скриншоты меню и модала встречи |
 | Сцена | `FG/Assets/Scenes/Main.unity` | Play Mode, день 1 → отчёт → день 2 |

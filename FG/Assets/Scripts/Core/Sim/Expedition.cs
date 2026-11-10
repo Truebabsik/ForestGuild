@@ -63,6 +63,10 @@ namespace ForestGuild.Core.Sim
         private const int TickMinutes = 10;
 
         private float _freeSlots;
+        private double _slotsTotal;
+        private readonly HashSet<string> _carried = new HashSet<string>();
+        private int _travelMinutes;
+        private int _returnMinutes;
         private bool _leaving;
 
         /// Последняя встреченная тварь: из неё потом достаётся добыча.
@@ -97,22 +101,30 @@ namespace ForestGuild.Core.Sim
             _state.Scouted = true;
 
             var tuning = tables.Tuning;
-            _workMinutes = Math.Max(0, tuning.GetInt("daylight_minutes") - _zone.TravelMinutes * 2);
+            _travelMinutes = _zone.TravelMinutes;
+            _returnMinutes = RoadMinutes(_travelMinutes, PartySpeed());
+
+            // День делится на дорогу туда, работу и обратную дорогу. Обратная — по скорости отряда:
+            // раненый идёт медленнее, выбитого несут ещё медленнее (ADR-0043).
+            _workMinutes = Math.Max(0, tuning.GetInt("daylight_minutes")
+                - RoadMinutes(_travelMinutes, PartySpeed()) - _returnMinutes);
 
             Result = new ExpeditionResult
             {
                 ZoneId = party.ZoneId,
             };
 
-            foreach (var personId in party.PersonIds)
-            {
-                var person = tables.Roster.Get(personId);
-                _freeSlots += tuning.GetInt("slots_per_person")
-                    + People.TraitSum(tables, person, trait => trait.CarryBonus);
-            }
+            _slotsTotal = TotalSlots();
+            _freeSlots = (float)_slotsTotal;
 
             Result.Log.Add(_zone.Name + ": отряд вышел из деревни");
         }
+
+        /// <summary>Сколько слотов осталось в мешке — с учётом состояния людей и ноши.</summary>
+        public float FreeSlots => _freeSlots;
+
+        /// <summary>Минут на обратную дорогу при текущем состоянии отряда.</summary>
+        public int ReturnMinutes => _returnMinutes;
 
         public bool HasDecision => Pending != null;
 
@@ -433,6 +445,9 @@ namespace ForestGuild.Core.Sim
                 state.HpMax = fighter.HpMax;
             }
 
+            // После боя люди могли просесть по HP: дорога домой и мешок пересчитываются сразу.
+            SyncPenalties();
+
             var downed = battle.Downed;
             foreach (var personId in downed) Works.Wound(_world, personId);
 
@@ -536,7 +551,7 @@ namespace ForestGuild.Core.Sim
 
                 _freeSlots -= 3f;
                 Result.Log.Add("тушу утащили целиком");
-                TakeDrops(success: true);
+                TakeDrops();
                 return;
             }
 
@@ -546,7 +561,7 @@ namespace ForestGuild.Core.Sim
                 if (success)
                 {
                     Result.Log.Add("освежевали");
-                    TakeDrops(success: true);
+                    TakeDrops();
                 }
                 else
                 {
@@ -561,9 +576,9 @@ namespace ForestGuild.Core.Sim
         }
 
         /// Что нашлось в туше: роллы из `drops.csv` по убитому зверю и навыку разделки.
-        private void TakeDrops(bool success)
+        private void TakeDrops()
         {
-            if (!success) return;
+            if (_lastBeastId == null) return;
 
             var drops = RollDrops(_tables, _lastBeastId, BestButcherLevel(), _rng);
             if (drops.Count == 0)
@@ -623,6 +638,123 @@ namespace ForestGuild.Core.Sim
         private void SpendMinutes(int minutes)
         {
             Result.MinutesUsed += minutes;
+        }
+
+        // ---- походные штрафы: скорость и слоты (ADR-0043) ----
+
+        private int RoadMinutes(int minutes, double speed)
+        {
+            if (speed <= 0.1) speed = 0.1;
+            return (int)Math.Ceiling(minutes / speed);
+        }
+
+        /// Скорость человека по остатку HP: 1.0 / `wound_speed_mult` / `hurt_speed_mult`.
+        private double SpeedShare(string personId)
+        {
+            if (!_world.People.TryGetValue(personId, out var state)) return 1.0;
+
+            var tuning = _tables.CombatTuning;
+            var share = state.HpMax <= 0 ? 1.0 : (double)state.Hp / state.HpMax;
+
+            if (share < tuning.GetFloat("hurt_threshold")) return tuning.GetFloat("hurt_speed_mult");
+            if (share < tuning.GetFloat("wound_threshold")) return tuning.GetFloat("wound_speed_mult");
+            return 1.0;
+        }
+
+        /// Отряд идёт по самому медленному; выбитого несут — ещё медленнее.
+        private double PartySpeed()
+        {
+            var speed = 1.0;
+            foreach (var personId in Party.PersonIds)
+            {
+                if (_carried.Contains(personId)) continue;
+                var share = SpeedShare(personId);
+                if (share < speed) speed = share;
+            }
+
+            if (_carried.Count > 0)
+            {
+                var carrying = _tables.CombatTuning.GetFloat("carry_out_speed_mult");
+                if (carrying < speed) speed = carrying;
+            }
+
+            return speed;
+        }
+
+        /// Слоты одного человека: база плюс черта, урезанные состоянием; несущий выбитого не несёт груз.
+        private double SlotsFor(string personId)
+        {
+            if (_carried.Contains(personId)) return 0;
+
+            var person = _tables.Roster.Get(personId);
+            var baseSlots = _tables.Tuning.GetInt("slots_per_person")
+                + People.TraitSum(_tables, person, trait => trait.CarryBonus);
+            if (!_world.People.TryGetValue(personId, out var state)) return baseSlots;
+
+            var tuning = _tables.CombatTuning;
+            var share = state.HpMax <= 0 ? 1.0 : (double)state.Hp / state.HpMax;
+
+            if (share < tuning.GetFloat("hurt_threshold"))
+                return baseSlots * tuning.GetFloat("hurt_carry_mult");
+            if (share < tuning.GetFloat("wound_threshold"))
+                return baseSlots * tuning.GetFloat("wound_carry_mult");
+            return baseSlots;
+        }
+
+        private double TotalSlots()
+        {
+            var total = 0.0;
+            foreach (var personId in Party.PersonIds) total += SlotsFor(personId);
+            total -= _carried.Count * _tables.CombatTuning.GetInt("carry_out_slots");
+            return Math.Max(0, total);
+        }
+
+        /// Пересчитать дорогу и слоты после боя или решения о раненом.
+        private void SyncPenalties()
+        {
+            var newReturn = RoadMinutes(_travelMinutes, PartySpeed());
+            if (newReturn > _returnMinutes)
+            {
+                SpendMinutes(newReturn - _returnMinutes);
+                _returnMinutes = newReturn;
+                Result.Log.Add("раненый замедляет отряд — дорога домой дольше");
+            }
+
+            var slots = TotalSlots();
+            if (slots >= _slotsTotal) return;
+
+            var lost = _slotsTotal - slots;
+            _slotsTotal = slots;
+            _freeSlots -= (float)lost;
+
+            // Ёмкости стало меньше — сначала выкидываем добычу, а не уходим в минус по слотам.
+            while (lost > 0.001 && Result.Found.Count > 0)
+            {
+                var cheapest = Cheapest();
+                if (cheapest == null) break;
+
+                var key = cheapest.Value.Key;
+                var item = _tables.Items.Get(key);
+
+                var index = -1;
+                for (var i = 0; i < Result.Found.Count; i++)
+                {
+                    if (Result.Found[i].Key != key) continue;
+                    index = i;
+                    break;
+                }
+
+                if (index < 0) break;
+
+                if (Result.Found[index].Value <= 1) Result.Found.RemoveAt(index);
+                else Result.Found[index] = new KeyValuePair<string, int>(key, Result.Found[index].Value - 1);
+
+                _freeSlots += (float)item.Slots;
+                lost -= item.Slots;
+                Result.Log.Add("бросили " + item.Name + " — не унести");
+            }
+
+            if (_freeSlots < 0) _freeSlots = 0;
         }
 
         /// Слова вместо процентов: игрок прикидывает шансы, а не читает таблицу.
@@ -713,6 +845,11 @@ namespace ForestGuild.Core.Sim
             {
                 Result.Wounded = true;
                 Result.WoundedPersonId = personId;
+
+                // Выбитого несут: 3 слота и медленнее дорога (ADR-0043).
+                _carried.Add(personId);
+                SyncPenalties();
+
                 SpendMinutes(60);
                 Result.Log.Add("раненого несут в деревню");
                 _leaving = true;
@@ -810,6 +947,18 @@ namespace ForestGuild.Core.Sim
             return Math.Min(0.95, 0.35 + 0.12 * best);
         }
 
+        /// Вес вида в зоне: из `zone_beasts.weight`, по умолчанию 1. Влияет только на выбор вида.
+        private int SpeciesWeight(string beastId)
+        {
+            foreach (var row in _tables.ZoneBeasts.All)
+            {
+                if (row.ZoneId != _zone.Id || row.BeastId != beastId) continue;
+                return Math.Max(1, row.Weight);
+            }
+
+            return 1;
+        }
+
         /// Кто именно встретился — одна тварь или стая до трёх (ADR-0041).
         /// Берём фактических тварей зоны, а не статичный список видов: иначе зашедшая
         /// мимо своей зоны тварь превращается в безымянную «тварь» без дропа.
@@ -822,12 +971,13 @@ namespace ForestGuild.Core.Sim
             // Вид у стаи один. Иначе карточка называет одну тварь (`pack[0]`), бой — самую быструю
             // из стаи, а дроп идёт только с одного вида: игрок видит «Осколочник (стая из 2)»,
             // бьётся с Искромётом и не получает осколков. Стая — несколько особей одного вида.
-            var total = live.Sum(x => x.Value);
-            var speciesRoll = _rng.Next(total);
+            // Вес вида из `zone_beasts.weight` решает, кто чаще попадается (не только численность).
+            var total = live.Sum(x => x.Value * SpeciesWeight(x.Key));
+            var speciesRoll = _rng.Next(Math.Max(1, total));
             var beastId = live[0].Key;
             foreach (var entry in live)
             {
-                speciesRoll -= entry.Value;
+                speciesRoll -= entry.Value * SpeciesWeight(entry.Key);
                 if (speciesRoll >= 0) continue;
 
                 beastId = entry.Key;

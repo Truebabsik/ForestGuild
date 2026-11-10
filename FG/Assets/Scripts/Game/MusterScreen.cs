@@ -167,8 +167,7 @@ namespace ForestGuild.Game
             name.AddToClassList("person-name");
             info.Add(name);
 
-            var profession = _tables.Professions.Get(person.Profession);
-            var primary = profession.SkillsAllowed[0];
+            var primary = People.PrimarySkill(_tables, person);
             var skill = new Label(_tables.Skills.Get(primary).Name + " "
                 + People.SkillLevel(_tables, person, primary));
             skill.AddToClassList("person-note");
@@ -235,7 +234,7 @@ namespace ForestGuild.Game
                     info.Add(name);
 
                     var profession = _tables.Professions.Get(person.Profession);
-                    var primarySkill = profession.SkillsAllowed[0];
+                    var primarySkill = People.PrimarySkill(_tables, person);
                     var note = new Label(_tables.Skills.Get(primarySkill).Name + " "
                         + People.SkillLevel(_tables, person, primarySkill));
                     note.AddToClassList("person-note");

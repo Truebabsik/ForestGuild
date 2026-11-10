@@ -77,7 +77,7 @@ namespace ForestGuild.Game
             _text.Clear();
             _text.Add(Text("zone-title", zone.Name));
             _text.Add(Text("zone-meta",
-                zone.Depth + " · дорога " + zone.TravelMinutes + " мин · сейчас: "
+                DepthWord(zone.Depth) + " · дорога " + zone.TravelMinutes + " мин · сейчас: "
                 + ZoneKnowledge.Mood(_world, _zoneId)));
             _text.Add(Text("zone-meta",
                 "соседи: " + string.Join(", ", NeighbourNames(zone))));
@@ -133,6 +133,18 @@ namespace ForestGuild.Game
                 case "mud": return "Вязко: груз тянет, обратный путь дольше.";
                 case "thicket": return "Тесно: идти по одному, встречи вплотную.";
                 default: return "Место как место — ничего особенного.";
+            }
+        }
+
+        /// <summary>Глубина зоны словами: в данных `edge`/`belt`/`heart`, игроку — по-русски.</summary>
+        private static string DepthWord(string depth)
+        {
+            switch (depth)
+            {
+                case "edge": return "опушка";
+                case "belt": return "пояс";
+                case "heart": return "сердце";
+                default: return depth;
             }
         }
 

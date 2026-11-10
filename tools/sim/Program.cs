@@ -114,8 +114,12 @@ internal static class Program
             z.Beasts["beast_spark"] = 4;
             z.Crystals = 0;
             var before = w.BeastCount("verge_meadow");
-            NightSim.AdvanceNight(w, t, new Rng(1));
-            return w.BeastCount("verge_springs") < 4 && w.BeastCount("verge_meadow") > before;
+            var report = NightSim.AdvanceNight(w, t, new Rng(1));
+
+            // Отряд голодных уходит наружу — в Опушку; обратная миграция может вернуть численность,
+            // поэтому проверяем сам факт перехода и рост соседней зоны, а не «стало меньше».
+            return w.BeastCount("verge_meadow") > before
+                && report.Lines.Any(line => line.Contains("Вулканические ключи") && line.Contains("уходит наружу"));
         });
 
         checks.Check("crystals eaten over forage give nest xp", () =>
@@ -253,7 +257,8 @@ internal static class Program
 
             var flow = new DayFlow(w, t, new Rng(2));
             flow.RunExpeditions(plan);
-            flow.RunNight();
+            // Постели применяются только в ночи — вечером игрок ещё может передумать.
+            flow.RunNight(plan);
             return w.ConditionOf("leya") == PersonCondition.Healthy;
         });
 
@@ -1317,6 +1322,42 @@ internal static class Program
                 * Expedition.EncounterIntensity(Behavior.Clean, members.Length, 0);
 
             return Math.Abs(briefing.EncounterPerMinute - expected) < 1e-9;
+        });
+
+        checks.Check("wounded walk slower", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            var healthyWorld = World.Create(t);
+            var healthy = new Expedition(healthyWorld, t, Party("verge_springs", "hilda"), new Rng(1));
+
+            var hurtWorld = World.Create(t);
+            hurtWorld.People["hilda"].Hp = 10; // 28% — «ранен»
+            var hurt = new Expedition(hurtWorld, t, Party("verge_springs", "hilda"), new Rng(1));
+
+            return hurt.ReturnMinutes > healthy.ReturnMinutes
+                && hurt.WorkMinutes < healthy.WorkMinutes;
+        });
+
+        checks.Check("wounded carry fewer slots", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            var healthyWorld = World.Create(t);
+            var healthy = new Expedition(healthyWorld, t, Party("verge_springs", "hilda", "orn"), new Rng(1));
+
+            var hurtWorld = World.Create(t);
+            hurtWorld.People["hilda"].Hp = 10; // 28% — «ранен»: 4 слота × 0,5 = 2
+            var hurt = new Expedition(hurtWorld, t, Party("verge_springs", "hilda", "orn"), new Rng(1));
+
+            var heavyWorld = World.Create(t);
+            heavyWorld.People["hilda"].Hp = 4; // 11% — «тяжело ранен»: 0 слотов
+            var heavy = new Expedition(heavyWorld, t, Party("verge_springs", "hilda", "orn"), new Rng(1));
+
+            // Орн с чертой «Крепкий»: у здорового отряда 4+1+4 = 9 слотов.
+            return healthy.FreeSlots == 9f
+                && hurt.FreeSlots == 7f
+                && heavy.FreeSlots == 5f;
         });
 
         checks.Check("battle spends minutes from the day", () =>

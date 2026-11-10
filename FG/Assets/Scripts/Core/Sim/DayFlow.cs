@@ -109,8 +109,6 @@ namespace ForestGuild.Core.Sim
 
             var forage = Works.Forage(_tables, _world, plan.Foragers.Count);
             if (forage > 0) report.Lines.Add("Заготовка: +" + forage + " корма в склад");
-
-            foreach (var personId in plan.Beds) Works.PutToBed(_world, personId);
         }
 
         /// Фаза «Ночь»: постели, лес живёт, день сменяется.
