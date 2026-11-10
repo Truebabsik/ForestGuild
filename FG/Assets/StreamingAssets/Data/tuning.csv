@@ -1,9 +1,8 @@
 id;value;note
 schema_version;1;версия схемы таблиц
-hours_per_day;10;рабочих часов в сутках
+daylight_minutes;600;сколько светло в сутках — бюджет похода в минутах
 slots_per_person;4;слотов груза на человека
-stamina_per_person;4;выносливости на человека
-encounter_per_hour;0.25;шанс встречи за час на единицу плотности
+encounter_per_hour;0.1;шанс встречи за час на одну тварь в зоне
 find_base;0.12;база шанса находки
 find_per_skill;0.06;прибавка за уровень навыка
 xp_to_nest;10;опыта до гнезда

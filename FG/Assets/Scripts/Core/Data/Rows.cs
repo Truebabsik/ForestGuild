@@ -6,7 +6,8 @@ namespace ForestGuild.Core.Data
     public sealed class Zone
     {
         public string Id, Name, Depth, EnvRule;
-        public float TravelHours, MapX, MapY;
+        public int TravelMinutes;
+        public float DistanceKm, MapX, MapY;
         public int CrystalsPerDay, ForagePerDay;
         public string[] Neighbours;
     }
@@ -129,5 +130,41 @@ namespace ForestGuild.Core.Data
         public string ScenarioId, Squad, Zone, Behavior;
         public string EncounterOrder = "ask";
         public string Members; // a|b|c
+    }
+
+    /// <summary>Строка beast_combat.csv: боевые параметры твари.</summary>
+    public sealed class BeastCombat
+    {
+        public string BeastId;
+        public int Level, Hp, AttackMin, AttackMax, Armor;
+        public float Speed;
+    }
+
+    /// <summary>Строка equipment.csv: оружие или броня.</summary>
+    public sealed class Equipment
+    {
+        public string Id, Name, Slot;
+        public int DamageMin, DamageMax, Armor, Value;
+    }
+
+    /// <summary>Строка roster_combat.csv: с чем и в какой закалке человек выходит.</summary>
+    public sealed class RosterCombat
+    {
+        public string PersonId, WeaponId, ArmorId;
+        public int Hardening;
+    }
+
+    /// <summary>Строка roster_skills.csv: какой боевой навык взят человеком.</summary>
+    public sealed class RosterSkill
+    {
+        public string PersonId, SkillId;
+    }
+
+    /// <summary>Строка skills_combat.csv: боевой навык уровня 2–5.</summary>
+    public sealed class SkillCombat
+    {
+        public string Id, Name, Branch, Effect;
+        public int Level;
+        public double Value;
     }
 }

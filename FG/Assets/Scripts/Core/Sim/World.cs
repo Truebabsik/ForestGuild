@@ -70,7 +70,21 @@ namespace ForestGuild.Core.Sim
             w.NextWaveDay = tables.Tuning.GetInt("wave_day");
 
             foreach (var person in tables.Roster.All)
-                w.People[person.Id] = new PersonState();
+            {
+                var vitals = new PersonState();
+                var level = ForestGuild.Core.Sim.People.SkillLevel(tables, person, "hunting");
+
+                vitals.HpMax = tables.CombatTuning.GetInt("base_hp")
+                    + tables.CombatTuning.GetInt("hp_per_level") * level;
+                vitals.Hp = vitals.HpMax;
+
+                if (tables.RosterCombat.TryGet(person.Id, out var gear))
+                {
+                    vitals.Hardening = Math.Min(gear.Hardening, tables.CombatTuning.GetInt("hardening_max"));
+                }
+
+                w.People[person.Id] = vitals;
+            }
 
             w.Squads.Add(new Squad("A", "А"));
             w.Squads.Add(new Squad("B", "Б"));

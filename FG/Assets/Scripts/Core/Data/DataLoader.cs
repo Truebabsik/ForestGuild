@@ -41,7 +41,8 @@ namespace ForestGuild.Core.Data
                 Id = Get(r, p, "id"),
                 Name = Get(r, p, "name"),
                 Depth = Get(r, p, "depth"),
-                TravelHours = F(r, p, "travel_hours"),
+                TravelMinutes = I(r, p, "travel_minutes"),
+                DistanceKm = F(r, p, "distance_km"),
                 CrystalsPerDay = I(r, p, "crystals_per_day"),
                 ForagePerDay = I(r, p, "forage_per_day"),
                 Neighbours = SplitList(Get(r, p, "neighbours")),
@@ -176,6 +177,54 @@ namespace ForestGuild.Core.Data
                 Members = Opt(r, "members") ?? "",
             }, x => x.ScenarioId + "|" + x.Squad);
 
+            t.CombatTuning = ReadTuning(Path.Combine(dir, "combat_tuning.csv"));
+
+            t.BeastCombat = Read(dir, "beast_combat.csv", (r, p) => new BeastCombat
+            {
+                BeastId = Get(r, p, "beast_id"),
+                Level = I(r, p, "level"),
+                Hp = I(r, p, "hp"),
+                AttackMin = I(r, p, "attack_min"),
+                AttackMax = I(r, p, "attack_max"),
+                Armor = I(r, p, "armor"),
+                Speed = F(r, p, "speed"),
+            }, x => x.BeastId);
+
+            t.Equipment = Read(dir, "equipment.csv", (r, p) => new Equipment
+            {
+                Id = Get(r, p, "id"),
+                Name = Get(r, p, "name"),
+                Slot = Get(r, p, "slot"),
+                DamageMin = I(r, p, "damage_min"),
+                DamageMax = I(r, p, "damage_max"),
+                Armor = I(r, p, "armor"),
+                Value = Opt(r, "value") == null ? 0 : I(r, p, "value"),
+            }, x => x.Id);
+
+            t.RosterCombat = Read(dir, "roster_combat.csv", (r, p) => new RosterCombat
+            {
+                PersonId = Get(r, p, "person_id"),
+                Hardening = I(r, p, "hardening"),
+                WeaponId = Get(r, p, "weapon_id"),
+                ArmorId = Get(r, p, "armor_id"),
+            }, x => x.PersonId);
+
+            t.SkillsCombat = Read(dir, "skills_combat.csv", (r, p) => new SkillCombat
+            {
+                Id = Get(r, p, "id"),
+                Level = I(r, p, "level"),
+                Name = Get(r, p, "name"),
+                Branch = Get(r, p, "branch"),
+                Effect = Get(r, p, "effect"),
+                Value = F(r, p, "value"),
+            }, x => x.Id);
+
+            t.RosterSkills = Read(dir, "roster_skills.csv", (r, p) => new RosterSkill
+            {
+                PersonId = Get(r, p, "person_id"),
+                SkillId = Get(r, p, "skill_id"),
+            }, x => x.PersonId + "|" + x.SkillId);
+
             Validate(t);
             return t;
         }
@@ -215,6 +264,7 @@ namespace ForestGuild.Core.Data
             RequireRefs(t.RecipeQuality.All.Select(x => x.OutputId), t.Items, "recipe_quality.csv", "output_id");
 
             ValidateScenarios(t);
+            ValidateCombat(t);
 
             var fields = new[] { "look", "beasts", "finds", "special" };
             foreach (var zone in t.Zones.All)
@@ -224,6 +274,60 @@ namespace ForestGuild.Core.Data
                     if (!t.ZoneLore.TryGet(zone.Id + "|" + field, out _))
                         throw new DataException("zone_lore.csv", "у зоны " + zone.Id + " нет поля " + field);
                 }
+            }
+        }
+
+        /// <summary>Бой: твари, снаряжение и навыки ссылаются на существующие строки.</summary>
+        private static void ValidateCombat(Tables t)
+        {
+            RequireRefs(t.BeastCombat.All.Select(x => x.BeastId), t.Beasts, "beast_combat.csv", "beast_id");
+            RequireRefs(t.RosterCombat.All.Select(x => x.PersonId), t.Roster, "roster_combat.csv", "person_id");
+
+            foreach (var beast in t.BeastCombat.All)
+            {
+                if (beast.Level < 1 || beast.Level > 5)
+                    throw new DataException("beast_combat.csv", "уровень " + beast.BeastId + " вне 1..5");
+                if (beast.Hp <= 0 || beast.AttackMin < 0 || beast.AttackMax < beast.AttackMin)
+                    throw new DataException("beast_combat.csv", "плохие hp/attack у " + beast.BeastId);
+                if (beast.Armor < 0)
+                    throw new DataException("beast_combat.csv", "отрицательная броня у " + beast.BeastId);
+            }
+
+            foreach (var row in t.RosterCombat.All)
+            {
+                if (!t.Equipment.TryGet(row.WeaponId, out var weapon) || weapon.Slot != "weapon")
+                    throw new DataException("roster_combat.csv", "у " + row.PersonId + " нет оружия " + row.WeaponId);
+
+                if (!t.Equipment.TryGet(row.ArmorId, out var armor) || armor.Slot != "armor")
+                    throw new DataException("roster_combat.csv", "у " + row.PersonId + " нет брони " + row.ArmorId);
+
+                var max = t.CombatTuning.GetInt("hardening_max");
+                if (row.Hardening < 0 || row.Hardening > max)
+                    throw new DataException("roster_combat.csv",
+                        "закалка " + row.PersonId + " вне 0.." + max);
+            }
+
+            var effects = new[] { "damage_bonus", "hit_bonus", "hp_bonus", "detect_bonus", "armor_pierce" };
+            foreach (var skill in t.SkillsCombat.All)
+            {
+                if (skill.Level < 2 || skill.Level > 5)
+                    throw new DataException("skills_combat.csv", "уровень навыка " + skill.Id + " вне 2..5");
+                if (System.Array.IndexOf(effects, skill.Effect) < 0)
+                    throw new DataException("skills_combat.csv", "неизвестный эффект " + skill.Effect + " у " + skill.Id);
+            }
+
+            RequireRefs(t.RosterSkills.All.Select(x => x.PersonId), t.Roster, "roster_skills.csv", "person_id");
+            RequireRefs(t.RosterSkills.All.Select(x => x.SkillId), t.SkillsCombat, "roster_skills.csv", "skill_id");
+
+            foreach (var take in t.RosterSkills.All)
+            {
+                if (!t.Roster.TryGet(take.PersonId, out var person)) continue;
+
+                var level = ForestGuild.Core.Sim.People.SkillLevel(t, person, "hunting");
+                var skill = t.SkillsCombat.Get(take.SkillId);
+                if (skill.Level > level)
+                    throw new DataException("roster_skills.csv",
+                        take.PersonId + " не может взять " + take.SkillId + ": нужен уровень " + skill.Level);
             }
         }
 

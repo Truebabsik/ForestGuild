@@ -15,6 +15,11 @@ internal static class Program
             return Days(days);
         }
 
+        if (args.Length > 0 && args[0] == "--battle")
+        {
+            return BattleReport();
+        }
+
         var checks = new CheckRunner();
 
         checks.Check("rng is deterministic", () =>
@@ -30,13 +35,13 @@ internal static class Program
             return t.Zones.All.Count == 6
                 && t.Roster.All.Count == 8
                 && t.Items.All.Count == 15
-                && t.Beasts.All.Count == 5;
+                && t.Beasts.All.Count == 8;
         });
 
         checks.Check("unknown neighbour zone fails", () =>
         {
             var dir = CopyDataWithMutation("zones.csv",
-                "verge_bad;Плохая зона;edge;1;1;2;nowhere;none;0.5;0.52");
+                "verge_bad;Плохая зона;edge;60;3;1;2;nowhere;none;0.5;0.52");
             try
             {
                 DataLoader.Load(dir);
@@ -117,12 +122,12 @@ internal static class Program
             var t = DataLoader.Load(DataDir());
             var w = World.Create(t);
 
-            // День — 10 часов, но один человек выдыхается за четыре: выносливость важнее часов.
+            // Световой день — 600 минут, Опушка съедает по 30 в каждую сторону.
             var briefing = Briefing.Compute(w, t, new[] { "leya" }, "verge_meadow", Behavior.Gather);
             var party = Party("verge_meadow", "leya");
             var r = ExpeditionSim.Resolve(w, t, party, new Rng(7));
 
-            return briefing.WorkHours == 9 && r.HoursUsed == 4 && r.ZoneId == "verge_meadow";
+            return briefing.WorkMinutes == 540 && r.MinutesUsed > 0 && r.ZoneId == "verge_meadow";
         });
 
         checks.Check("expedition finds something over many seeds", () =>
@@ -141,7 +146,7 @@ internal static class Program
             var w = World.Create(t);
             var a = ExpeditionSim.Resolve(w, t, Party("verge_springs", "brunni"), new Rng(3));
             var b = ExpeditionSim.Resolve(w, t, Party("verge_springs", "brunni"), new Rng(3));
-            return a.Found.Count == b.Found.Count && a.Wounded == b.Wounded && a.HoursUsed == b.HoursUsed;
+            return a.Found.Count == b.Found.Count && a.Wounded == b.Wounded && a.MinutesUsed == b.MinutesUsed;
         });
 
         checks.Check("day flow resolves parties and advances night", () =>
@@ -258,8 +263,8 @@ internal static class Program
             var one = Briefing.Compute(w, t, new[] { "brunni" }, "verge_springs", Behavior.Gather);
             var three = Briefing.Compute(w, t, new[] { "brunni", "leya", "tove" }, "verge_springs", Behavior.Clean);
 
-            return one.Slots == 5                      // 4 + «Крепкий»
-                && one.WorkHours == 8
+            return one.Slots == 5                      // 4 + «Твёрдый»
+                && one.WorkMinutes == 480
                 && three.Warnings.Count >= 1;          // втроём шумно
         });
 
@@ -401,19 +406,25 @@ internal static class Program
             zone.Crystals = 0;
 
             var party = Party("verge_springs", "brunni");
-            party.Orders = new StandingOrders { Encounter = EncounterOrder.Retreat };
+            party.Orders = new StandingOrders
+            {
+                Encounter = EncounterOrder.Retreat,
+                Wounded = WoundedOrder.Leave,
+                Carcass = CarcassOrder.Leave,
+                BagFull = BagOrder.Skip,
+            };
 
             var expedition = new Expedition(w, t, party, new Rng(4));
-            for (var i = 0; i < 20 && !expedition.Finished; i++) expedition.Advance();
+            for (var i = 0; i < 80 && !expedition.Finished; i++) expedition.Advance();
 
             return expedition.Finished;
         });
 
-        checks.Check("day is ten hours and the meadow is half an hour away", () =>
+        checks.Check("day is six hundred minutes and the meadow is half an hour away", () =>
         {
             var t = DataLoader.Load(DataDir());
-            return t.Tuning.GetInt("hours_per_day") == 10
-                && t.Zones.Get("verge_meadow").TravelHours == 0.5f;
+            return t.Tuning.GetInt("daylight_minutes") == 600
+                && t.Zones.Get("verge_meadow").TravelMinutes == 30;
         });
 
         checks.Check("passive forest grows a nest before the wave", () =>
@@ -679,7 +690,121 @@ internal static class Program
                 && episode.Scenario.OnFinish == "continue";
         });
 
+        checks.Check("battle is deterministic", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var a = Battle.Resolve(t, World.Create(t), new[] { "brunni" }, new[] { "beast_ash" }, new Rng(11));
+            var b = Battle.Resolve(t, World.Create(t), new[] { "brunni" }, new[] { "beast_ash" }, new Rng(11));
+
+            return a.Won == b.Won
+                && a.Beast.Hp == b.Beast.Hp
+                && a.Rounds == b.Rounds
+                && a.Fighters[0].Hp == b.Fighters[0].Hp;
+        });
+
+        checks.Check("pack has the sum of its parts", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var one = Battle.Resolve(t, World.Create(t), new[] { "brunni" }, new[] { "beast_ash" }, new Rng(1));
+            var two = Battle.Resolve(t, World.Create(t), new[] { "brunni" },
+                new[] { "beast_ash", "beast_ash" }, new Rng(1));
+
+            return two.Beast.HpMax > one.Beast.HpMax;
+        });
+
+        checks.Check("battle always ends", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+
+            for (var seed = 0; seed < 25; seed++)
+            {
+                var battle = Battle.Resolve(t, w, new[] { "hilda", "orn" },
+                    new[] { "beast_bone" }, new Rng(seed));
+
+                if (battle.Rounds > 200) return false;
+                if (!battle.Won && battle.Downed.Count == 0) return false;
+            }
+
+            return true;
+        });
+
+        checks.Check("battle spends minutes from the day", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var party = Party("verge_springs", "brunni", "skadi");
+            party.Orders = new StandingOrders
+            {
+                Encounter = EncounterOrder.Fight,
+                Wounded = WoundedOrder.Leave,
+                Carcass = CarcassOrder.Leave,
+                BagFull = BagOrder.Skip,
+            };
+
+            w.Zones["verge_springs"].Beasts.Clear();
+            w.Zones["verge_springs"].Beasts["beast_ash"] = 3;
+
+            var expedition = new Expedition(w, t, party, new Rng(5));
+            for (var i = 0; i < 80 && !expedition.Finished; i++) expedition.Advance();
+
+            return expedition.Finished && expedition.Result.Encountered;
+        });
+
+        checks.Check("hp survives the night and heals", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var hilda = w.People["hilda"];
+
+            hilda.Hp = 5;
+            var before = hilda.Hp;
+
+            NightSim.AdvanceNight(w, t, new Rng(1));
+
+            return hilda.Hp > before && hilda.Hp <= hilda.HpMax;
+        });
+
         return checks.Report() ? 0 : 1;
+    }
+
+    /// Боевой прогон: кто против кого выигрывает и за сколько раундов.
+    /// Нужен для калибровки кривой, а не для приёмки: приёмка — проверки.
+    private static int BattleReport()
+    {
+        var tables = DataLoader.Load(DataDir());
+        var world = World.Create(tables);
+
+        var hunters = new[] { "brunni", "skadi", "hilda", "orn" };
+        var beasts = new[] { "beast_ash", "beast_shard", "beast_glassworm", "beast_bogling",
+            "beast_spark", "beast_climber", "beast_angler", "beast_bone" };
+
+        Console.WriteLine("охотник;тварь;победа;раунды;минуты");
+
+        foreach (var hunter in hunters)
+        {
+            foreach (var beast in beasts)
+            {
+                var wins = 0;
+                var rounds = 0;
+                var minutes = 0;
+                const int samples = 200;
+
+                for (var seed = 0; seed < samples; seed++)
+                {
+                    var battle = Battle.Resolve(tables, world, new[] { hunter }, new[] { beast }, new Rng(seed));
+                    if (battle.Won) wins++;
+                    rounds += battle.Rounds;
+                    minutes += battle.Minutes;
+                }
+
+                Console.WriteLine(hunter + ";" + beast + ";" + (100.0 * wins / samples).ToString("0.0")
+                    + ";" + ((double)rounds / samples).ToString("0.00")
+                    + ";" + ((double)minutes / samples).ToString("0.0"));
+            }
+        }
+
+        return 0;
     }
 
     /// Пассивный прогон N дней: никто не работает, никто не ходит в лес — видно, что делает лес сам.

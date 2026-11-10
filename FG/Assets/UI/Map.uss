@@ -643,6 +643,15 @@
 .monster-art-fang-attack { background-image: url("project://database/Assets/UI/Art/Monsters/fang_attack.jpg"); }
 .monster-art-fang-dead { background-image: url("project://database/Assets/UI/Art/Monsters/fang_dead.jpg"); }
 .monster-art-mole-search { background-image: url("project://database/Assets/UI/Art/Monsters/mole_search.jpg"); }
+.monster-art-shard-search { background-image: url("project://database/Assets/UI/Art/Monsters/shard_search.jpg"); }
+.monster-art-shard-attack { background-image: url("project://database/Assets/UI/Art/Monsters/shard_attack.jpg"); }
+.monster-art-shard-dead { background-image: url("project://database/Assets/UI/Art/Monsters/shard_dead.jpg"); }
+.monster-art-glassworm-search { background-image: url("project://database/Assets/UI/Art/Monsters/glassworm_search.jpg"); }
+.monster-art-glassworm-attack { background-image: url("project://database/Assets/UI/Art/Monsters/glassworm_attack.jpg"); }
+.monster-art-glassworm-dead { background-image: url("project://database/Assets/UI/Art/Monsters/glassworm_dead.jpg"); }
+.monster-art-bogling-search { background-image: url("project://database/Assets/UI/Art/Monsters/bogling_search.jpg"); }
+.monster-art-bogling-attack { background-image: url("project://database/Assets/UI/Art/Monsters/bogling_attack.jpg"); }
+.monster-art-bogling-dead { background-image: url("project://database/Assets/UI/Art/Monsters/bogling_dead.jpg"); }
 
 .village {
     left: 180px;

@@ -10,11 +10,16 @@ namespace ForestGuild.Core.Sim
         Dead,
     }
 
-    /// <summary>Состояние жителя между днями: рана, постель, смерть.</summary>
+    /// <summary>Состояние жителя между днями: рана, постель, смерть, здоровье.</summary>
     public sealed class PersonState
     {
         public PersonCondition Condition = PersonCondition.Healthy;
         public int InBedDays;
+
+        /// <summary>Здоровье накопительное: переживает день и вылазки (ADR-0043).</summary>
+        public int Hp;
+        public int HpMax;
+        public int Hardening;
     }
 
     public enum EncounterOrder { Ask, Hide, Retreat, Fight }

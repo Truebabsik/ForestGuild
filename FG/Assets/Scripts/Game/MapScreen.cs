@@ -299,9 +299,9 @@ namespace ForestGuild.Game
                 _modalLines.Add(portraits);
 
                 AddModalLine("   " + string.Join(" · ", MemberNames(squad)));
-                AddModalLine("   дорога " + briefing.TravelHours.ToString("0.#") + " ч"
-                    + (briefing.WorkHours > 0
-                        ? ", в лесу " + briefing.WorkHours + " ч"
+                AddModalLine("   дорога " + briefing.TravelMinutes + " мин"
+                    + (briefing.WorkMinutes > 0
+                        ? ", в лесу " + briefing.WorkMinutes + " мин"
                         : ", работы не будет — день уйдёт на дорогу"));
 
                 foreach (var warning in briefing.Warnings) AddModalLine("   ⚠ " + warning, "warning-line");

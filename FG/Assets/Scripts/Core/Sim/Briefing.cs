@@ -7,10 +7,10 @@ namespace ForestGuild.Core.Sim
     /// <summary>Сухой прогон приказа (ui.md §4.5, §9): всё, что UI показывает до отправки.</summary>
     public sealed class SquadBriefing
     {
-        public float TravelHours;
-        public int WorkHours;
+        public int TravelMinutes;
+        public int WorkMinutes;
         public int Slots;
-        public double EncounterPerHour;
+        public double EncounterPerMinute;
         public readonly List<string> Warnings = new List<string>();
     }
 
@@ -26,8 +26,8 @@ namespace ForestGuild.Core.Sim
             if (string.IsNullOrEmpty(zoneId)) return briefing;
 
             var zone = tables.Zones.Get(zoneId);
-            briefing.TravelHours = zone.TravelHours;
-            briefing.WorkHours = Math.Max(0, tuning.GetInt("hours_per_day") - (int)Math.Ceiling(zone.TravelHours * 2));
+            briefing.TravelMinutes = zone.TravelMinutes;
+            briefing.WorkMinutes = Math.Max(0, tuning.GetInt("daylight_minutes") - zone.TravelMinutes * 2);
 
             var slots = 0;
             var brave = false;
@@ -68,22 +68,18 @@ namespace ForestGuild.Core.Sim
                 briefing.Warnings.Add("На тварей без храброго охотника не ходят");
             }
 
-            if (briefing.WorkHours == 0)
+            if (briefing.WorkMinutes == 0)
             {
                 briefing.Warnings.Add("До места и обратно — весь день, работать некогда");
             }
 
-            var density = 0.0;
-            if (world.Zones.TryGetValue(zoneId, out var zoneState))
-            {
-                var food = Math.Max(1, zoneState.Forage + zoneState.Crystals);
-                density = (double)world.BeastCount(zoneId) / food;
-            }
+            // Встречи считаются по числу тварей в зоне, а не по «богатству» (ADR-0042).
+            var beasts = world.BeastCount(zoneId);
 
             var intensity = behavior == Behavior.Avoid ? 0.5 : behavior == Behavior.Clean ? 2.5 : 1.0;
             if (members.Count > 2) intensity *= 1.2;
 
-            briefing.EncounterPerHour = tuning.GetFloat("encounter_per_hour") * density * intensity;
+            briefing.EncounterPerMinute = tuning.GetFloat("encounter_per_hour") / 60.0 * beasts * intensity;
             return briefing;
         }
     }

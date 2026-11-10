@@ -57,19 +57,27 @@ namespace ForestGuild.Core.Sim
         private readonly Rng _rng;
         private readonly ZoneState _state;
         private readonly Zone _zone;
-        private readonly int _workHours;
+        private readonly int _workMinutes;
+
+        /// Шаг похода: 10 минут. Дорога и бой списываются как есть, шаг — целыми тиками.
+        private const int TickMinutes = 10;
 
         private float _freeSlots;
-        private int _hour;
         private bool _leaving;
 
         /// Последняя встреченная тварь: из неё потом достаётся добыча.
         private string _lastBeastId;
 
+        /// Кто именно встретился: одна тварь или стая до трёх (ADR-0041).
+        private List<string> _pack = new List<string>();
+
+        /// Бой выигран, но сначала надо решить, что делать с выбитым.
+        private bool _carcassAfterWound;
+
         public ExpeditionDecision Pending { get; private set; }
         public bool Finished { get; private set; }
-        public int Hour => _hour;
-        public int WorkHours => _workHours;
+        public int WorkMinutes => _workMinutes;
+        public int MinutesLeft => Math.Max(0, _workMinutes - Result.MinutesUsed);
 
         public Expedition(World world, Tables tables, PartyAssignment party, Rng rng)
         {
@@ -83,12 +91,11 @@ namespace ForestGuild.Core.Sim
             _state.Scouted = true;
 
             var tuning = tables.Tuning;
-            _workHours = Math.Max(0, tuning.GetInt("hours_per_day") - (int)Math.Ceiling(_zone.TravelHours * 2));
+            _workMinutes = Math.Max(0, tuning.GetInt("daylight_minutes") - _zone.TravelMinutes * 2);
 
             Result = new ExpeditionResult
             {
                 ZoneId = party.ZoneId,
-                Stamina = party.PersonIds.Count * tuning.GetInt("stamina_per_person"),
             };
 
             foreach (var personId in party.PersonIds)
@@ -103,33 +110,25 @@ namespace ForestGuild.Core.Sim
 
         public bool HasDecision => Pending != null;
 
-        /// Один час. Возвращает false, если поход закончился.
+        /// Один шаг похода (10 минут). false — поход закончился.
         public bool Advance()
         {
             if (Finished) return false;
             if (Pending != null) return true;
 
-            if (_workHours <= 0)
+            if (_workMinutes <= 0)
             {
                 Finish("дорога съедает весь день, работы не было");
                 return false;
             }
 
-            if (_hour >= _workHours || _leaving)
+            if (MinutesLeft < TickMinutes || _leaving)
             {
                 Finish("отряд повернул домой");
                 return false;
             }
 
-            if (Result.Stamina <= 0)
-            {
-                _leaving = true;
-                Result.Log.Add(_zone.Name + ": отряд выбился из сил");
-                return true;
-            }
-
-            SpendHour();
-            Result.Stamina--;
+            SpendMinutes(TickMinutes);
 
             Find();
             if (Pending != null) return true;
@@ -159,9 +158,10 @@ namespace ForestGuild.Core.Sim
             {
                 var person = _tables.Roster.Get(personId);
                 var skill = People.SkillLevel(_tables, person, "gathering");
-                var chance = _tables.Tuning.GetFloat("find_base")
+                var perHour = _tables.Tuning.GetFloat("find_base")
                     + _tables.Tuning.GetFloat("find_per_skill") * skill
                     + People.TraitSumDouble(_tables, person, trait => trait.FindBonus);
+                var chance = perHour * TickMinutes / 60.0;
 
                 if (!_rng.Chance(chance)) continue;
 
@@ -294,15 +294,21 @@ namespace ForestGuild.Core.Sim
 
         private void Meet()
         {
-            var density = Density();
+            var beasts = _world.BeastCount(_zone.Id);
+            if (beasts <= 0) return;
+
             var intensity = Intensity();
-            if (!_rng.Chance(_tables.Tuning.GetFloat("encounter_per_hour") * density * intensity)) return;
+            var perMinute = _tables.Tuning.GetFloat("encounter_per_hour") / 60.0 * beasts * intensity;
+            if (!_rng.Chance(perMinute * TickMinutes)) return;
 
             Result.Encountered = true;
-            Result.Stamina = Math.Max(0, Result.Stamina - 1);
 
-            var beast = PickBeast();
+            _pack = PickPack();
+            var beast = _tables.Beasts.Get(_lastBeastId).Name;
+            if (_pack.Count > 1) beast += " (стая из " + _pack.Count + ")";
+
             var orders = Party.Orders ?? new StandingOrders();
+            var fightChance = Battle.Estimate(_tables, _world, Party.PersonIds, _pack);
 
             var decision = new ExpeditionDecision
             {
@@ -332,8 +338,8 @@ namespace ForestGuild.Core.Sim
             {
                 Id = "fight",
                 Label = "бой",
-                Chance = FightChance(),
-                Note = RiskWord(FightChance()),
+                Chance = fightChance,
+                Note = RiskWord(fightChance),
             });
 
             Pending = decision;
@@ -374,7 +380,7 @@ namespace ForestGuild.Core.Sim
             {
                 Result.Log.Add(success ? _zone.Name + ": прошли мимо, тварь не заметила"
                     : _zone.Name + ": спрятаться не вышло — бой");
-                if (!success) Fight();
+                if (!success) RunBattle();
                 return;
             }
 
@@ -382,33 +388,56 @@ namespace ForestGuild.Core.Sim
             {
                 if (success)
                 {
-                    SpendHour();
+                    SpendMinutes(60);
                     Result.Log.Add(_zone.Name + ": отошли, потеряли час");
                     LoseSomeLoot();
                 }
                 else
                 {
                     Result.Log.Add(_zone.Name + ": отойти не вышло — бой");
-                    Fight();
+                    RunBattle();
                 }
 
                 return;
             }
 
-            if (success)
-            {
-                FightWon();
-            }
-            else
-            {
-                Wound();
-            }
+            RunBattle();
         }
 
-        private void Fight()
+        /// Короткий бой: раунды до победы или до того, как все выбиты (ADR-0041).
+        private void RunBattle()
         {
-            if (_rng.Chance(FightChance())) FightWon();
-            else Wound();
+            var battle = Battle.Resolve(_tables, _world, Party.PersonIds, _pack, _rng);
+            SpendMinutes(battle.Minutes);
+
+            foreach (var line in battle.Log) Result.Log.Add(_zone.Name + ": " + line);
+
+            foreach (var fighter in battle.Fighters)
+            {
+                if (!_world.People.TryGetValue(fighter.PersonId, out var state)) continue;
+                state.Hp = Math.Max(0, fighter.Hp);
+                state.HpMax = fighter.HpMax;
+            }
+
+            var downed = battle.Downed;
+            foreach (var personId in downed) Works.Wound(_world, personId);
+
+            _lastBeastId = battle.Beast.Id;
+
+            if (!battle.Won)
+            {
+                Wound(downed.Count > 0 ? downed[0] : null);
+                return;
+            }
+
+            if (downed.Count > 0)
+            {
+                _carcassAfterWound = true;
+                Wound(downed[0]);
+                return;
+            }
+
+            FightWon();
         }
 
         private void FightWon()
@@ -469,7 +498,7 @@ namespace ForestGuild.Core.Sim
 
             if (option == "butcher")
             {
-                SpendHour();
+                SpendMinutes(60);
                 if (success)
                 {
                     Result.Log.Add("освежевали");
@@ -546,11 +575,10 @@ namespace ForestGuild.Core.Sim
             return best;
         }
 
-        /// Час в лесу: единственное место, где растёт и `_hour`, и `HoursUsed`.
-        private void SpendHour()
+        /// Минуты в лесу: единственное место, где растёт `MinutesUsed`.
+        private void SpendMinutes(int minutes)
         {
-            _hour++;
-            Result.HoursUsed = _hour;
+            Result.MinutesUsed += minutes;
         }
 
         /// Слова вместо процентов: игрок прикидывает шансы, а не читает таблицу.
@@ -596,9 +624,11 @@ namespace ForestGuild.Core.Sim
             }
         }
 
-        private void Wound()
+        private void Wound(string victimId = null)
         {
-            var victim = Party.PersonIds[_rng.Next(Party.PersonIds.Count)];
+            var victim = string.IsNullOrEmpty(victimId)
+                ? Party.PersonIds[_rng.Next(Party.PersonIds.Count)]
+                : victimId;
             var person = _tables.Roster.Get(victim);
 
             var decision = new ExpeditionDecision
@@ -632,15 +662,23 @@ namespace ForestGuild.Core.Sim
             {
                 Result.Wounded = true;
                 Result.WoundedPersonId = personId;
-                Result.Stamina = Math.Max(0, Result.Stamina - 1);
+                SpendMinutes(60);
                 Result.Log.Add("раненого несут в деревню");
                 _leaving = true;
-                return;
+            }
+            else
+            {
+                Works.Kill(_world, personId);
+                Result.Log.Add("оставили " + _tables.Roster.Get(personId).Name + " — не дойдёт");
+                _leaving = true;
             }
 
-            Works.Kill(_world, personId);
-            Result.Log.Add("оставили " + _tables.Roster.Get(personId).Name + " — не дойдёт");
-            _leaving = true;
+            // Бой был выигран, но сначала пришлось решать судьбу выбитого — туша ещё на месте.
+            if (_carcassAfterWound)
+            {
+                _carcassAfterWound = false;
+                FightWon();
+            }
         }
 
         // ---- итог ----
@@ -731,50 +769,70 @@ namespace ForestGuild.Core.Sim
             return Math.Min(0.95, 0.35 + 0.12 * best);
         }
 
-        /// Кто именно встретился: берём фактических тварей зоны, а не статичный список видов.
-        /// Иначе зашедшая мимо своей зоны тварь превращается в безымянную «тварь» без дропа.
-        private string PickBeast()
+        /// Кто именно встретился — одна тварь или стая до трёх (ADR-0041).
+        /// Берём фактических тварей зоны, а не статичный список видов: иначе зашедшая
+        /// мимо своей зоны тварь превращается в безымянную «тварь» без дропа.
+        private List<string> PickPack()
         {
-            var live = _state.Beasts.Where(x => x.Value > 0).ToList();
+            var live = _state.Beasts.Where(x => x.Value > 0).OrderBy(x => x.Key, StringComparer.Ordinal).ToList();
+            var pack = new List<string>();
 
-            if (live.Count > 0)
+            var available = live.Sum(x => x.Value);
+            if (available <= 0) return pack;
+
+            var tuning = _tables.CombatTuning;
+            var max = Math.Min(tuning.GetInt("pack_max"), available);
+            var size = 1;
+
+            var weights = new List<KeyValuePair<int, int>>
             {
-                var totalLive = live.Sum(x => x.Value);
-                var roll = _rng.Next(totalLive);
+                new KeyValuePair<int, int>(1, tuning.GetInt("pack_weight_1")),
+                new KeyValuePair<int, int>(2, tuning.GetInt("pack_weight_2")),
+                new KeyValuePair<int, int>(3, tuning.GetInt("pack_weight_3")),
+            };
 
-                foreach (var entry in live)
+            var totalWeight = weights.Where(x => x.Key <= max).Sum(x => x.Value);
+            if (totalWeight > 0)
+            {
+                var roll = _rng.Next(totalWeight);
+                foreach (var pair in weights)
+                {
+                    if (pair.Key > max) continue;
+                    roll -= pair.Value;
+                    if (roll < 0)
+                    {
+                        size = pair.Key;
+                        break;
+                    }
+                }
+            }
+
+            var remaining = new Dictionary<string, int>(_state.Beasts);
+            for (var i = 0; i < size; i++)
+            {
+                var pool = remaining.Where(x => x.Value > 0).OrderBy(x => x.Key, StringComparer.Ordinal).ToList();
+                if (pool.Count == 0) break;
+
+                var total = pool.Sum(x => x.Value);
+                var roll = _rng.Next(total);
+
+                foreach (var entry in pool)
                 {
                     roll -= entry.Value;
                     if (roll >= 0) continue;
 
-                    _lastBeastId = entry.Key;
-                    return _tables.Beasts.Get(entry.Key).Name;
+                    pack.Add(entry.Key);
+                    remaining[entry.Key] = entry.Value - 1;
+                    break;
                 }
-
-                var lastLive = live[live.Count - 1].Key;
-                _lastBeastId = lastLive;
-                return _tables.Beasts.Get(lastLive).Name;
             }
 
-            var pool = _tables.ZoneBeasts.All.Where(x => x.ZoneId == _zone.Id).ToList();
-            if (pool.Count == 0) return "тварь";
+            if (pack.Count == 0) pack.Add(live[0].Key);
+            _lastBeastId = pack[0];
 
-            var total = pool.Sum(x => x.Weight);
-            if (total <= 0) return "тварь";
-
-            var rollStatic = _rng.Next(total);
-            foreach (var entry in pool)
-            {
-                rollStatic -= entry.Weight;
-                if (rollStatic >= 0) continue;
-
-                _lastBeastId = entry.BeastId;
-                return _tables.Beasts.Get(entry.BeastId).Name;
-            }
-
-            var last = pool[pool.Count - 1].BeastId;
-            _lastBeastId = last;
-            return _tables.Beasts.Get(last).Name;
+            // Не даём взять больше, чем в зоне.
+            if (pack.Count > available) pack.RemoveRange(available, pack.Count - available);
+            return pack;
         }
 
         private string PickResource()

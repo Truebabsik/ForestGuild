@@ -58,10 +58,39 @@ namespace ForestGuild.Core.Sim
             Migrate(world, tables, hungry, tuning, report);
             GrowNests(world, tables, tuning, report);
             AgeCrystals(world, tables, tuning);
+            RestPeople(world, tables, report);
 
             world.Day++;
             report.Add("Наступил день " + world.Day);
             return report;
+        }
+
+        /// Ночь лечит: обычный сон — `rest_per_night`, постель — `bed_per_night` вместо него.
+        /// Выбитый, у которого HP поднялось выше нуля, встаёт здоровым (ADR-0043).
+        private static void RestPeople(World world, Tables tables, NightReport report)
+        {
+            var tuning = tables.CombatTuning;
+
+            foreach (var pair in world.People)
+            {
+                var state = pair.Value;
+                if (state.Condition == PersonCondition.Dead) continue;
+
+                var inBed = state.InBedDays > 0;
+                var heal = inBed ? tuning.GetInt("bed_per_night") : tuning.GetInt("rest_per_night");
+
+                // Выбитый встаёт только с постели: ночь сама по себе тяжёлую рану не лечит.
+                if (state.Condition == PersonCondition.Wounded && !inBed) continue;
+
+                state.Hp = Math.Min(state.HpMax, state.Hp + heal);
+
+                if (state.Condition == PersonCondition.Wounded && state.Hp > 0)
+                {
+                    state.Condition = PersonCondition.Healthy;
+                    state.InBedDays = 0;
+                    report.Add(tables.Roster.Get(pair.Key).Name + " встал на ноги");
+                }
+            }
         }
 
         private static void AddDailyFood(World world, Tables tables)

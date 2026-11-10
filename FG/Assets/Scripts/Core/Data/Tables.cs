@@ -22,5 +22,13 @@ namespace ForestGuild.Core.Data
         /// <summary>Эпизоды мира: с чего начинаем и с какими входными данными.</summary>
         public Table<Scenario> Scenarios;
         public Table<ScenarioParty> ScenarioParties;
+
+        /// <summary>Бой: параметры тварей, снаряжение, навыки, отдельный тюнинг.</summary>
+        public Table<BeastCombat> BeastCombat;
+        public Table<Equipment> Equipment;
+        public Table<RosterCombat> RosterCombat;
+        public Table<SkillCombat> SkillsCombat;
+        public Table<RosterSkill> RosterSkills;
+        public Tuning CombatTuning;
     }
 }

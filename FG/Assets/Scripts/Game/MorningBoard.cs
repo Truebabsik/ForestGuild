@@ -83,9 +83,9 @@ namespace ForestGuild.Game
                 left.Add(Line("squad-line",
                     string.IsNullOrEmpty(squad.ZoneId)
                         ? "зона не выбрана — нажми кнопку зоны"
-                        : briefing.WorkHours > 0
-                            ? "дорога " + briefing.TravelHours.ToString("0.#") + " ч · в лесу " + briefing.WorkHours + " ч"
-                            : "дорога " + briefing.TravelHours.ToString("0.#") + " ч · работы не будет"));
+                        : briefing.WorkMinutes > 0
+                            ? "дорога " + briefing.TravelMinutes + " мин · в лесу " + briefing.WorkMinutes + " мин"
+                            : "дорога " + briefing.TravelMinutes + " мин · работы не будет"));
 
                 var actions = new VisualElement();
                 actions.AddToClassList("squad-actions");

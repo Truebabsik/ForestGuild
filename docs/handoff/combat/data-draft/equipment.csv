@@ -1,0 +1,9 @@
+id;name;slot;damage_min;damage_max;armor;value;note
+weapon_none;кулаки;weapon;3;9;0;0;без оружия
+weapon_knife;нож;weapon;6;15;0;4;стартовое у сборщиков
+weapon_club;дубина;weapon;6;18;0;6;стартовое у охотников
+weapon_spear;копьё;weapon;12;27;0;9;задел: кузня, пробивает броню 6
+weapon_axe;топор;weapon;18;36;0;14;задел: кузня, пробивает броню 9
+armor_none;рубаха;armor;0;0;0;0;без брони
+armor_padded;стёганка;armor;0;0;3;7;стартовое
+armor_quilted;поддоспешник;armor;0;0;6;16;задел: кожевня

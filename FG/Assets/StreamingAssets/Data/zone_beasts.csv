@@ -1,10 +1,13 @@
 zone_id;beast_id;weight;initial_count
 verge_springs;beast_spark;3;1
 verge_springs;beast_bone;1;0
+verge_springs;beast_shard;2;1
 verge_marsh;beast_ash;2;0
 verge_marsh;beast_angler;2;1
+verge_marsh;beast_bogling;2;1
 verge_thicket;beast_bone;2;1
 verge_thicket;beast_ash;1;0
 verge_thicket;beast_climber;2;1
+verge_thicket;beast_glassworm;2;1
 belt_stone;beast_bone;2;1
 belt_stone;beast_spark;1;2

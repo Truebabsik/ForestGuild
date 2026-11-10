@@ -175,7 +175,7 @@ namespace ForestGuild.Game
         private void UpdateHour()
         {
             if (_current == null) return;
-            _hour.text = "час " + _current.Hour + " из " + _current.WorkHours;
+            _hour.text = "осталось " + _current.MinutesLeft + " мин";
         }
 
         // ---- карточка развилки ----

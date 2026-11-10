@@ -29,17 +29,17 @@ namespace ForestGuild.Core.Sim
             return workers;
         }
 
-        /// Положить раненого на постель: к утру он здоров.
+        /// Положить на постель: к утру человек восстанавливается сильнее обычного сна.
         public static bool PutToBed(World world, string personId)
         {
             if (!world.People.TryGetValue(personId, out var state)) return false;
-            if (state.Condition != PersonCondition.Wounded) return false;
+            if (state.Condition == PersonCondition.Dead) return false;
 
             state.InBedDays = 1;
             return true;
         }
 
-        /// Утро: кто пролежал ночь — встаёт.
+        /// Утро: ночь уже прошла, здесь только гасим счётчик постели.
         public static List<string> Recover(World world)
         {
             var healed = new List<string>();
@@ -47,14 +47,15 @@ namespace ForestGuild.Core.Sim
             foreach (var pair in world.People)
             {
                 var state = pair.Value;
-                if (state.Condition != PersonCondition.Wounded) continue;
+                if (state.Condition == PersonCondition.Dead) continue;
                 if (state.InBedDays <= 0) continue;
 
                 state.InBedDays--;
-                if (state.InBedDays > 0) continue;
-
-                state.Condition = PersonCondition.Healthy;
-                healed.Add(pair.Key);
+                if (state.InBedDays == 0 && state.Condition == PersonCondition.Wounded && state.Hp > 0)
+                {
+                    state.Condition = PersonCondition.Healthy;
+                    healed.Add(pair.Key);
+                }
             }
 
             return healed;

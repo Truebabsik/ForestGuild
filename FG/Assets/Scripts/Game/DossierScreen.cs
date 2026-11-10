@@ -77,7 +77,7 @@ namespace ForestGuild.Game
             _text.Clear();
             _text.Add(Text("zone-title", zone.Name));
             _text.Add(Text("zone-meta",
-                zone.Depth + " · дорога " + zone.TravelHours.ToString("0.#") + " ч · сейчас: "
+                zone.Depth + " · дорога " + zone.TravelMinutes + " мин · сейчас: "
                 + ZoneKnowledge.Mood(_world, _zoneId)));
             _text.Add(Text("zone-meta",
                 "соседи: " + string.Join(", ", NeighbourNames(zone))));

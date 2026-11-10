@@ -8,8 +8,7 @@ namespace ForestGuild.Core.Sim
         public string ZoneId;
         public readonly List<KeyValuePair<string, int>> Found = new List<KeyValuePair<string, int>>();
         public readonly List<string> Log = new List<string>();
-        public int HoursUsed;
-        public int Stamina;
+        public int MinutesUsed;
         public bool Encountered;
         public bool Wounded;
         public string WoundedPersonId;

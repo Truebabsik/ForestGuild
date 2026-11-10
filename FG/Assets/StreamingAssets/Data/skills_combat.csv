@@ -1,0 +1,13 @@
+id;level;name;branch;effect;param;value;note
+skill_iron_grip;2;Хватка;combat;damage_bonus;2;2;удар крепче: +2 к урону оружия
+skill_steady_hand;2;Твёрдая рука;combat;hit_bonus;0.05;0.05;точность +5 п.п.
+skill_iron_will;2;Живучий;combat;hp_bonus;6;6;здоровье +6 (примерно полтора удара вора)
+skill_wide_swing;3;Широкий замах;combat;damage_bonus;4;4;удар крепче: +4 к урону оружия
+skill_killer_instinct;3;Чутьё на слабое;combat;hit_bonus;0.07;0.07;точность +7 п.п.
+skill_ambusher;3;Из засады;combat;detect_bonus;0.15;0.15;обнаружение +15 п.п.: чаще бьёшь первым и сам реже попадаешь под засаду
+skill_bone_breaker;4;Костолом;combat;armor_pierce;4;4;вдвое лучше пробивает броню твари
+skill_wide_swing2;4;Размашистый удар;combat;damage_bonus;6;6;удар крепче: +6 к урону оружия
+skill_precision;4;Выверенный удар;combat;hit_bonus;0.08;0.08;точность +8 п.п.
+skill_slaughterer;5;Потрошитель;combat;armor_pierce;6;6;ещё лучше пробивает броню твари
+skill_butcher;5;Мясник;combat;damage_bonus;8;8;удар крепче: +8 к урону оружия
+skill_deadeye;5;Верный глаз;combat;hit_bonus;0.10;0.10;точность +10 п.п.
