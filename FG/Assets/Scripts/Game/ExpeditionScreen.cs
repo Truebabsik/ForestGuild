@@ -194,10 +194,12 @@ namespace ForestGuild.Game
             else ShowInlineDecision(decision);
         }
 
-        /// Встреча и туша показываются модалом с артом твари; раненый и мешок — нижней карточкой.
+        /// Встреча, бой и туша показываются модалом с артом твари; раненый и мешок — нижней карточкой.
         private bool UsesMonsterArt(ExpeditionDecision decision)
         {
-            if (decision.Kind != DecisionKind.Encounter && decision.Kind != DecisionKind.Carcass) return false;
+            if (decision.Kind != DecisionKind.Encounter
+                && decision.Kind != DecisionKind.Battle
+                && decision.Kind != DecisionKind.Carcass) return false;
             return !string.IsNullOrEmpty(decision.BeastId);
         }
 
@@ -210,7 +212,10 @@ namespace ForestGuild.Game
                 return;
             }
 
-            var state = decision.Kind == DecisionKind.Encounter ? "search" : "dead";
+            // Встреча — «поиск», бой — «момент первого удара», туша — «мёртвая» (mechanics.md §8).
+            var state = decision.Kind == DecisionKind.Encounter ? "search"
+                : decision.Kind == DecisionKind.Battle ? "attack"
+                : "dead";
 
             _monsterArt.RemoveFromClassList("monster-art-" + _artClass);
             _artClass = beast.Art + "-" + state;

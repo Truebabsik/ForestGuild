@@ -56,6 +56,7 @@ public static class DriveBattle
         var option = "fight";
         switch (decision.Kind)
         {
+            case DecisionKind.Battle: option = "next"; break;
             case DecisionKind.Carcass: option = "leave"; break;
             case DecisionKind.Wounded: option = "carry"; break;
             case DecisionKind.BagFull: option = decision.Options[0].Id; break;
@@ -99,6 +100,10 @@ public static class DriveBattle
                     encounters++;
                     titles.Add(decision.Title);
                     option = "fight";
+                }
+                else if (decision.Kind == DecisionKind.Battle)
+                {
+                    option = "next";
                 }
                 else if (decision.Kind == DecisionKind.Wounded)
                 {
@@ -159,6 +164,69 @@ public static class DriveBattle
 
         ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "fight" });
         return Step(screen, 90);
+    }
+
+    /// <summary>Наказ «бей»: карточка боя не должна держать поход — бой идёт без паузы.</summary>
+    public static string AutoFight()
+    {
+        var screen = Map();
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
+        var ui = screen.Expedition;
+
+        var current = Current(ui);
+        if (current != null) AutoOrders(current.Party);
+
+        var queueField = ui.GetType().GetField("_queue", Flags);
+        var queue = queueField.GetValue(ui) as Queue<PartyAssignment>;
+        if (queue != null)
+        {
+            foreach (var party in queue.ToList()) AutoOrders(party);
+        }
+
+        var choose = ui.GetType().GetMethod("Choose", Flags);
+        var tick = ui.GetType().GetMethod("Tick", Flags);
+        var battleCards = 0;
+        var encounters = 0;
+        var fights = 0;
+
+        for (var step = 0; step < 600; step++)
+        {
+            var exp = Current(ui);
+            if (exp == null || exp.Finished) break;
+
+            if (exp.HasDecision)
+            {
+                if (exp.Pending.Kind == DecisionKind.Battle) battleCards++;
+                else if (exp.Pending.Kind == DecisionKind.Encounter) encounters++;
+
+                var option = exp.Pending.Kind == DecisionKind.Encounter ? "fight"
+                    : exp.Pending.Kind == DecisionKind.Battle ? "next"
+                    : exp.Pending.Kind == DecisionKind.Carcass ? "leave"
+                    : exp.Pending.Kind == DecisionKind.Wounded ? "carry"
+                    : exp.Pending.Options[0].Id;
+
+                choose.Invoke(ui, new object[] { option });
+                continue;
+            }
+
+            tick.Invoke(ui, null);
+            if (exp.LastBattle != null) fights = 1;
+        }
+
+        var done = Current(ui);
+        return "encounters=" + encounters
+            + " battleCards=" + battleCards
+            + " fightHappened=" + (done != null && done.LastBattle != null || fights == 1)
+            + " hp=[" + Snapshot(screen) + "]";
+    }
+
+    private static void AutoOrders(PartyAssignment party)
+    {
+        var orders = party.Orders ?? (party.Orders = new StandingOrders());
+        orders.Encounter = EncounterOrder.Fight;
+        orders.Carcass = CarcassOrder.Leave;
+        orders.Wounded = WoundedOrder.Carry;
+        orders.BagFull = BagOrder.Skip;
     }
 
     private static string Snapshot(MapScreen screen)

@@ -707,6 +707,70 @@ internal static class Program
                 && a.Fighters[0].Hp == b.Fighters[0].Hp;
         });
 
+        checks.Check("battle tells its story without numbers", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            // Живой человек, а не проба: у пробы в имени уровень («Проба 2»), то есть цифра.
+            var battle = Battle.Resolve(t, World.Create(t), new[] { "hilda" },
+                new[] { "beast_ash" }, new Rng(11));
+
+            if (battle.Log.Count < 3 || battle.Log.Count > 6) return false;
+
+            var hasOutcome = battle.Log.Any(line => line.Contains("падает") || line.Contains("смят"));
+            var hasHpWord = battle.Log.Any(line => line.Contains(" — ") && line.EndsWith("."));
+            var noNumbers = battle.Log.All(line => !line.Any(char.IsDigit));
+
+            return hasOutcome && hasHpWord && noNumbers;
+        });
+
+        checks.Check("battle card waits only when the encounter is asked", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            for (var seed = 0; seed < 30; seed++)
+            {
+                var w = World.Create(t);
+                var zone = w.Zones["verge_springs"];
+                zone.Beasts.Clear();
+                zone.Beasts["beast_ash"] = 2;
+                zone.Forage = 1;
+                zone.Crystals = 0;
+
+                var party = Party("verge_springs", "brunni", "skadi");
+                party.Orders = new StandingOrders
+                {
+                    Encounter = EncounterOrder.Ask,
+                    Wounded = WoundedOrder.Leave,
+                    Carcass = CarcassOrder.Leave,
+                    BagFull = BagOrder.Skip,
+                };
+
+                var run = new Expedition(w, t, party, new Rng(seed));
+                for (var i = 0; i < 120 && !run.Finished && !run.HasDecision; i++) run.Advance();
+                if (!run.HasDecision || run.Pending.Kind != DecisionKind.Encounter) continue;
+
+                run.Decide("fight");
+                if (run.Pending == null || run.Pending.Kind != DecisionKind.Battle) return false;
+
+                var lines = run.Pending.Body.Split('\n');
+                if (lines.Length < 3) return false;
+                if (run.LastBattle == null) return false;
+                if (run.Pending.Options[0].Id != "next") return false;
+
+                run.Decide("next");
+
+                // Дальше — обычный исход боя: туша, ранение или конец похода.
+                if (run.HasDecision
+                    && run.Pending.Kind != DecisionKind.Carcass
+                    && run.Pending.Kind != DecisionKind.Wounded
+                    && run.Pending.Kind != DecisionKind.BagFull) return false;
+
+                return true;
+            }
+
+            return false;
+        });
+
         checks.Check("pack has the sum of its parts", () =>
         {
             var t = DataLoader.Load(DataDir());

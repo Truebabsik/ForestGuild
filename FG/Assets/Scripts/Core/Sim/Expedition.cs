@@ -5,7 +5,7 @@ using ForestGuild.Core.Data;
 
 namespace ForestGuild.Core.Sim
 {
-    public enum DecisionKind { Encounter, Carcass, Wounded, BagFull }
+    public enum DecisionKind { Encounter, Battle, Carcass, Wounded, BagFull }
 
     public sealed class ExpeditionOption
     {
@@ -76,6 +76,9 @@ namespace ForestGuild.Core.Sim
 
         public ExpeditionDecision Pending { get; private set; }
         public bool Finished { get; private set; }
+
+        /// <summary>Последний бой: строки рассказа, бойцы и тварь — для карточки боя.</summary>
+        public BattleResult LastBattle { get; private set; }
 
         /// <summary>Состав стаи: одна тварь или несколько особей одного вида (ADR-0041).</summary>
         public IReadOnlyList<string> Pack => _pack;
@@ -363,6 +366,10 @@ namespace ForestGuild.Core.Sim
                     ResolveEncounter(option.Id, success);
                     break;
 
+                case DecisionKind.Battle:
+                    AfterBattle();
+                    break;
+
                 case DecisionKind.Carcass:
                     ResolveCarcass(option.Id, success);
                     break;
@@ -426,6 +433,36 @@ namespace ForestGuild.Core.Sim
             foreach (var personId in downed) Works.Wound(_world, personId);
 
             _lastBeastId = battle.Beast.Id;
+            LastBattle = battle;
+
+            // Бой виден игроку: карточка с рассказом, артом `_attack` и словом о состоянии.
+            // По наказу (не `Ask`) карточка не держит — бой идёт без паузы (mechanics.md §7).
+            var orders = Party.Orders ?? new StandingOrders();
+            var card = new ExpeditionDecision
+            {
+                Kind = DecisionKind.Battle,
+                Title = "БОЙ: " + _tables.Beasts.Get(battle.Beast.Id).Name,
+                Body = string.Join("\n", battle.Log),
+                BeastId = battle.Beast.Id,
+            };
+            card.Options.Add(new ExpeditionOption
+            {
+                Id = "next", Label = "дальше", Chance = 1.0, Note = "",
+            });
+
+            Pending = card;
+            if (orders.Encounter == EncounterOrder.Ask) return;
+
+            Decide("next");
+        }
+
+        /// Исход боя: победа ведёт к туше, поражение — к ранению (mechanics.md §6.7).
+        private void AfterBattle()
+        {
+            var battle = LastBattle;
+            if (battle == null) return;
+
+            var downed = battle.Downed;
 
             if (!battle.Won)
             {

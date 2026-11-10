@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using ForestGuild.Core.Data;
 
 namespace ForestGuild.Core.Sim
@@ -12,6 +13,9 @@ namespace ForestGuild.Core.Sim
         public int Level, Hp, HpMax, WeaponMin, WeaponMax, Armor, Hardening;
         public double HitBonus, DamageBonus, DetectBonus, AlertBonus;
         public int ArmorPierce;
+
+        /// <summary>Счётчики боя — из них собирается рассказ в 3–5 строк, без чисел.</summary>
+        public int Hits, DamageDealt, DamageTaken;
 
         public bool Alive => Hp > 0;
     }
@@ -144,11 +148,56 @@ namespace ForestGuild.Core.Sim
                 if (!fighter.Alive) result.Downed.Add(fighter.PersonId);
             }
 
+            // Рассказ боя: 3–5 строк без чисел (mechanics.md §8). Арт `_attack` — на карточке боя.
+            result.Log.Add(StrikeLine(result.Fighters, result.Beast.Name));
+
+            var hurt = result.Fighters
+                .Where(f => f.DamageTaken > 0)
+                .OrderByDescending(f => f.DamageTaken)
+                .FirstOrDefault();
+            if (hurt != null) result.Log.Add("Тварь достаёт " + hurt.Name + ".");
+
             result.Log.Add(result.Won
                 ? result.Beast.Name + " падает."
                 : "Отряд смят: " + (result.Downed.Count > 0 ? "кто-то не поднимется" : "пришлось отойти") + ".");
 
+            result.Log.Add(HpLine(result.Fighters));
+
             return result;
+        }
+
+        /// <summary>Слово о состоянии человека — единственная форма HP, которую видит игрок.</summary>
+        public static string HpWord(int hp, int hpMax)
+        {
+            if (hp <= 0) return "на ногах не стоит";
+
+            var share = (double)hp / Math.Max(1, hpMax);
+            if (share < 0.25) return "тяжело ранен";
+            if (share < 0.5) return "ранен";
+            if (share < 0.8) return "в ссадинах";
+            return "в порядке";
+        }
+
+        private static string StrikeLine(List<BattleFighter> fighters, string beastName)
+        {
+            var strikers = fighters
+                .Where(f => f.Hits > 0)
+                .OrderByDescending(f => f.DamageDealt)
+                .ToList();
+
+            if (strikers.Count == 0) return beastName + " не даёт замахнуться.";
+            if (strikers.Count == 1) return strikers[0].Name + " бьёт.";
+
+            return strikers[0].Name + " бьёт; " + strikers[1].Name + " прикрывает.";
+        }
+
+        private static string HpLine(List<BattleFighter> fighters)
+        {
+            var words = fighters
+                .Select(f => f.Name + " — " + HpWord(f.Hp, f.HpMax))
+                .ToList();
+
+            return string.Join(", ", words) + ".";
         }
 
         /// <summary>
@@ -429,7 +478,11 @@ namespace ForestGuild.Core.Sim
             if (!rng.Chance(HitChance(tables, fighter))) return false;
 
             var roll = rng.Range(fighter.WeaponMin, fighter.WeaponMax);
-            beast.Hp -= WeaponHit(tables, fighter, beast, roll, surprise);
+            var damage = WeaponHit(tables, fighter, beast, roll, surprise);
+
+            beast.Hp -= damage;
+            fighter.Hits++;
+            fighter.DamageDealt += damage;
             return true;
         }
 
@@ -449,7 +502,10 @@ namespace ForestGuild.Core.Sim
             if (!target.Hunter && rng.Chance(tuning.GetFloat("gatherer_dodge"))) return;
 
             var roll = rng.Range(beast.AttackMin, beast.AttackMax);
-            target.Hp -= BeastHit(tables, target, beast, roll, surprise);
+            var damage = BeastHit(tables, target, beast, roll, surprise);
+
+            target.Hp -= damage;
+            target.DamageTaken += damage;
         }
 
         private static int AmbushDamage(Tables tables, int damage)

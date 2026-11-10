@@ -33,6 +33,7 @@ namespace ForestGuild.Core.Sim
             switch (decision.Kind)
             {
                 case DecisionKind.Encounter: return "retreat";
+                case DecisionKind.Battle: return "next";
                 case DecisionKind.Carcass: return "leave";
                 case DecisionKind.Wounded: return "carry";
                 default: return decision.Options[0].Id;
