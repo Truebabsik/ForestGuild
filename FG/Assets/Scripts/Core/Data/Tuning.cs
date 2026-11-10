@@ -45,5 +45,15 @@ namespace ForestGuild.Core.Data
         {
             return _raw.ContainsKey(key);
         }
+
+        /// <summary>
+        /// Копия с заменённым числом. Нужна проверкам, которым нужен «выключенный» параметр
+        /// (например, кривая без засады), не трогая сам справочник.
+        /// </summary>
+        public Tuning With(string key, string value)
+        {
+            var raw = new Dictionary<string, string>(_raw) { [key] = value };
+            return new Tuning(raw);
+        }
     }
 }

@@ -16,8 +16,9 @@ Unity 6000.6.6f1, URP 17.6.0.0, Input System 1.20.0 (только новый). U
 
 Быстрые команды из корня:
 
-- проверки ядра: `dotnet run --project tools/sim -- --selfcheck` (должно быть «все проверки прошли (51)», код 0);
+- проверки ядра: `dotnet run --project tools/sim -- --selfcheck` (должно быть «все проверки прошли (66)», код 0);
 - боевой прогон: `dotnet run --project tools/sim -- --battle` — победы по уровням и тварям;
+- кривая боя: `dotnet run --project tools/sim -- --curve` — проба h1–h5, та же кривая без засады, доли засад;
 - пассивный прогон леса: `dotnet run --project tools/sim -- --days 21` — таблица дней;
 - новый эпизод для ручной проверки — строка в `scenarios.csv` + `scenario_parties.csv` (сид, день, стартовый экран, отряды), меню строится из них;
 - открыть редактор: `Start_editor.bat` (или `unity open FG --args -automated`).
@@ -39,7 +40,7 @@ Unity 6000.6.6f1, URP 17.6.0.0, Input System 1.20.0 (только новый). U
    `FindObjectOfType`.
 6. **Скрипты — в `FG/Assets/Scripts/`**, `asmdef` не заводить: весь код идёт в `Assembly-CSharp`.
    Слои: `Core/` — чистое ядро без `using UnityEngine`, `Game/` — адаптеры и экраны UI Toolkit.
-7. **Числа — в CSV**, в `FG/Assets/StreamingAssets/Data/` (15 справочников данных + 2 таблицы сценариев), не в коде. Новое правило
+7. **Числа — в CSV**, в `FG/Assets/StreamingAssets/Data/` (21 справочник данных + 2 таблицы сценариев), не в коде. Новое правило
    баланса проверяется прогоном в `tools/sim`, а не «на глаз» в Play Mode.
 8. **Проверять, а не заявлять**: читать состояние (вывод команды, `resolvedStyle`, скриншот) и
    показывать его. Доказательство раньше утверждения.

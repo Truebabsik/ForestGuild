@@ -20,6 +20,11 @@ internal static class Program
             return BattleReport();
         }
 
+        if (args.Length > 0 && args[0] == "--curve")
+        {
+            return CurveReport();
+        }
+
         var checks = new CheckRunner();
 
         checks.Check("rng is deterministic", () =>
@@ -143,9 +148,9 @@ internal static class Program
         checks.Check("expedition is deterministic", () =>
         {
             var t = DataLoader.Load(DataDir());
-            var w = World.Create(t);
-            var a = ExpeditionSim.Resolve(w, t, Party("verge_springs", "brunni"), new Rng(3));
-            var b = ExpeditionSim.Resolve(w, t, Party("verge_springs", "brunni"), new Rng(3));
+            // Поход меняет мир (встреча снимает тварь из зоны), поэтому каждому прогону — свой мир.
+            var a = ExpeditionSim.Resolve(World.Create(t), t, Party("verge_springs", "brunni"), new Rng(3));
+            var b = ExpeditionSim.Resolve(World.Create(t), t, Party("verge_springs", "brunni"), new Rng(3));
             return a.Found.Count == b.Found.Count && a.Wounded == b.Wounded && a.MinutesUsed == b.MinutesUsed;
         });
 
@@ -729,6 +734,292 @@ internal static class Program
             return true;
         });
 
+        checks.Check("ambush: detection follows speed", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var probe = Battle.ProbeFighter(t, 2);
+
+            var ash = new BattleBeast { Id = "beast_ash", Speed = t.BeastCombat.Get("beast_ash").Speed };
+            Battle.DetectChances(t, new[] { probe }, ash, out var party, out var beast);
+            if (Math.Abs(party - 0.5) > 0.001 || Math.Abs(beast - 0.7) > 0.001) return false;
+
+            var worm = new BattleBeast { Id = "beast_glassworm", Speed = t.BeastCombat.Get("beast_glassworm").Speed };
+            Battle.DetectChances(t, new[] { probe }, worm, out _, out var slowBeast);
+            if (Math.Abs(slowBeast - 0.4) > 0.001) return false;
+
+            // Навык `alert_bonus` поднимает «чутьё» отряда на свою величину.
+            var alert = Battle.ProbeFighter(t, 2);
+            alert.AlertBonus = 0.5;
+            Battle.DetectChances(t, new[] { alert }, ash, out var alertParty, out _);
+
+            return Math.Abs(alertParty - 0.55) < 0.001;
+        });
+
+        checks.Check("ambush: sides roll independently", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var party = 0;
+            var beast = 0;
+            var none = 0;
+            const int samples = 2000;
+
+            for (var seed = 0; seed < samples; seed++)
+            {
+                var battle = Battle.ResolveFighters(t, new[] { Battle.ProbeFighter(t, 2) },
+                    new[] { "beast_ash" }, new Rng(seed * 7919 + 13));
+
+                if (battle.Ambusher == "party") party++;
+                else if (battle.Ambusher == "beast") beast++;
+                else none++;
+            }
+
+            // Засада отряда 0.5, тварь 0.7 → «мы» 15%, «она» 35%, никто 50%.
+            return Math.Abs(party / (double)samples - 0.15) < 0.04
+                && Math.Abs(beast / (double)samples - 0.35) < 0.04
+                && Math.Abs(none / (double)samples - 0.50) < 0.04;
+        });
+
+        checks.Check("curve: h2 is in the corridor", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var wins = ProbeWinRate(t, 2, "beast_ash", 2000);
+            return wins >= 0.45 && wins <= 0.55;
+        });
+
+        checks.Check("curve: without ambush h2 leaves the corridor", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var saved = t.CombatTuning;
+            t.CombatTuning = saved.With("detect_base", "0").With("detect_per_alert", "0");
+            var wins = ProbeWinRate(t, 2, "beast_ash", 2000);
+            t.CombatTuning = saved;
+
+            return wins > 0.55;
+        });
+
+        checks.Check("victory leads to a carcass, defeat to a wound", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            var winWorld = World.Create(t);
+            var winZone = winWorld.Zones["verge_springs"];
+            winZone.Beasts.Clear();
+            winZone.Beasts["beast_ash"] = 6;
+            winZone.Forage = 1;
+            winZone.Crystals = 0;
+
+            var winners = Party("verge_springs", "brunni", "skadi");
+            winners.Orders = FightOrders();
+            var winRun = new Expedition(winWorld, t, winners, new Rng(4));
+            for (var i = 0; i < 120 && !winRun.Finished; i++) winRun.Advance();
+
+            var lossWorld = World.Create(t);
+            var lossZone = lossWorld.Zones["verge_springs"];
+            lossZone.Beasts.Clear();
+            lossZone.Beasts["beast_bone"] = 6;
+            lossZone.Forage = 1;
+            lossZone.Crystals = 0;
+
+            var losers = Party("verge_springs", "leya");
+            losers.Orders = new StandingOrders
+            {
+                Encounter = EncounterOrder.Fight,
+                Wounded = WoundedOrder.Carry,
+                Carcass = CarcassOrder.Leave,
+                BagFull = BagOrder.Skip,
+            };
+            var lossRun = new Expedition(lossWorld, t, losers, new Rng(4));
+            for (var i = 0; i < 120 && !lossRun.Finished; i++) lossRun.Advance();
+
+            var won = winRun.Result.Log.Any(line => line.Contains("бой — победа"))
+                && winRun.Result.Log.Any(line => line.Contains("тушу бросили"));
+            return won && lossRun.Finished && lossRun.Result.Wounded;
+        });
+
+        checks.Check("battle damage stays on people between fights", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var zone = w.Zones["verge_springs"];
+            zone.Beasts.Clear();
+            zone.Beasts["beast_ash"] = 3;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            var party = Party("verge_springs", "hilda", "orn");
+            party.Orders = FightOrders();
+            var run = new Expedition(w, t, party, new Rng(7));
+            for (var i = 0; i < 200 && !run.Finished; i++) run.Advance();
+
+            var fought = run.Result.Log.Any(line => line.Contains("бой — победа")
+                || line.Contains("застаёт отряд"));
+            var hurt = w.People["hilda"].Hp < w.People["hilda"].HpMax
+                || w.People["orn"].Hp < w.People["orn"].HpMax;
+
+            return fought && hurt;
+        });
+
+        checks.Check("armor and hardening never make a hit zero", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var probe = Battle.ProbeFighter(t, 2);
+            var armored = BeastOf(t, "beast_ash");
+            armored.Armor = 100;
+
+            if (Battle.WeaponHit(t, probe, armored, probe.WeaponMax, false) != 1) return false;
+
+            var hardened = Battle.ProbeFighter(t, 5);
+            var weak = BeastOf(t, "beast_ash");
+            weak.AttackMin = 1;
+            return Battle.BeastHit(t, hardened, weak, 1, false) >= 1
+                && Battle.BeastHit(t, hardened, weak, 2, false) >= 1;
+        });
+
+        checks.Check("hardening opens at level three and gives its share", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var second = Battle.ProbeFighter(t, 2);
+            var third = Battle.ProbeFighter(t, 3);
+            var fourth = Battle.ProbeFighter(t, 4);
+            var fifth = Battle.ProbeFighter(t, 5);
+
+            if (second.Hardening != 0 || third.Hardening != 1
+                || fourth.Hardening != 2 || fifth.Hardening != 2) return false;
+
+            var beast = BeastOf(t, "beast_ash");
+            beast.Armor = 0;
+            var plain = Battle.ProbeFighter(t, 2);
+            plain.Hardening = 0;
+            plain.Armor = 0;
+            var one = Battle.ProbeFighter(t, 2);
+            one.Hardening = 1;
+            one.Armor = 0;
+
+            return Battle.BeastHit(t, plain, beast, 20, false) == 20
+                && Battle.BeastHit(t, one, beast, 20, false) == 18;
+        });
+
+        checks.Check("hit chance grows with level and stops at 0.95", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var first = Battle.ProbeFighter(t, 1);
+            var last = Battle.ProbeFighter(t, 5);
+            var lucky = Battle.ProbeFighter(t, 5);
+            lucky.HitBonus = 0.5;
+
+            return Math.Abs(Battle.HitChance(t, first) - 0.46) < 0.0001
+                && Math.Abs(Battle.HitChance(t, last) - 0.62) < 0.0001
+                && Math.Abs(Battle.HitChance(t, lucky) - 0.95) < 0.0001;
+        });
+
+        checks.Check("damage comes from the weapon and the beast range", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var probe = Battle.ProbeFighter(t, 2);
+            var beast = BeastOf(t, "beast_ash");
+            beast.Armor = 0;
+
+            var lowWeapon = Battle.WeaponHit(t, probe, beast, probe.WeaponMin, false);
+            var highWeapon = Battle.WeaponHit(t, probe, beast, probe.WeaponMax, false);
+            var lowBeast = Battle.BeastHit(t, probe, beast, beast.AttackMin, false);
+            var highBeast = Battle.BeastHit(t, probe, beast, beast.AttackMax, false);
+
+            return probe.WeaponMax > probe.WeaponMin
+                && beast.AttackMax > beast.AttackMin
+                && highWeapon > lowWeapon
+                && highBeast > lowBeast;
+        });
+
+        checks.Check("weapon that cannot pierce the armor deals min_damage", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var first = Battle.ProbeFighter(t, 1);
+            var beast = BeastOf(t, "beast_ash");
+            beast.Armor = first.WeaponMax;
+
+            var exact = Battle.WeaponHit(t, first, beast, first.WeaponMax, false);
+            beast.Armor = first.WeaponMax + 5;
+            var deeper = Battle.WeaponHit(t, first, beast, first.WeaponMax, false);
+
+            return exact == 1 && deeper == 1;
+        });
+
+        checks.Check("wound penalty is exact and has no penalty on the boundary", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var fighter = Battle.ProbeFighter(t, 2);
+            var beast = BeastOf(t, "beast_ash");
+            beast.Armor = 0;
+
+            var full = Battle.WeaponHit(t, fighter, beast, 20, false);
+
+            fighter.Hp = fighter.HpMax / 2; // ровно 50% — штрафа нет
+            if (Battle.PenaltyFactor(t, fighter) != 1.0) return false;
+
+            fighter.Hp = fighter.HpMax / 2 - 1;
+            var wounded = Battle.WeaponHit(t, fighter, beast, 20, false);
+            if (Battle.PenaltyFactor(t, fighter) != 0.75) return false;
+
+            fighter.Hp = fighter.HpMax / 4; // ровно 25% — ещё ×0.75
+            if (Battle.PenaltyFactor(t, fighter) != 0.75) return false;
+
+            fighter.Hp = fighter.HpMax / 4 - 1;
+            var hurt = Battle.WeaponHit(t, fighter, beast, 20, false);
+            if (Battle.PenaltyFactor(t, fighter) != 0.5) return false;
+
+            return wounded == (int)(full * 0.75) && hurt == (int)(full * 0.5);
+        });
+
+        checks.Check("penalty cuts our blows, not the beast's", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var fighter = Battle.ProbeFighter(t, 2);
+            var beast = BeastOf(t, "beast_ash");
+            beast.Armor = 0;
+
+            fighter.Hp = fighter.HpMax / 4 - 1;
+            var ourBlow = Battle.WeaponHit(t, fighter, beast, 20, false);
+
+            var armored = BeastOf(t, "beast_ash");
+            armored.Armor = 3;
+            var beastBlow = Battle.BeastHit(t, fighter, armored, 20, false);
+
+            return ourBlow == (int)(26 * 0.5) && beastBlow == 17;
+        });
+
+        checks.Check("penalty follows the hp inside the fight", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var fighter = Battle.ProbeFighter(t, 2);
+            var beast = BeastOf(t, "beast_ash");
+            beast.Armor = 0;
+
+            var healthy = Battle.WeaponHit(t, fighter, beast, 20, false);
+            fighter.Hp = 8;
+            var hurt = Battle.WeaponHit(t, fighter, beast, 20, false);
+
+            return healthy == 26 && hurt == (int)(healthy * 0.5);
+        });
+
+        // Контракт §11 п.12 ждёт «кривую плоскую в окне ±10% HP твари». Прогон это **опровергает**:
+        // ash 27 → h2 57,9%, ash 33 → 46,0%. Это не баг, а прямое следствие §10.6 («HP 30 подобрано
+        // в узком окне: ±10% сдвигает кривую на 7–9 п.п.»). Два пункта контракта противоречат друг
+        // другу; проверка ловит то, что верно по §10.6: окно узкое, кривая крутая.
+        checks.Check("curve is steep over ten percent of the beast hp", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var row = t.BeastCombat.Get("beast_ash");
+            var baseHp = row.Hp;
+
+            row.Hp = (int)Math.Round(baseHp * 0.9);
+            var lower = ProbeWinRate(t, 2, "beast_ash", 2000);
+            row.Hp = (int)Math.Round(baseHp * 1.1);
+            var higher = ProbeWinRate(t, 2, "beast_ash", 2000);
+            row.Hp = baseHp;
+
+            return Math.Abs(higher - lower) > 0.05;
+        });
+
         checks.Check("battle spends minutes from the day", () =>
         {
             var t = DataLoader.Load(DataDir());
@@ -779,7 +1070,7 @@ internal static class Program
         var beasts = new[] { "beast_ash", "beast_shard", "beast_glassworm", "beast_bogling",
             "beast_spark", "beast_climber", "beast_angler", "beast_bone" };
 
-        Console.WriteLine("охотник;тварь;победа;раунды;минуты");
+        Console.WriteLine("охотник;тварь;победа;раунды;минуты;застали_мы;застала_тварь");
 
         foreach (var hunter in hunters)
         {
@@ -788,23 +1079,140 @@ internal static class Program
                 var wins = 0;
                 var rounds = 0;
                 var minutes = 0;
-                const int samples = 200;
+                var partyAmbush = 0;
+                var beastAmbush = 0;
+                const int samples = 1000;
 
                 for (var seed = 0; seed < samples; seed++)
                 {
-                    var battle = Battle.Resolve(tables, world, new[] { hunter }, new[] { beast }, new Rng(seed));
+                    var battle = Battle.Resolve(tables, world, new[] { hunter }, new[] { beast },
+                        new Rng(seed * 7919 + 13));
+
                     if (battle.Won) wins++;
                     rounds += battle.Rounds;
                     minutes += battle.Minutes;
+                    if (battle.Ambusher == "party") partyAmbush++;
+                    else if (battle.Ambusher == "beast") beastAmbush++;
                 }
 
                 Console.WriteLine(hunter + ";" + beast + ";" + (100.0 * wins / samples).ToString("0.0")
                     + ";" + ((double)rounds / samples).ToString("0.00")
-                    + ";" + ((double)minutes / samples).ToString("0.0"));
+                    + ";" + ((double)minutes / samples).ToString("0.0")
+                    + ";" + (100.0 * partyAmbush / samples).ToString("0.0")
+                    + ";" + (100.0 * beastAmbush / samples).ToString("0.0"));
             }
         }
 
         return 0;
+    }
+
+    /// Кривая калибровки: как в прототипе — чистая проба, без навыков и без ростера.
+    /// `--curve` отвечает на вопрос «кривая в коридоре?» и «засада вообще считается?».
+    private static int CurveReport()
+    {
+        var tables = DataLoader.Load(DataDir());
+
+        var goals = new[]
+        {
+            (Level: 1, Lo: 0.0, Hi: 0.10, Label: "≤10%"),
+            (Level: 2, Lo: 0.45, Hi: 0.55, Label: "45–55%"),
+            (Level: 3, Lo: 0.75, Hi: 0.85, Label: "75–85%"),
+            (Level: 4, Lo: 0.88, Hi: 1.0, Label: "≥88%"),
+            (Level: 5, Lo: 0.88, Hi: 1.0, Label: "≥88%"),
+        };
+
+        Console.WriteLine("уровень;победа;цель;вывод");
+        foreach (var goal in goals)
+        {
+            var wins = ProbeWinRate(tables, goal.Level, "beast_ash", CurveSamples);
+            var verdict = wins >= goal.Lo && wins <= goal.Hi ? "сходится" : "не сходится";
+            Console.WriteLine(goal.Level + ";" + (wins * 100).ToString("0.0")
+                + ";" + goal.Label + ";" + verdict);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("без засады;h1;h2;h3");
+        var saved = tables.CombatTuning;
+        tables.CombatTuning = saved.With("detect_base", "0").With("detect_per_alert", "0");
+        var noAmbush = new List<string>();
+        foreach (var level in new[] { 1, 2, 3 })
+            noAmbush.Add((ProbeWinRate(tables, level, "beast_ash", CurveSamples) * 100).ToString("0.0"));
+        tables.CombatTuning = saved;
+        Console.WriteLine("победа;" + string.Join(";", noAmbush));
+
+        Console.WriteLine();
+        Console.WriteLine("засада;доля");
+        var probe = Battle.ProbeFighter(tables, 2);
+        Battle.DetectChances(tables, new[] { probe }, new BattleBeast
+        {
+            Id = "beast_ash",
+            Speed = tables.BeastCombat.Get("beast_ash").Speed,
+        }, out var partyChance, out var beastChance);
+
+        Console.WriteLine("шанс отряда;" + (partyChance * 100).ToString("0.0") + "%");
+        Console.WriteLine("шанс твари;" + (beastChance * 100).ToString("0.0") + "%");
+
+        var party = 0;
+        var beast = 0;
+        for (var seed = 0; seed < CurveSamples; seed++)
+        {
+            var battle = Battle.ResolveFighters(tables, new[] { Battle.ProbeFighter(tables, 2) },
+                new[] { "beast_ash" }, new Rng(seed * 7919 + 13));
+
+            if (battle.Ambusher == "party") party++;
+            else if (battle.Ambusher == "beast") beast++;
+        }
+
+        Console.WriteLine("застали мы;" + (100.0 * party / CurveSamples).ToString("0.0") + "%");
+        Console.WriteLine("застала тварь;" + (100.0 * beast / CurveSamples).ToString("0.0") + "%");
+
+        return 0;
+    }
+
+    private const int CurveSamples = 4000;
+
+    /// <summary>Наказы «бей, тушу бросить, раненого нести» — бой без игрока.</summary>
+    private static StandingOrders FightOrders()
+    {
+        return new StandingOrders
+        {
+            Encounter = EncounterOrder.Fight,
+            Wounded = WoundedOrder.Leave,
+            Carcass = CarcassOrder.Leave,
+            BagFull = BagOrder.Skip,
+        };
+    }
+
+    /// <summary>Боевые параметры твари из таблицы — для проверок формул без запуска боя.</summary>
+    private static BattleBeast BeastOf(Tables tables, string beastId)
+    {
+        var row = tables.BeastCombat.Get(beastId);
+        return new BattleBeast
+        {
+            Id = beastId,
+            Level = row.Level,
+            Hp = row.Hp,
+            HpMax = row.Hp,
+            AttackMin = row.AttackMin,
+            AttackMax = row.AttackMax,
+            Armor = row.Armor,
+            Speed = row.Speed,
+        };
+    }
+
+    /// Доля побед пробы уровня `level` против твари. Сиды разнесены, чтобы не мерить один
+    /// удачный кусок генератора: 200 подряд идущих сидов давали 75% там, где честно 66%.
+    private static double ProbeWinRate(Tables tables, int level, string beastId, int samples)
+    {
+        var wins = 0;
+        for (var seed = 0; seed < samples; seed++)
+        {
+            var fighter = Battle.ProbeFighter(tables, level);
+            if (Battle.ResolveFighters(tables, new[] { fighter }, new[] { beastId },
+                new Rng(seed * 7919 + 13)).Won) wins++;
+        }
+
+        return (double)wins / samples;
     }
 
     /// Пассивный прогон N дней: никто не работает, никто не ходит в лес — видно, что делает лес сам.
