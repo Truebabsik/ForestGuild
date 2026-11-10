@@ -314,7 +314,11 @@ namespace ForestGuild.Core.Sim
             if (_pack.Count > 1) beast += " (стая из " + _pack.Count + ")";
 
             var orders = Party.Orders ?? new StandingOrders();
-            var fightChance = Battle.Estimate(_tables, _world, Party.PersonIds, _pack);
+
+            // Оценка — только для карточки: по наказу она никому не видна, а стоит 400 боёв.
+            var fightChance = orders.Encounter == EncounterOrder.Ask
+                ? Battle.Estimate(_tables, _world, Party.PersonIds, _pack)
+                : 0.0;
 
             var decision = new ExpeditionDecision
             {
@@ -666,6 +670,13 @@ namespace ForestGuild.Core.Sim
 
         private void Wound(string victimId = null)
         {
+            // Пустой отряд ранить некого: иначе Wound падал бы на индексе пустого списка.
+            if (string.IsNullOrEmpty(victimId) && Party.PersonIds.Count == 0)
+            {
+                Finish("отряд пуст — раненых нет");
+                return;
+            }
+
             var victim = string.IsNullOrEmpty(victimId)
                 ? Party.PersonIds[_rng.Next(Party.PersonIds.Count)]
                 : victimId;
@@ -741,6 +752,10 @@ namespace ForestGuild.Core.Sim
             if (Result.Found.Count == 0) return;
 
             var last = Result.Found[Result.Found.Count - 1];
+
+            // Брошенный предмет освобождает слоты, иначе мешок «полон» без причины.
+            if (_tables.Items.TryGet(last.Key, out var item)) _freeSlots += item.Slots;
+
             if (last.Value <= 1) Result.Found.RemoveAt(Result.Found.Count - 1);
             else Result.Found[Result.Found.Count - 1] = new KeyValuePair<string, int>(last.Key, last.Value - 1);
 
@@ -761,38 +776,24 @@ namespace ForestGuild.Core.Sim
 
         // ---- шансы и выбор ----
 
-        private double Density()
+        /// <summary>
+        /// Множитель встреч: намерение, число людей сверх двух, тревога зоны.
+        /// Один источник и для прогноза приказа (`Briefing`), и для самого похода.
+        /// </summary>
+        public static double EncounterIntensity(Behavior behavior, int people, int alertDays)
         {
-            var food = Math.Max(1, _state.Forage + _state.Crystals);
-            return (double)_world.BeastCount(_state.ZoneId) / food;
+            var intensity = behavior == Behavior.Avoid ? 0.5
+                : behavior == Behavior.Clean ? 2.5 : 1.0;
+
+            if (people > 2) intensity *= Math.Pow(1.2, people - 2);
+            if (alertDays > 0) intensity *= 1.2;
+
+            return intensity;
         }
 
         private double Intensity()
         {
-            var intensity = Party.Behavior == Behavior.Avoid ? 0.5
-                : Party.Behavior == Behavior.Clean ? 2.5 : 1.0;
-
-            if (Party.PersonIds.Count > 2)
-            {
-                intensity *= Math.Pow(1.2, Party.PersonIds.Count - 2);
-            }
-
-            if (_state.AlertDays > 0) intensity *= 1.2;
-            return intensity;
-        }
-
-        private double FightChance()
-        {
-            var strength = 0;
-            foreach (var personId in Party.PersonIds)
-            {
-                var person = _tables.Roster.Get(personId);
-                strength += People.SkillLevel(_tables, person, "hunting")
-                    + People.TraitSum(_tables, person, trait => trait.FightBonus);
-            }
-
-            var chance = 0.35 + 0.10 * strength;
-            return Math.Min(0.85, chance);
+            return EncounterIntensity(Party.Behavior, Party.PersonIds.Count, _state.AlertDays);
         }
 
         private double ButcherChance()

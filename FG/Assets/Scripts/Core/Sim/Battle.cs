@@ -14,21 +14,18 @@ namespace ForestGuild.Core.Sim
         public double HitBonus, DamageBonus, DetectBonus, AlertBonus;
         public int ArmorPierce;
 
-        /// <summary>Счётчики боя — из них собирается рассказ в 3–5 строк, без чисел.</summary>
-        public int Hits, DamageDealt, DamageTaken;
-
         public bool Alive => Hp > 0;
     }
 
     /// <summary>Тварь в бою: одна или стая (стая — сумма HP, бьёт самая быстрая).</summary>
     public sealed class BattleBeast
     {
-        public string Id, Name;
+        public string Id;
 
         /// <summary>Имя вида без пометки о стае: в рассказе боя она повторяется в каждой строке.</summary>
         public string SpeciesName;
 
-        public int Level, Hp, HpMax, AttackMin, AttackMax, Armor;
+        public int Hp, HpMax, AttackMin, AttackMax, Armor;
         public float Speed;
     }
 
@@ -93,7 +90,6 @@ namespace ForestGuild.Core.Sim
             else if (beastRoll && !partyRoll) result.Ambusher = "beast";
 
             var noArmorOnAmbush = tuning.GetInt("ambush_no_armor") != 0;
-            var ambushBonus = tuning.GetFloat("ambush_bonus");
             var skipReply = tuning.GetInt("ambush_skip_reply") != 0;
             var allHit = tuning.GetInt("ambush_all_hit") != 0;
 
@@ -165,7 +161,7 @@ namespace ForestGuild.Core.Sim
                 : "Отряд смят: " + (result.Downed.Count > 0 ? "кто-то не поднимется" : "пришлось отойти") + ".";
             result.Log.Add(outcome);
 
-            var hpLine = HpLine(result.Fighters);
+            var hpLine = HpLine(tables, result.Fighters);
             result.Log.Add(hpLine);
 
             // Короткая выжимка для общего лога похода: засада, исход, состояние.
@@ -178,21 +174,27 @@ namespace ForestGuild.Core.Sim
         }
 
         /// <summary>Слово о состоянии человека — единственная форма HP, которую видит игрок.</summary>
-        public static string HpWord(int hp, int hpMax)
+        /// <summary>
+        /// Слово о состоянии человека — единственная форма HP, которую видит игрок.
+        /// Границы берутся из `combat_tuning.csv`, чтобы слово и штраф за ранение не разъезжались.
+        /// </summary>
+        public static string HpWord(Tables tables, int hp, int hpMax)
         {
             if (hp <= 0) return "на ногах не стоит";
 
+            var tuning = tables.CombatTuning;
             var share = (double)hp / Math.Max(1, hpMax);
-            if (share < 0.25) return "тяжело ранен";
-            if (share < 0.5) return "ранен";
-            if (share < 0.8) return "в ссадинах";
+
+            if (share < tuning.GetFloat("hurt_threshold")) return "тяжело ранен";
+            if (share < tuning.GetFloat("wound_threshold")) return "ранен";
+            if (share < tuning.GetFloat("scratches_threshold")) return "в ссадинах";
             return "в порядке";
         }
 
-        private static string HpLine(List<BattleFighter> fighters)
+        private static string HpLine(Tables tables, List<BattleFighter> fighters)
         {
             var words = fighters
-                .Select(f => f.Name + " — " + HpWord(f.Hp, f.HpMax))
+                .Select(f => f.Name + " — " + HpWord(tables, f.Hp, f.HpMax))
                 .ToList();
 
             return string.Join(", ", words) + ".";
@@ -365,11 +367,14 @@ namespace ForestGuild.Core.Sim
 
         private static BattleBeast MakePack(Tables tables, IReadOnlyList<string> beastIds)
         {
+            // Пустая стая — ошибка данных/вызова: без неё MakePack падал бы IndexOutOfRange.
+            if (beastIds == null || beastIds.Count == 0)
+                throw new DataException("Battle", "пустая стая: бой без тварей");
+
             var primary = tables.BeastCombat.Get(beastIds[0]);
             var beast = new BattleBeast
             {
                 Id = primary.BeastId,
-                Level = primary.Level,
                 AttackMin = primary.AttackMin,
                 AttackMax = primary.AttackMax,
                 Armor = primary.Armor,
@@ -391,8 +396,6 @@ namespace ForestGuild.Core.Sim
 
             beast.Hp = beast.HpMax;
             beast.SpeciesName = tables.Beasts.Get(beast.Id).Name;
-            beast.Name = beast.SpeciesName;
-            if (beastIds.Count > 1) beast.Name += " (стая из " + beastIds.Count + ")";
             return beast;
         }
 
@@ -490,8 +493,6 @@ namespace ForestGuild.Core.Sim
             var damage = WeaponHit(tables, fighter, beast, roll, surprise);
 
             beast.Hp -= damage;
-            fighter.Hits++;
-            fighter.DamageDealt += damage;
 
             // Имена не склоняем: «бьёт Осколочника» требует падежа, а «бьёт — Осколочник дрогнул» нет.
             if (surprise)
@@ -533,7 +534,6 @@ namespace ForestGuild.Core.Sim
             var damage = BeastHit(tables, target, beast, roll, surprise);
 
             target.Hp -= damage;
-            target.DamageTaken += damage;
 
             if (surprise)
             {

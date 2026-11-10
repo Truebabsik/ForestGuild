@@ -25,6 +25,14 @@ internal static class Program
             return CurveReport();
         }
 
+        if (args.Length > 0 && args[0] != "--selfcheck")
+        {
+            // Опечатка не должна молча прогонять проверки: для CI это ложная уверенность.
+            Console.WriteLine("неизвестный аргумент: " + args[0]
+                + " (ожидается --selfcheck, --battle, --curve или --days N)");
+            return 2;
+        }
+
         var checks = new CheckRunner();
 
         checks.Check("rng is deterministic", () =>
@@ -1151,13 +1159,25 @@ internal static class Program
 
         checks.Check("hp is a word with exact steps", () =>
         {
-            return Battle.HpWord(0, 36) == "на ногах не стоит"
-                && Battle.HpWord(8, 36) == "тяжело ранен"
-                && Battle.HpWord(9, 36) == "ранен"      // ровно 25% — уже не «тяжело»
-                && Battle.HpWord(17, 36) == "ранен"
-                && Battle.HpWord(18, 36) == "в ссадинах" // ровно 50% — уже не «ранен»
-                && Battle.HpWord(28, 36) == "в ссадинах"
-                && Battle.HpWord(29, 36) == "в порядке"; // ровно 80%
+            var t = DataLoader.Load(DataDir());
+
+            return Battle.HpWord(t, 0, 36) == "на ногах не стоит"
+                && Battle.HpWord(t, 8, 36) == "тяжело ранен"
+                && Battle.HpWord(t, 9, 36) == "ранен"      // ровно 25% — уже не «тяжело»
+                && Battle.HpWord(t, 17, 36) == "ранен"
+                && Battle.HpWord(t, 18, 36) == "в ссадинах" // ровно 50% — уже не «ранен»
+                && Battle.HpWord(t, 28, 36) == "в ссадинах"
+                && Battle.HpWord(t, 29, 36) == "в порядке"; // ровно 80%
+        });
+
+        checks.Check("hp word boundaries come from the csv", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            if (Battle.HpWord(t, 29, 36) != "в порядке") return false;
+
+            // Тот же порог, но 0.90 из таблицы: 29/36 = 80,5% попадает в «ссадины», а не «в порядке».
+            t.CombatTuning = t.CombatTuning.With("scratches_threshold", "0.9");
+            return Battle.HpWord(t, 29, 36) == "в ссадинах";
         });
 
         checks.Check("risk word counts the whole pack", () =>
@@ -1233,6 +1253,70 @@ internal static class Program
             }
 
             return false;
+        });
+
+        checks.Check("battle rejects an empty pack", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            try
+            {
+                Battle.Resolve(t, World.Create(t), new[] { "hilda" }, new string[0], new Rng(1));
+            }
+            catch (DataException)
+            {
+                return true;
+            }
+
+            return false;
+        });
+
+        checks.Check("expedition with an empty party finishes", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var zone = w.Zones["verge_springs"];
+            zone.Beasts.Clear();
+            zone.Beasts["beast_ash"] = 2;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            var party = Party("verge_springs");
+            party.Orders = FightOrders();
+
+            var result = ExpeditionSim.Resolve(w, t, party, new Rng(3));
+            return result != null;
+        });
+
+        checks.Check("sim follows the standing orders", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var zone = w.Zones["verge_springs"];
+            zone.Beasts.Clear();
+            zone.Beasts["beast_ash"] = 2;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            // Наказ «бей»: «домотать» обязано драться, а не отступать.
+            var party = Party("verge_springs", "brunni", "skadi");
+            party.Orders = FightOrders();
+
+            var result = ExpeditionSim.Resolve(w, t, party, new Rng(7));
+            return result.Encountered
+                && result.Log.Any(line => line.Contains("падает") || line.Contains("смят"));
+        });
+
+        checks.Check("briefing intensity matches the expedition", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var members = new[] { "brunni", "skadi", "hilda", "orn" };
+
+            var briefing = Briefing.Compute(w, t, members, "verge_springs", Behavior.Clean);
+            var expected = t.Tuning.GetFloat("encounter_per_hour") / 60.0 * w.BeastCount("verge_springs")
+                * Expedition.EncounterIntensity(Behavior.Clean, members.Length, 0);
+
+            return Math.Abs(briefing.EncounterPerMinute - expected) < 1e-9;
         });
 
         checks.Check("battle spends minutes from the day", () =>
@@ -1405,7 +1489,6 @@ internal static class Program
         return new BattleBeast
         {
             Id = beastId,
-            Level = row.Level,
             Hp = row.Hp,
             HpMax = row.Hp,
             AttackMin = row.AttackMin,

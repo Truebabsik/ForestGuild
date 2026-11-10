@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ForestGuild.Core.Data;
 
 namespace ForestGuild.Core.Sim
 {
@@ -11,21 +12,23 @@ namespace ForestGuild.Core.Sim
     {
         public const string ForageStoreKey = "forage";
 
-        public static int RepairPalisade(World world, int workers)
+        public static int RepairPalisade(Tables tables, World world, int workers)
         {
             if (workers <= 0) return 0;
 
+            var perWorker = tables.Tuning.GetInt("repair_per_worker");
             var before = world.PalisadeHp;
-            world.PalisadeHp = Math.Min(world.PalisadeMax, world.PalisadeHp + workers * 2);
+            world.PalisadeHp = Math.Min(world.PalisadeMax, world.PalisadeHp + workers * perWorker);
             return world.PalisadeHp - before;
         }
 
-        public static int Forage(World world, int workers)
+        public static int Forage(Tables tables, World world, int workers)
         {
             if (workers <= 0) return 0;
 
+            var perWorker = tables.Tuning.GetInt("forage_per_worker");
             world.Store.TryGetValue(ForageStoreKey, out var current);
-            world.Store[ForageStoreKey] = current + workers;
+            world.Store[ForageStoreKey] = current + workers * perWorker;
             return workers;
         }
 

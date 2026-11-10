@@ -56,7 +56,8 @@ namespace ForestGuild.Game
         {
             _title.text = "ДЕРЕВНЯ · работы на день " + _world.Day;
             _palisade.text = "Частокол: " + _world.PalisadeHp + "/" + _world.PalisadeMax
-                + " · починка даёт +2 за человека · стену чинят руками, не добром из мешка";
+                + " · починка даёт +" + _tables.Tuning.GetInt("repair_per_worker")
+                + " за человека · стену чинят руками, не добром из мешка";
 
             BuildWorks();
             BuildPeople();

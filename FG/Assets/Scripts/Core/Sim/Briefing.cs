@@ -75,9 +75,10 @@ namespace ForestGuild.Core.Sim
 
             // Встречи считаются по числу тварей в зоне, а не по «богатству» (ADR-0042).
             var beasts = world.BeastCount(zoneId);
+            var alertDays = world.Zones.TryGetValue(zoneId, out var zoneState) ? zoneState.AlertDays : 0;
 
-            var intensity = behavior == Behavior.Avoid ? 0.5 : behavior == Behavior.Clean ? 2.5 : 1.0;
-            if (members.Count > 2) intensity *= 1.2;
+            // Тот же множитель, что и в самом походе: прогноз не должен расходиться с боем.
+            var intensity = Expedition.EncounterIntensity(behavior, members.Count, alertDays);
 
             briefing.EncounterPerMinute = tuning.GetFloat("encounter_per_hour") / 60.0 * beasts * intensity;
             return briefing;

@@ -174,7 +174,7 @@ namespace ForestGuild.Game
             skill.AddToClassList("person-note");
             info.Add(skill);
 
-            info.Add(HpLabel(_world, personId));
+            info.Add(HpLabel(_tables, _world, personId));
 
             if (busy)
             {
@@ -241,7 +241,7 @@ namespace ForestGuild.Game
                     note.AddToClassList("person-note");
                     info.Add(note);
 
-                    info.Add(HpLabel(_world, personId));
+                    info.Add(HpLabel(_tables, _world, personId));
 
                     if (profession.Id == "hunter")
                     {
@@ -329,9 +329,9 @@ namespace ForestGuild.Game
         // ---- люди ----
 
         /// <summary>Состояние человека словами: то же слово, что в карточке боя и на доске утра.</summary>
-        private static Label HpLabel(World world, string personId)
+        private static Label HpLabel(Tables tables, World world, string personId)
         {
-            var word = Ui.HpWord(world, personId);
+            var word = Ui.HpWord(tables, world, personId);
             var label = new Label(word);
             label.AddToClassList("person-hp");
             if (word != "в порядке") label.AddToClassList("person-hp-hurt");

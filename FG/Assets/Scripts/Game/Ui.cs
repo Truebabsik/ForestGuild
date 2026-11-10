@@ -17,7 +17,7 @@ namespace ForestGuild.Game
         /// Состояние человека словами — единственная форма HP, которую видит игрок.
         /// Одно слово на весь интерфейс: карточка боя, доска утра, Сбор, вечер.
         /// </summary>
-        public static string HpWord(World world, string personId)
+        public static string HpWord(Core.Data.Tables tables, World world, string personId)
         {
             var condition = world.ConditionOf(personId);
             if (condition == PersonCondition.Dead) return "погиб";
@@ -25,7 +25,7 @@ namespace ForestGuild.Game
             if (condition == PersonCondition.Wounded) return "на ногах не стоит";
 
             if (!world.People.TryGetValue(personId, out var state)) return "в порядке";
-            return Battle.HpWord(state.Hp, state.HpMax);
+            return Battle.HpWord(tables, state.Hp, state.HpMax);
         }
 
         public static VisualElement Portrait(string personId, bool small = false)

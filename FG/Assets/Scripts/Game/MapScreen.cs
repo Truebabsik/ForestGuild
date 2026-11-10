@@ -142,6 +142,8 @@ namespace ForestGuild.Game
                     return;
                 }
 
+                // Сценарий может начаться сразу в походе: дневного отчёта ещё нет, а наказы уже нужны.
+                if (_dayReport == null) _dayReport = _flow.BeginDay(_plan);
                 _flow.FinishExpeditions(_dayReport, results);
                 GoToEvening();
             };

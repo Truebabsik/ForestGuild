@@ -386,7 +386,9 @@ namespace ForestGuild.Game
             {
                 for (var guard = 0; guard < 500 && !_current.Finished; guard++)
                 {
-                    if (_current.HasDecision) _current.Decide(ExpeditionSim.Default(_current.Pending));
+                    if (_current.HasDecision)
+                        _current.Decide(ExpeditionSim.Default(_current.Pending,
+                            _current.Party.Orders ?? new StandingOrders()));
                     else _current.Advance();
                 }
 

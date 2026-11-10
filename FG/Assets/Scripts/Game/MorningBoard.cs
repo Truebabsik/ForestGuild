@@ -91,7 +91,7 @@ namespace ForestGuild.Game
                 {
                     var words = new List<string>();
                     foreach (var personId in squad.Members)
-                        words.Add(_tables.Roster.Get(personId).Name + " — " + Ui.HpWord(_world, personId));
+                        words.Add(_tables.Roster.Get(personId).Name + " — " + Ui.HpWord(_tables, _world, personId));
 
                     left.Add(Line("squad-line", string.Join(", ", words)));
                 }

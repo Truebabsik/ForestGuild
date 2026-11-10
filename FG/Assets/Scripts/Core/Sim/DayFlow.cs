@@ -99,7 +99,7 @@ namespace ForestGuild.Core.Sim
         {
             if (plan.VillageWorkers.Count > 0)
             {
-                report.Repaired = Works.RepairPalisade(_world, plan.VillageWorkers.Count);
+                report.Repaired = Works.RepairPalisade(_tables, _world, plan.VillageWorkers.Count);
                 var workers = plan.VillageWorkers.Count + " человеко-дн.";
                 report.Lines.Add(report.Repaired == 0
                     ? "Частокол и так цел: " + _world.PalisadeHp + "/" + _world.PalisadeMax + " (" + workers + ")"
@@ -107,7 +107,7 @@ namespace ForestGuild.Core.Sim
                       + " (+" + report.Repaired + " за " + workers + ")");
             }
 
-            var forage = Works.Forage(_world, plan.Foragers.Count);
+            var forage = Works.Forage(_tables, _world, plan.Foragers.Count);
             if (forage > 0) report.Lines.Add("Заготовка: +" + forage + " корма в склад");
 
             foreach (var personId in plan.Beds) Works.PutToBed(_world, personId);

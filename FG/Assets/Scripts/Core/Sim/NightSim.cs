@@ -246,7 +246,12 @@ namespace ForestGuild.Core.Sim
         private static void MoveOneBeast(World world, string from, string to)
         {
             var src = world.Zones[from];
-            var beastId = src.Beasts.Where(kv => kv.Value > 0).Select(kv => kv.Key).FirstOrDefault();
+            // Порядок словаря не должен решать, кто уйдёт: тот же приём, что в `Expedition.PickPack`.
+            var beastId = src.Beasts
+                .Where(kv => kv.Value > 0)
+                .OrderBy(kv => kv.Key, StringComparer.Ordinal)
+                .Select(kv => kv.Key)
+                .FirstOrDefault();
             if (beastId == null) return;
 
             src.Beasts[beastId]--;
