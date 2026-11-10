@@ -141,6 +141,17 @@ public static class DriveBattle
     /// <summary>Слабый отряд: бой обязан закончиться выбитым и карточкой «нести/оставить».</summary>
     public static string Wound()
     {
+        return WoundCore(false);
+    }
+
+    /// <summary>То же, но рассказ боя замирает на первой строке — для скриншота «построчно».</summary>
+    public static string WoundHold()
+    {
+        return WoundCore(true);
+    }
+
+    private static string WoundCore(bool hold)
+    {
         var screen = Map();
         screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
 
@@ -163,6 +174,14 @@ public static class DriveBattle
             return "no encounter: " + State(ui);
 
         ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "fight" });
+
+        if (hold)
+        {
+            var reveal = ui.GetType().GetField("_reveal", Flags).GetValue(ui) as IVisualElementScheduledItem;
+            reveal?.Pause();
+            return Body(ui);
+        }
+
         return Step(screen, 90);
     }
 
@@ -227,6 +246,135 @@ public static class DriveBattle
         orders.Carcass = CarcassOrder.Leave;
         orders.Wounded = WoundedOrder.Carry;
         orders.BagFull = BagOrder.Skip;
+    }
+
+    /// <summary>Показать одну следующую строку рассказа боя (для скриншота «построчно»).</summary>
+    public static string RevealOne()
+    {
+        return Reveal(1);
+    }
+
+    /// <summary>Дочитать рассказ боя до конца.</summary>
+    public static string RevealAll()
+    {
+        return Reveal(60);
+    }
+
+    private static string Reveal(int times)
+    {
+        var ui = Map().Expedition;
+        var step = ui.GetType().GetMethod("RevealStep", Flags);
+
+        for (var i = 0; i < times; i++)
+        {
+            var before = Body(ui);
+            step.Invoke(ui, null);
+            if (Body(ui) == before) break;
+        }
+
+        return Body(ui);
+    }
+
+    /// <summary>Начать бой и сразу заморозить рассказ на первой строке — чтобы снять «построчно».</summary>
+    public static string FightHold()
+    {
+        var screen = Map();
+        var ui = screen.Expedition;
+        var current = Current(ui);
+        if (current == null || !current.HasDecision || current.Pending.Kind != DecisionKind.Encounter)
+            return "not an encounter: " + State(ui);
+
+        ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "fight" });
+
+        var reveal = ui.GetType().GetField("_reveal", Flags).GetValue(ui) as IVisualElementScheduledItem;
+        reveal?.Resume();
+        reveal?.Pause();
+
+        return Body(ui);
+    }
+
+    /// <summary>Снять паузу рассказа — он дочитается сам.</summary>
+    public static string ResumeReveal()
+    {
+        var ui = Map().Expedition;
+        var reveal = ui.GetType().GetField("_reveal", Flags).GetValue(ui) as IVisualElementScheduledItem;
+        reveal?.Resume();
+        return Body(ui);
+    }
+
+    private static string Body(ExpeditionScreen ui)
+    {
+        var lines = (ScrollView)ui.GetType().GetField("_monsterLines", Flags).GetValue(ui);
+        var texts = lines.contentContainer.Children().Select(child => ((Label)child).text).ToList();
+        return "lines=" + texts.Count + " body=[" + string.Join(" / ", texts) + "]";
+    }
+
+    /// <summary>Найти бой с засадой и заморозить рассказ — проверить отдельный нарратив засады.</summary>
+    public static string AmbushStory()
+    {
+        var screen = Map();
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
+
+        var ui = screen.Expedition;
+        var plan = (DayPlan)screen.GetType().GetField("_plan", Flags).GetValue(screen);
+        var world = screen.World;
+        var zone = world.Zones["verge_springs"];
+
+        for (var seed = 1; seed <= 60; seed++)
+        {
+            zone.Beasts.Clear();
+            zone.Beasts["beast_ash"] = 1;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            foreach (var person in new[] { "brunni", "skadi" })
+            {
+                world.People[person].Hp = world.People[person].HpMax;
+                world.People[person].Condition = PersonCondition.Healthy;
+            }
+
+            ui.Open(screen.Tables, world, plan, new Rng(seed * 7919 + 13));
+
+            var current = Current(ui);
+            for (var i = 0; i < 200 && current != null && !current.HasDecision; i++)
+            {
+                ui.GetType().GetMethod("Tick", Flags).Invoke(ui, null);
+                current = Current(ui);
+            }
+
+            if (current == null || !current.HasDecision || current.Pending.Kind != DecisionKind.Encounter)
+                continue;
+
+            ui.GetType().GetMethod("Choose", Flags).Invoke(ui, new object[] { "fight" });
+
+            var battle = current.LastBattle;
+            if (battle == null || battle.Ambusher == "") continue;
+
+            var reveal = ui.GetType().GetField("_reveal", Flags).GetValue(ui) as IVisualElementScheduledItem;
+            reveal?.Pause();
+
+            return "ambusher=" + battle.Ambusher + " " + Body(ui);
+        }
+
+        return "no ambush found";
+    }
+
+    /// <summary>Размеры рассказа: сколько видно, сколько всего, куда прокручено.</summary>
+    public static string Metrics()
+    {
+        var ui = Map().Expedition;
+        var view = (ScrollView)ui.GetType().GetField("_monsterLines", Flags).GetValue(ui);
+        var content = view.contentContainer;
+
+        return "viewH=" + view.layout.height
+            + " viewW=" + view.layout.width
+            + " contentH=" + content.layout.height
+            + " maxH=" + view.resolvedStyle.maxHeight
+            + " offset=" + view.scrollOffset.y
+            + " lines=" + content.childCount
+            + " firstH=" + content[0].layout.height
+            + " firstW=" + content[0].layout.width
+            + " artH=" + ((VisualElement)ui.GetType().GetField("_monsterArt", Flags).GetValue(ui)).layout.height;
     }
 
     private static string Snapshot(MapScreen screen)
@@ -308,6 +456,13 @@ public static class DriveBattle
 
             var artField = ui.GetType().GetField("_artClass", Flags);
             if (artField != null) text.Append(" art=").Append(artField.GetValue(ui));
+
+            if (decision.Kind == DecisionKind.Battle)
+            {
+                var linesField = ui.GetType().GetField("_monsterLines", Flags);
+                var view = linesField != null ? (ScrollView)linesField.GetValue(ui) : null;
+                if (view != null) text.Append(" bodyLines=").Append(view.contentContainer.childCount);
+            }
 
             var packField = current.GetType().GetField("_pack", Flags);
             var pack = packField != null ? packField.GetValue(current) as List<string> : null;

@@ -42,6 +42,7 @@
       <ui:VisualElement name="monster-art" class="monster-art" />
       <ui:Label name="monster-title" text="" class="monster-title" />
       <ui:Label name="monster-body" text="" class="zone-text" />
+      <ui:ScrollView name="monster-lines" class="battle-lines hidden" />
       <ui:VisualElement name="monster-options" class="decision-options" />
     </ui:VisualElement>
 

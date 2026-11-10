@@ -14,6 +14,9 @@ namespace ForestGuild.Game
     {
         private const int TickMs = 700;
 
+        /// <summary>Задержка рассказа боя: строка успевает прочитаться, но бой не превращается в кино.</summary>
+        private const int BattleLineMs = 650;
+
         private readonly VisualElement _panel;
         private readonly Label _title;
         private readonly Label _hour;
@@ -28,6 +31,7 @@ namespace ForestGuild.Game
         private readonly VisualElement _monsterArt;
         private readonly Label _monsterTitle;
         private readonly Label _monsterBody;
+        private readonly ScrollView _monsterLines;
         private readonly VisualElement _monsterOptions;
 
         private Tables _tables;
@@ -40,6 +44,9 @@ namespace ForestGuild.Game
 
         private Expedition _current;
         private IVisualElementScheduledItem _tick;
+        private IVisualElementScheduledItem _reveal;
+        private string[] _revealLines;
+        private int _revealIndex;
         private string _artClass = "";
         private bool _paused;
 
@@ -64,6 +71,10 @@ namespace ForestGuild.Game
             _monsterArt = root.Q<VisualElement>("monster-art");
             _monsterTitle = root.Q<Label>("monster-title");
             _monsterBody = root.Q<Label>("monster-body");
+            _monsterLines = root.Q<ScrollView>("monster-lines");
+            // Полоса прокрутки в ките лишняя: рассказ листается сам, по мере появления строк.
+            _monsterLines.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            _monsterLines.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
             _monsterOptions = root.Q<VisualElement>("monster-options");
 
             _pause.clicked += TogglePause;
@@ -223,10 +234,79 @@ namespace ForestGuild.Game
             _monsterArt.AddToClassList("monster-art-" + _artClass);
 
             _monsterTitle.text = decision.Title;
-            _monsterBody.text = decision.Body;
+
+            if (decision.Kind == DecisionKind.Battle)
+            {
+                // Рассказ боя идёт построчно, с задержкой: сначала засада, затем каждая атака.
+                _monsterModal.AddToClassList("battle-mode");
+                _monsterBody.AddToClassList("hidden");
+                _monsterLines.RemoveFromClassList("hidden");
+                StartReveal(decision.Body);
+            }
+            else
+            {
+                _monsterModal.RemoveFromClassList("battle-mode");
+                _monsterLines.AddToClassList("hidden");
+                _monsterBody.RemoveFromClassList("hidden");
+                StopReveal();
+                _monsterBody.text = decision.Body;
+            }
 
             BuildOptions(_monsterOptions, decision);
             _monsterModal.RemoveFromClassList("hidden");
+        }
+
+        private void StartReveal(string body)
+        {
+            _revealLines = body.Split('\n');
+            _revealIndex = 0;
+
+            _monsterLines.contentContainer.Clear();
+            if (_revealLines.Length > 0) AddBattleLine(_revealLines[_revealIndex++]);
+            _reveal?.Pause();
+            if (_revealIndex >= _revealLines.Length)
+            {
+                _revealLines = null;
+                return;
+            }
+
+            _reveal ??= _monsterLines.schedule.Execute(RevealStep).Every(BattleLineMs);
+            _reveal.Resume();
+        }
+
+        /// <summary>Одна строка рассказа за шаг: игрок успевает прочитать, кто кого ударил.</summary>
+        private void RevealStep()
+        {
+            if (_revealLines == null || _revealIndex >= _revealLines.Length)
+            {
+                StopReveal();
+                return;
+            }
+
+            AddBattleLine(_revealLines[_revealIndex++]);
+        }
+
+        private void AddBattleLine(string text)
+        {
+            var label = new Label(text);
+            label.AddToClassList("battle-line");
+            _monsterLines.contentContainer.Add(label);
+
+            // Раскладка в этом кадре ещё старая: докручиваем вниз следующим шагом планировщика.
+            _monsterLines.schedule.Execute(ScrollToEnd).StartingIn(16);
+        }
+
+        private void ScrollToEnd()
+        {
+            // Если рассказ целиком помещается — не прокручиваем: игрок должен читать с первой строки.
+            if (_monsterLines.contentContainer.layout.height <= _monsterLines.layout.height) return;
+            _monsterLines.scrollOffset = new UnityEngine.Vector2(0, float.MaxValue);
+        }
+
+        private void StopReveal()
+        {
+            _reveal?.Pause();
+            _revealLines = null;
         }
 
         private void ShowInlineDecision(ExpeditionDecision decision)
@@ -257,6 +337,7 @@ namespace ForestGuild.Game
 
         private void HideDecisions()
         {
+            StopReveal();
             _card.AddToClassList("hidden");
             _monsterModal.AddToClassList("hidden");
         }

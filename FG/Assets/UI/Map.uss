@@ -624,6 +624,33 @@
     margin-bottom: 4px;
 }
 
+/* Рассказ боя: строка на атаку, читается как сцена, поэтому крупнее обычного текста зоны. */
+.battle-body {
+    font-size: 15px;
+    color: rgb(228, 222, 206);
+    margin-top: 4px;
+    margin-bottom: 14px;
+    white-space: normal;
+}
+
+/* Бой: арт ниже (строк много), сам рассказ — список строк; панель 1080 по высоте, места хватает. */
+.monster-modal.battle-mode .monster-art {
+    height: 120px;
+}
+
+.battle-lines {
+    max-height: 520px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
+.battle-line {
+    font-size: 15px;
+    color: rgb(228, 222, 206);
+    margin-bottom: 5px;
+    white-space: normal;
+}
+
 .monster-art-spark-search { background-image: url("project://database/Assets/UI/Art/Monsters/spark_search.jpg"); }
 .monster-art-bone-search { background-image: url("project://database/Assets/UI/Art/Monsters/bone_search.jpg"); }
 .monster-art-ash-search { background-image: url("project://database/Assets/UI/Art/Monsters/ash_search.jpg"); }

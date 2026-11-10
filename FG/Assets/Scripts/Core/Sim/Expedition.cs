@@ -420,7 +420,7 @@ namespace ForestGuild.Core.Sim
             var battle = Battle.Resolve(_tables, _world, Party.PersonIds, _pack, _rng);
             SpendMinutes(battle.Minutes);
 
-            foreach (var line in battle.Log) Result.Log.Add(_zone.Name + ": " + line);
+            foreach (var line in battle.Summary) Result.Log.Add(_zone.Name + ": " + line);
 
             foreach (var fighter in battle.Fighters)
             {

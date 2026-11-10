@@ -58,16 +58,16 @@
 
 ### P1 — бой должен быть виден (главное)
 
-**T2. Карточка боя.** — **сделано 2026-11-10.** Новый `DecisionKind.Battle`: модал в стиле кита —
-арт твари, 3–5 строк без чисел, слова о состоянии людей, кнопка «дальше». Строки собирает
-`Battle.Resolve` (засада → удар → кого достало → исход → HP словами), карточку держит `Expedition`.
-По наказу не-`Ask` карточка не держит поход.
+**T2. Карточка боя.** — **сделано 2026-11-10, доработано: рассказ построчно.**
+Новый `DecisionKind.Battle`: модал — арт `_attack`, строки раскрываются по одной (650 мс), слова о
+состоянии людей, кнопка «дальше». Строки собирает `Battle.Resolve`: строка на каждую атаку и промах,
+засада отдельным нарративом в начале. По наказу карточка не держит поход.
 
-Доказательства: `decision=Battle title=[БОЙ: Осколочник] body=[Брунни бьёт. Осколочник падает.
-Брунни — в порядке, Скади — в порядке.]`; поражение — 4 строки про костяного бегуна; `AutoFight`
-(наказ «бей») — бой прошёл с уроном (brunni 50/54, skadi 37/45), карточек боя **0**; проверки
-«battle tells its story without numbers» и «battle card waits only when the encounter is asked» (69/69).
-Скриншоты: `docs/images/ui/step1/battle-card.png`, `battle-card-loss.png`.
+Доказательства: `AmbushStory` → `lines=1 body=[Пепельный вор застаёт отряд врасплох.]`,
+`RevealAll` → 14 строк, `Metrics: viewH=505 contentH=505 offset=0`; `AutoFight` (наказ «бей») — бой
+прошёл без карточек. Проверки «battle tells its story without numbers», «ambush has its own narrative»,
+«battle card waits only when the encounter is asked» (70/70).
+Скриншот: `docs/images/ui/step1/battle-card.png`.
 
 **T3. Арт `_attack` в момент удара.** — **сделано вместе с T2.** `ShowMonsterDecision` выбирает
 `search` для встречи, `attack` для боя, `dead` для туши. На скриншотах `shard-attack` и `bone-attack`.

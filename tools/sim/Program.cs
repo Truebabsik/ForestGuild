@@ -714,13 +714,37 @@ internal static class Program
             var battle = Battle.Resolve(t, World.Create(t), new[] { "hilda" },
                 new[] { "beast_ash" }, new Rng(11));
 
-            if (battle.Log.Count < 3 || battle.Log.Count > 6) return false;
+            if (battle.Log.Count < 4 || battle.Log.Count > 40) return false;
 
             var hasOutcome = battle.Log.Any(line => line.Contains("падает") || line.Contains("смят"));
-            var hasHpWord = battle.Log.Any(line => line.Contains(" — ") && line.EndsWith("."));
-            var noNumbers = battle.Log.All(line => !line.Any(char.IsDigit));
+            var hasStrike = battle.Log.Any(line => line.Contains("бьёт") || line.Contains("достаёт"));
+            var noNumbers = battle.Log.All(line => !line.Any(char.IsDigit))
+                && battle.Summary.All(line => !line.Any(char.IsDigit));
+            var summaryOk = battle.Summary.Count >= 2 && battle.Summary.Count <= 3;
 
-            return hasOutcome && hasHpWord && noNumbers;
+            return hasOutcome && hasStrike && noNumbers && summaryOk;
+        });
+
+        checks.Check("ambush has its own narrative", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+
+            for (var seed = 0; seed < 300; seed++)
+            {
+                var battle = Battle.Resolve(t, World.Create(t), new[] { "hilda" },
+                    new[] { "beast_ash" }, new Rng(seed));
+
+                if (battle.Ambusher == "") continue;
+
+                var first = battle.Log[0];
+                var ok = battle.Ambusher == "party"
+                    ? first.Contains("замечает")
+                    : first.Contains("врасплох");
+
+                return ok && battle.Log.Count(x => x.Contains("из засады")) >= 1;
+            }
+
+            return false;
         });
 
         checks.Check("battle card waits only when the encounter is asked", () =>
@@ -753,7 +777,7 @@ internal static class Program
                 if (run.Pending == null || run.Pending.Kind != DecisionKind.Battle) return false;
 
                 var lines = run.Pending.Body.Split('\n');
-                if (lines.Length < 3) return false;
+                if (lines.Length < 4) return false;
                 if (run.LastBattle == null) return false;
                 if (run.Pending.Options[0].Id != "next") return false;
 

@@ -24,6 +24,10 @@ namespace ForestGuild.Core.Sim
     public sealed class BattleBeast
     {
         public string Id, Name;
+
+        /// <summary>Имя вида без пометки о стае: в рассказе боя она повторяется в каждой строке.</summary>
+        public string SpeciesName;
+
         public int Level, Hp, HpMax, AttackMin, AttackMax, Armor;
         public float Speed;
     }
@@ -38,6 +42,10 @@ namespace ForestGuild.Core.Sim
 
         public BattleBeast Beast;
         public readonly List<string> Log = new List<string>();
+
+        /// <summary>Короткая выжимка для общего лога похода: засада, исход, состояние.</summary>
+        public readonly List<string> Summary = new List<string>();
+
         public readonly List<string> Downed = new List<string>();
         public readonly List<BattleFighter> Fighters = new List<BattleFighter>();
     }
@@ -72,6 +80,8 @@ namespace ForestGuild.Core.Sim
 
             foreach (var fighter in fighters) result.Fighters.Add(fighter);
             result.Beast = MakePack(tables, beastIds);
+            if (beastIds.Count > 1)
+                result.Log.Add(result.Beast.SpeciesName + " — их " + (beastIds.Count == 2 ? "двое" : "трое") + ".");
 
             DetectChances(tables, fighters, result.Beast,
                 out var partyDetect, out var beastDetect);
@@ -92,7 +102,8 @@ namespace ForestGuild.Core.Sim
 
             if (result.Ambusher == "party")
             {
-                result.Log.Add("Отряд застал " + result.Beast.Name + " первым.");
+                // Засада — отдельный нарратив: сначала обнаружение, потом удары из засады.
+                result.Log.Add("Отряд замечает тварь первым.");
 
                 var hit = false;
                 foreach (var fighter in result.Fighters)
@@ -100,7 +111,7 @@ namespace ForestGuild.Core.Sim
                     if (!fighter.Hunter || !fighter.Alive) continue;
                     if (hit && !allHit) break;
 
-                    if (StrikeBeast(tables, fighter, result.Beast, true, rng)) hit = true;
+                    if (StrikeBeast(tables, fighter, result.Beast, true, rng, result.Log)) hit = true;
                     if (result.Beast.Hp <= 0) break;
                 }
 
@@ -108,8 +119,8 @@ namespace ForestGuild.Core.Sim
             }
             else if (result.Ambusher == "beast")
             {
-                result.Log.Add(result.Beast.Name + " застаёт отряд первым.");
-                StrikeParty(tables, result.Fighters, result.Beast, rng, true);
+                result.Log.Add(result.Beast.SpeciesName + " застаёт отряд врасплох.");
+                StrikeParty(tables, result.Fighters, result.Beast, rng, true, result.Log);
 
                 // Застигнутый отряд теряет свой ход в первом раунде (§6.3, `ambush_skip_reply`).
                 if (skipReply)
@@ -129,7 +140,7 @@ namespace ForestGuild.Core.Sim
                     foreach (var fighter in result.Fighters)
                     {
                         if (!fighter.Alive || !fighter.Hunter) continue;
-                        StrikeBeast(tables, fighter, result.Beast, false, rng);
+                        StrikeBeast(tables, fighter, result.Beast, false, rng, result.Log);
                         if (result.Beast.Hp <= 0) break;
                     }
                 }
@@ -137,7 +148,7 @@ namespace ForestGuild.Core.Sim
                 if (result.Beast.Hp <= 0) break;
                 if (result.Rounds == 1 && beastSkipsRoundOne) continue;
 
-                StrikeParty(tables, result.Fighters, result.Beast, rng, false);
+                StrikeParty(tables, result.Fighters, result.Beast, rng, false, result.Log);
             }
 
             result.Won = result.Beast.Hp <= 0;
@@ -148,20 +159,20 @@ namespace ForestGuild.Core.Sim
                 if (!fighter.Alive) result.Downed.Add(fighter.PersonId);
             }
 
-            // Рассказ боя: 3–5 строк без чисел (mechanics.md §8). Арт `_attack` — на карточке боя.
-            result.Log.Add(StrikeLine(result.Fighters, result.Beast.Name));
+            // Рассказ боя: строка на каждую атаку (mechanics.md §8), без единой цифры.
+            var outcome = result.Won
+                ? result.Beast.SpeciesName + " падает."
+                : "Отряд смят: " + (result.Downed.Count > 0 ? "кто-то не поднимется" : "пришлось отойти") + ".";
+            result.Log.Add(outcome);
 
-            var hurt = result.Fighters
-                .Where(f => f.DamageTaken > 0)
-                .OrderByDescending(f => f.DamageTaken)
-                .FirstOrDefault();
-            if (hurt != null) result.Log.Add("Тварь достаёт " + hurt.Name + ".");
+            var hpLine = HpLine(result.Fighters);
+            result.Log.Add(hpLine);
 
-            result.Log.Add(result.Won
-                ? result.Beast.Name + " падает."
-                : "Отряд смят: " + (result.Downed.Count > 0 ? "кто-то не поднимется" : "пришлось отойти") + ".");
-
-            result.Log.Add(HpLine(result.Fighters));
+            // Короткая выжимка для общего лога похода: засада, исход, состояние.
+            if (result.Ambusher == "party") result.Summary.Add("Отряд замечает тварь первым.");
+            else if (result.Ambusher == "beast") result.Summary.Add(result.Beast.SpeciesName + " застаёт отряд первым.");
+            result.Summary.Add(outcome);
+            result.Summary.Add(hpLine);
 
             return result;
         }
@@ -176,19 +187,6 @@ namespace ForestGuild.Core.Sim
             if (share < 0.5) return "ранен";
             if (share < 0.8) return "в ссадинах";
             return "в порядке";
-        }
-
-        private static string StrikeLine(List<BattleFighter> fighters, string beastName)
-        {
-            var strikers = fighters
-                .Where(f => f.Hits > 0)
-                .OrderByDescending(f => f.DamageDealt)
-                .ToList();
-
-            if (strikers.Count == 0) return beastName + " не даёт замахнуться.";
-            if (strikers.Count == 1) return strikers[0].Name + " бьёт.";
-
-            return strikers[0].Name + " бьёт; " + strikers[1].Name + " прикрывает.";
         }
 
         private static string HpLine(List<BattleFighter> fighters)
@@ -387,7 +385,8 @@ namespace ForestGuild.Core.Sim
             }
 
             beast.Hp = beast.HpMax;
-            beast.Name = tables.Beasts.Get(beast.Id).Name;
+            beast.SpeciesName = tables.Beasts.Get(beast.Id).Name;
+            beast.Name = beast.SpeciesName;
             if (beastIds.Count > 1) beast.Name += " (стая из " + beastIds.Count + ")";
             return beast;
         }
@@ -472,10 +471,15 @@ namespace ForestGuild.Core.Sim
 
         /// <summary>Удар человека по твари. true — попал (для засады «бьёт до первого попадания»).</summary>
         private static bool StrikeBeast(Tables tables, BattleFighter fighter, BattleBeast beast,
-            bool surprise, Rng rng)
+            bool surprise, Rng rng, List<string> log)
         {
             if (!fighter.Alive || !fighter.Hunter) return false;
-            if (!rng.Chance(HitChance(tables, fighter))) return false;
+
+            if (!rng.Chance(HitChance(tables, fighter)))
+            {
+                log.Add(fighter.Name + " бьёт, но промахивается.");
+                return false;
+            }
 
             var roll = rng.Range(fighter.WeaponMin, fighter.WeaponMax);
             var damage = WeaponHit(tables, fighter, beast, roll, surprise);
@@ -483,12 +487,27 @@ namespace ForestGuild.Core.Sim
             beast.Hp -= damage;
             fighter.Hits++;
             fighter.DamageDealt += damage;
+
+            // Имена не склоняем: «бьёт Осколочника» требует падежа, а «бьёт — Осколочник дрогнул» нет.
+            if (surprise)
+            {
+                log.Add(fighter.Name + " бьёт из засады — " + beast.SpeciesName + " не успевает прикрыться.");
+            }
+            else if (damage * 4 >= beast.HpMax)
+            {
+                log.Add(fighter.Name + " бьёт — " + beast.SpeciesName + " дрогнул.");
+            }
+            else
+            {
+                log.Add(fighter.Name + " бьёт — " + beast.SpeciesName + " принимает удар.");
+            }
+
             return true;
         }
 
         /// <summary>Удар твари по отряду. `surprise` — первый удар из засады: мимо брони и закалки.</summary>
         private static void StrikeParty(Tables tables, List<BattleFighter> fighters, BattleBeast beast,
-            Rng rng, bool surprise)
+            Rng rng, bool surprise, List<string> log)
         {
             var alive = new List<BattleFighter>();
             foreach (var fighter in fighters) if (fighter.Alive) alive.Add(fighter);
@@ -499,13 +518,34 @@ namespace ForestGuild.Core.Sim
             var target = targetRandom ? alive[rng.Next(alive.Count)] : alive[0];
 
             // Сборщик не бьётся: он пытается уйти с линии удара.
-            if (!target.Hunter && rng.Chance(tuning.GetFloat("gatherer_dodge"))) return;
+            if (!target.Hunter && rng.Chance(tuning.GetFloat("gatherer_dodge")))
+            {
+                log.Add(target.Name + " уходит с линии удара.");
+                return;
+            }
 
             var roll = rng.Range(beast.AttackMin, beast.AttackMax);
             var damage = BeastHit(tables, target, beast, roll, surprise);
 
             target.Hp -= damage;
             target.DamageTaken += damage;
+
+            if (surprise)
+            {
+                log.Add(beast.SpeciesName + " бьёт из засады — " + target.Name + " не успевает прикрыться.");
+            }
+            else if (target.Hp <= 0)
+            {
+                log.Add(beast.SpeciesName + " бьёт — " + target.Name + " падает.");
+            }
+            else if (damage * 4 >= target.HpMax)
+            {
+                log.Add(beast.SpeciesName + " бьёт — " + target.Name + " отходит, держась за бок.");
+            }
+            else
+            {
+                log.Add(beast.SpeciesName + " бьёт — " + target.Name + " принимает удар.");
+            }
         }
 
         private static int AmbushDamage(Tables tables, int damage)
