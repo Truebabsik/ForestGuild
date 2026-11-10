@@ -132,7 +132,7 @@ namespace ForestGuild.Core.Sim
             if (endedDay == _world.NextWaveDay)
             {
                 report.Wave = WaveSim.Resolve(_world, _tables, Defenders(plan), _rng);
-                report.Lines.AddRange(report.Wave.Lines);
+                foreach (var line in report.Wave.Lines) report.Add(line);
             }
 
             return report;
@@ -157,7 +157,7 @@ namespace ForestGuild.Core.Sim
         {
             var report = RunExpeditions(plan);
             report.Night = RunNight();
-            report.Lines.AddRange(report.Night.Lines);
+            foreach (var entry in report.Night.Entries) report.Lines.Add(entry.Text);
             return report;
         }
     }

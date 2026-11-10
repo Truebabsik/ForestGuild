@@ -125,7 +125,8 @@ internal static class Program
             // Отряд голодных уходит наружу — в Опушку; обратная миграция может вернуть численность,
             // поэтому проверяем сам факт перехода и рост соседней зоны, а не «стало меньше».
             return w.BeastCount("verge_meadow") > before
-                && report.Lines.Any(line => line.Contains("Вулканические ключи") && line.Contains("уходит наружу"));
+                && report.Entries.Any(entry => entry.Text.Contains("Вулканические ключи")
+                    && entry.Text.Contains("уходит наружу"));
         });
 
         checks.Check("crystals eaten over forage give nest xp", () =>
@@ -199,9 +200,9 @@ internal static class Program
             var t = DataLoader.Load(DataDir());
             var w = World.Create(t);
             var report = NightSim.AdvanceNight(w, t, new Rng(1));
-            return report.Lines.Any(line => line.Contains("кормятся")
-                || line.Contains("кристалл")
-                || line.Contains("голодные"));
+            return report.Entries.Any(entry => entry.Text.Contains("кормятся")
+                || entry.Text.Contains("кристалл")
+                || entry.Text.Contains("голодные"));
         });
 
         checks.Check("zone lore is complete for all zones", () =>
@@ -238,7 +239,7 @@ internal static class Program
             var dayAfter = w.Day;
 
             var night = flow.RunNight();
-            return dayAfter == 1 && w.Day == 2 && day.Parties.Count == 1 && night.Lines.Count > 0;
+            return dayAfter == 1 && w.Day == 2 && day.Parties.Count == 1 && night.Entries.Count > 0;
         });
 
         checks.Check("foragers fill the store", () =>

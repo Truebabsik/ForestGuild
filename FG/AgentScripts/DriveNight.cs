@@ -13,6 +13,10 @@ public static class DriveNight
         var screen = Object.FindAnyObjectByType<ForestGuild.Game.MapScreen>();
         var type = screen.GetType();
 
+        // С начала суток: кампания -> планирование, иначе мир и доска ещё не созданы.
+        type.GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "campaign" });
+        type.GetMethod("EnterPlanning", Flags).Invoke(screen, null);
+
         var a = screen.World.Squads[0];
         a.Members.Clear();
         a.Members.Add("brunni");

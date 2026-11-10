@@ -13,7 +13,7 @@ namespace ForestGuild.Core.Sim
 
     public sealed class NightReport
     {
-        public readonly List<string> Lines = new List<string>();
+        /// <summary>Строки ночи: текст и зона (если событие в зоне). Одна коллекция — один источник.</summary>
         public readonly List<NightLine> Entries = new List<NightLine>();
 
         /// <summary>Волна этой ночью, если пришла (design.md §10).</summary>
@@ -21,7 +21,6 @@ namespace ForestGuild.Core.Sim
 
         public void Add(string line, string zoneId = null)
         {
-            Lines.Add(line);
             Entries.Add(new NightLine { Text = line, ZoneId = zoneId });
         }
     }

@@ -669,6 +669,7 @@
 .monster-art-climber-search { background-image: url("project://database/Assets/UI/Art/Monsters/climber_search.jpg"); }
 .monster-art-climber-attack { background-image: url("project://database/Assets/UI/Art/Monsters/climber_attack.jpg"); }
 .monster-art-climber-dead { background-image: url("project://database/Assets/UI/Art/Monsters/climber_dead.jpg"); }
+/* fang и mole: арт на будущий пояс, видов в beasts.csv пока нет — классы ждут данные. */
 .monster-art-fang-search { background-image: url("project://database/Assets/UI/Art/Monsters/fang_search.jpg"); }
 .monster-art-fang-attack { background-image: url("project://database/Assets/UI/Art/Monsters/fang_attack.jpg"); }
 .monster-art-fang-dead { background-image: url("project://database/Assets/UI/Art/Monsters/fang_dead.jpg"); }

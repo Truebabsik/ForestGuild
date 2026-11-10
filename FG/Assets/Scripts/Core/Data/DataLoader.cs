@@ -18,13 +18,28 @@ namespace ForestGuild.Core.Data
         {
             var t = new Tables();
 
+            LoadSettings(t, dir);
+            LoadWorld(t, dir);
+            LoadCombat(t, dir);
+            Validate(t);
+
+            return t;
+        }
+
+        /// <summary>Глобальные числа и версия схемы: без них остальные таблицы не читать.</summary>
+        private static void LoadSettings(Tables t, string dir)
+        {
             t.Tuning = ReadTuning(Path.Combine(dir, "tuning.csv"));
             if (t.Tuning.GetInt("schema_version") != SchemaVersion)
             {
                 throw new DataException("tuning.csv",
                     "schema_version " + t.Tuning.GetInt("schema_version") + ", ожидалось " + SchemaVersion);
             }
+        }
 
+        /// <summary>Мир и экономика: зоны, ресурсы, твари, люди, сценарии.</summary>
+        private static void LoadWorld(Tables t, string dir)
+        {
             t.Items = Read(dir, "items.csv", (r, p) => new Item
             {
                 Id = Get(r, p, "id"),
@@ -174,7 +189,11 @@ namespace ForestGuild.Core.Data
                 EncounterOrder = Opt(r, "encounter_order") ?? "ask",
                 Members = Opt(r, "members") ?? "",
             }, x => x.ScenarioId + "|" + x.Squad);
+        }
 
+        /// <summary>Боевые таблицы: числа боя, статы тварей, снаряжение, навыки.</summary>
+        private static void LoadCombat(Tables t, string dir)
+        {
             t.CombatTuning = ReadTuning(Path.Combine(dir, "combat_tuning.csv"));
 
             t.BeastCombat = Read(dir, "beast_combat.csv", (r, p) => new BeastCombat
@@ -222,9 +241,6 @@ namespace ForestGuild.Core.Data
                 PersonId = Get(r, p, "person_id"),
                 SkillId = Get(r, p, "skill_id"),
             }, x => x.PersonId + "|" + x.SkillId);
-
-            Validate(t);
-            return t;
         }
 
         private static void Validate(Tables t)
