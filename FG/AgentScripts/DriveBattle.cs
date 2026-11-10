@@ -377,6 +377,81 @@ public static class DriveBattle
             + " artH=" + ((VisualElement)ui.GetType().GetField("_monsterArt", Flags).GetValue(ui)).layout.height;
     }
 
+    /// <summary>Слово риска для стаи: одна тварь против трёх при одном составе.</summary>
+    public static string PackWords()
+    {
+        var screen = Map();
+        screen.GetType().GetMethod("StartScenario", Flags).Invoke(screen, new object[] { "expedition" });
+
+        var ui = screen.Expedition;
+        var plan = (DayPlan)screen.GetType().GetField("_plan", Flags).GetValue(screen);
+        var world = screen.World;
+        var zone = world.Zones["verge_springs"];
+
+        // Один и тот же состав (Хильда + Орн), одна зона; меняется только размер стаи.
+        while (plan.Parties.Count > 1) plan.Parties.RemoveAt(plan.Parties.Count - 1);
+
+        var one = FindEncounter(screen, plan, zone, "beast_ash", 1, "hilda", "orn");
+        var three = FindEncounter(screen, plan, zone, "beast_ash", 3, "hilda", "orn");
+
+        return "one=[" + one + "] three=[" + three + "]";
+    }
+
+    private static string FindEncounter(MapScreen screen, DayPlan plan, ZoneState zone,
+        string beastId, int count, params string[] people)
+    {
+        var ui = screen.Expedition;
+
+        for (var seed = 1; seed <= 200; seed++)
+        {
+            var members = plan.Parties[0].PersonIds;
+            members.Clear();
+            members.AddRange(people);
+            plan.Parties[0].ZoneId = "verge_springs";
+            plan.Parties[0].Orders = new StandingOrders
+            {
+                Encounter = EncounterOrder.Ask,
+                Wounded = WoundedOrder.Leave,
+                Carcass = CarcassOrder.Leave,
+                BagFull = BagOrder.Skip,
+            };
+
+            zone.Beasts.Clear();
+            zone.Beasts[beastId] = count;
+            zone.Forage = 1;
+            zone.Crystals = 0;
+
+            foreach (var person in people)
+            {
+                screen.World.People[person].Hp = screen.World.People[person].HpMax;
+                screen.World.People[person].Condition = PersonCondition.Healthy;
+            }
+
+            ui.Open(screen.Tables, screen.World, plan, new Rng(seed * 7919 + 13));
+
+            var current = Current(ui);
+            for (var i = 0; i < 200 && current != null && !current.HasDecision; i++)
+            {
+                ui.GetType().GetMethod("Tick", Flags).Invoke(ui, null);
+                current = Current(ui);
+            }
+
+            if (current == null || !current.HasDecision) continue;
+            if (current.Pending.Kind != DecisionKind.Encounter) continue;
+            if (current.Pack.Count != count) continue;
+
+            var fight = current.Pending.Options.FirstOrDefault(option => option.Id == "fight");
+
+            // Промежуточные прогоны могли закончиться и вернуть меню — для снимка прячем его.
+            var menu = screen.GetComponent<UIDocument>().rootVisualElement.Q<VisualElement>("menu");
+            menu?.AddToClassList("hidden");
+
+            return current.Pending.Title + " → " + (fight != null ? fight.Note : "?");
+        }
+
+        return "no encounter of size " + count;
+    }
+
     private static string Snapshot(MapScreen screen)
     {
         var text = new List<string>();

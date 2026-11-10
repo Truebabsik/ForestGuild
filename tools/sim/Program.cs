@@ -1160,6 +1160,81 @@ internal static class Program
                 && Battle.HpWord(29, 36) == "в порядке"; // ровно 80%
         });
 
+        checks.Check("risk word counts the whole pack", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var w = World.Create(t);
+            var party = new[] { "hilda", "orn" };
+
+            // Костяной бегун: один — «почти наверняка», двое — «рискованно». Если оценка смотрит
+            // только на первую тварь, слово не изменится и проверка упадёт.
+            var one = Battle.Estimate(t, w, party, new[] { "beast_bone" }, 200);
+            var two = Battle.Estimate(t, w, party, new[] { "beast_bone", "beast_bone" }, 200);
+            if (Expedition.RiskWord(one) == Expedition.RiskWord(two)) return false;
+            if (two > 0.5) return false;
+
+            // Пепельный вор: три твари заметно хуже одной.
+            var ashOne = Battle.Estimate(t, w, party, new[] { "beast_ash" }, 200);
+            var ashThree = Battle.Estimate(t, w, party,
+                new[] { "beast_ash", "beast_ash", "beast_ash" }, 200);
+
+            return ashOne - ashThree > 0.08;
+        });
+
+        checks.Check("risk word is a word, never a number", () =>
+        {
+            var allowed = new[] { "почти наверняка", "надёжно", "как повезёт", "рискованно" };
+            var chances = new[] { 0.0, 0.49, 0.50, 0.69, 0.70, 0.84, 0.85, 1.0 };
+
+            foreach (var chance in chances)
+            {
+                var word = Expedition.RiskWord(chance);
+                if (!allowed.Contains(word)) return false;
+                if (word.Any(char.IsDigit) || word.Contains("%")) return false;
+            }
+
+            return Expedition.RiskWord(0.84) == "надёжно"
+                && Expedition.RiskWord(0.85) == "почти наверняка";
+        });
+
+        checks.Check("encounter fight note is a risk word", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var allowed = new[] { "почти наверняка", "надёжно", "как повезёт", "рискованно" };
+
+            for (var seed = 0; seed < 40; seed++)
+            {
+                var w = World.Create(t);
+                var zone = w.Zones["verge_springs"];
+                zone.Beasts.Clear();
+                zone.Beasts["beast_shard"] = 2;
+                zone.Forage = 1;
+                zone.Crystals = 0;
+
+                var party = Party("verge_springs", "brunni", "skadi");
+                party.Orders = new StandingOrders
+                {
+                    Encounter = EncounterOrder.Ask,
+                    Wounded = WoundedOrder.Leave,
+                    Carcass = CarcassOrder.Leave,
+                    BagFull = BagOrder.Skip,
+                };
+
+                var run = new Expedition(w, t, party, new Rng(seed));
+                for (var i = 0; i < 120 && !run.Finished && !run.HasDecision; i++) run.Advance();
+                if (!run.HasDecision || run.Pending.Kind != DecisionKind.Encounter) continue;
+
+                var fight = run.Pending.Options.FirstOrDefault(option => option.Id == "fight");
+                if (fight == null) return false;
+                if (!allowed.Contains(fight.Note)) return false;
+                if (fight.Note.Any(char.IsDigit) || fight.Note.Contains("%")) return false;
+
+                return true;
+            }
+
+            return false;
+        });
+
         checks.Check("battle spends minutes from the day", () =>
         {
             var t = DataLoader.Load(DataDir());
