@@ -15,7 +15,7 @@
 
 Правило, за которое отвечает вся архитектура: **числа меняются без компиляции, структура меняется с компиляцией.** Всё, что в таблице, правится на ходу; всё, что в коде, проходит через компилятор и тесты.
 
-Ядро не содержит `using UnityEngine` — ни одного. Это проверяется тестом (`Core` не должен ссылаться на `UnityEngine`), а не обещанием.
+Ядро не содержит `using UnityEngine` — ни одного. Это проверяется компиляцией `tools/sim`: проект собирает `Core` без ссылки на Unity (отдельного теста-сканера нет — ADR-0002), а не обещанием.
 
 ## 2. Структура папок
 
@@ -34,10 +34,17 @@ Assets/
       traits.csv
       professions.csv
       roster.csv
+      roster_combat.csv
+      roster_skills.csv
       stations.csv
       recipes.csv
       recipe_quality.csv
       zone_lore.csv
+      beasts.csv
+      beast_combat.csv
+      combat_tuning.csv
+      equipment.csv
+      skills_combat.csv
       scenarios.csv
       scenario_parties.csv
   Scripts/
@@ -65,7 +72,7 @@ tools/
 | Файл | Колонки |
 |---|---|
 | `tuning.csv` | `id; value; note` — числа мира: `daylight_minutes`, слоты, шанс находки, опыт до гнезда, частокол |
-| `combat_tuning.csv` | `id; value; note` — числа боя: HP, точность, броня, закалка, раунды, стая, походные штрафы |
+| `combat_tuning.csv` | `id; value; note` — числа боя: HP, точность, броня, закалка, минуты за раунд, стая, засада |
 | `beast_combat.csv` | `beast_id; level; hp; attack_min; attack_max; armor; damage_spread; speed; note` — боевые параметры твари |
 | `equipment.csv` | `id; name; slot; damage_min; damage_max; armor; value; note` — `slot`: `weapon` / `armor` |
 | `roster_combat.csv` | `person_id; hardening; weapon_id; armor_id; note` — с чем человек выходит и в какой закалке |
@@ -85,6 +92,8 @@ tools/
 | `stations.csv` | `id; name; skill_id; people_slots` |
 | `recipes.csv` | `id; station; skill_id; skill_req; hours; inputs; outputs` |
 | `recipe_quality.csv` | `recipe_id; min_skill; output_id; qty; chance` |
+| `scenarios.csv` | `id; title; seed; day; start_screen; on_finish; notes` — эпизод запуска |
+| `scenario_parties.csv` | `scenario_id; squad; zone; behavior; encounter_order; members` — кто куда идёт в эпизоде |
 
 Ресурс и предмет — **одна сущность**: трава из леса, ингредиент и груз в мешке — одна строка `items.csv`.
 
@@ -157,7 +166,7 @@ p = random() < шанс_отряда;  b = random() < шанс_твари      /
 
 Отдельных `--validate`, `--seed` и `--roster` нет: проверки схемы идут внутри `--selfcheck`, сид зашит. EditMode-тестов Unity в проекте нет — все проверки живут в `tools/sim`.
 
-Проверки утверждают и инварианты, и конкретные числа: «за 21 день без вмешательства появляется гнездо», «волна не приходит раньше своего дня», но и «рабочих часов 9», «частокол после пассивной волны 4/10». При правке баланса их приходится обновлять.
+Проверки утверждают и инварианты, и конкретные числа: «за 21 день без вмешательства появляется гнездо», «волна не приходит раньше своего дня», «экспедиция тратит бюджет дня», «степень закалки открывается ровно с 3 уровня». При правке баланса их приходится обновлять.
 
 ## 9. Что дальше
 
@@ -172,7 +181,7 @@ p = random() < шанс_отряда;  b = random() < шанс_твари      /
 |---|---|---|
 | 23 CSV-справочника (21 данных + 2 сценария) | `FG/Assets/StreamingAssets/Data/` | `dotnet run --project tools/sim -- --selfcheck` |
 | Загрузчик с валидацией внешних ключей | `FG/Assets/Scripts/Core/Data/` | проверки «сломанный сосед», «неизвестный предмет», «чужая schema_version» |
-| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `ExpeditionResult`, `DayFlow`, `WaveSim`, `Briefing`, `Works`, `ZoneKnowledge`, `State`, `Battle` | `FG/Assets/Scripts/Core/Sim/` | 66 проверок в `tools/sim`, ядро без `UnityEngine` |
+| Ядро: `Rng`, `World`, `NightSim`, `DayPlan`, `Expedition`, `ExpeditionSim`, `ExpeditionResult`, `DayFlow`, `WaveSim`, `Briefing`, `Works`, `ZoneKnowledge`, `State`, `Battle` | `FG/Assets/Scripts/Core/Sim/` | 79 проверок в `tools/sim`, ядро без `UnityEngine` |
 | Карта, досье зоны, экраны цикла, отчёт | `FG/Assets/UI/`, `FG/Assets/Scripts/Game/` | скриншоты `docs/images/ui/step1/` |
 | Кит интерфейса: золотая плашка, палитра | `FG/Assets/UI/Art/Kit/`, `Map.uss` | скриншоты меню и модала встречи |
 | Сцена | `FG/Assets/Scenes/Main.unity` | Play Mode, день 1 → отчёт → день 2 |
