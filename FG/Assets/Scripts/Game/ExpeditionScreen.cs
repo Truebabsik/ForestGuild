@@ -45,6 +45,9 @@ namespace ForestGuild.Game
 
         public event Action<List<ExpeditionResult>> Finished;
 
+        /// <summary>Любое изменение в походе: HUD перерисовывается, иначе «здоровы 8/8» врёт после боя.</summary>
+        public event Action Changed;
+
         public ExpeditionScreen(VisualElement root)
         {
             _panel = root.Q<VisualElement>("expedition");
@@ -142,6 +145,7 @@ namespace ForestGuild.Game
             _current.Advance();
             AppendNew(before);
             UpdateHour();
+            Changed?.Invoke();
 
             if (_current.HasDecision)
             {
@@ -258,6 +262,9 @@ namespace ForestGuild.Game
             var before = _current.Result.Log.Count;
             _current.Decide(optionId);
             AppendNew(before);
+            // Бой и развилки тратят минуты сами, без тика: иначе «осталось N мин» отстаёт на весь бой.
+            UpdateHour();
+            Changed?.Invoke();
 
             if (_current.Finished)
             {

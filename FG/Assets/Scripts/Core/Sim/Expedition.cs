@@ -76,6 +76,9 @@ namespace ForestGuild.Core.Sim
 
         public ExpeditionDecision Pending { get; private set; }
         public bool Finished { get; private set; }
+
+        /// <summary>Состав стаи: одна тварь или несколько особей одного вида (ADR-0041).</summary>
+        public IReadOnlyList<string> Pack => _pack;
         public int WorkMinutes => _workMinutes;
         public int MinutesLeft => Math.Max(0, _workMinutes - Result.MinutesUsed);
 
@@ -776,12 +779,28 @@ namespace ForestGuild.Core.Sim
         {
             var live = _state.Beasts.Where(x => x.Value > 0).OrderBy(x => x.Key, StringComparer.Ordinal).ToList();
             var pack = new List<string>();
+            if (live.Count == 0) return pack;
 
-            var available = live.Sum(x => x.Value);
-            if (available <= 0) return pack;
+            // Вид у стаи один. Иначе карточка называет одну тварь (`pack[0]`), бой — самую быструю
+            // из стаи, а дроп идёт только с одного вида: игрок видит «Осколочник (стая из 2)»,
+            // бьётся с Искромётом и не получает осколков. Стая — несколько особей одного вида.
+            var total = live.Sum(x => x.Value);
+            var speciesRoll = _rng.Next(total);
+            var beastId = live[0].Key;
+            foreach (var entry in live)
+            {
+                speciesRoll -= entry.Value;
+                if (speciesRoll >= 0) continue;
+
+                beastId = entry.Key;
+                break;
+            }
+
+            var stock = _state.Beasts.TryGetValue(beastId, out var count) ? count : 0;
+            if (stock <= 0) return pack;
 
             var tuning = _tables.CombatTuning;
-            var max = Math.Min(tuning.GetInt("pack_max"), available);
+            var max = Math.Min(tuning.GetInt("pack_max"), stock);
             var size = 1;
 
             var weights = new List<KeyValuePair<int, int>>
@@ -807,31 +826,9 @@ namespace ForestGuild.Core.Sim
                 }
             }
 
-            var remaining = new Dictionary<string, int>(_state.Beasts);
-            for (var i = 0; i < size; i++)
-            {
-                var pool = remaining.Where(x => x.Value > 0).OrderBy(x => x.Key, StringComparer.Ordinal).ToList();
-                if (pool.Count == 0) break;
+            for (var i = 0; i < size; i++) pack.Add(beastId);
 
-                var total = pool.Sum(x => x.Value);
-                var roll = _rng.Next(total);
-
-                foreach (var entry in pool)
-                {
-                    roll -= entry.Value;
-                    if (roll >= 0) continue;
-
-                    pack.Add(entry.Key);
-                    remaining[entry.Key] = entry.Value - 1;
-                    break;
-                }
-            }
-
-            if (pack.Count == 0) pack.Add(live[0].Key);
-            _lastBeastId = pack[0];
-
-            // Не даём взять больше, чем в зоне.
-            if (pack.Count > available) pack.RemoveRange(available, pack.Count - available);
+            _lastBeastId = beastId;
             return pack;
         }
 

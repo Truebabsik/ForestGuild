@@ -1020,6 +1020,47 @@ internal static class Program
             return Math.Abs(higher - lower) > 0.05;
         });
 
+        checks.Check("encounter pack is one species", () =>
+        {
+            var t = DataLoader.Load(DataDir());
+            var encounters = 0;
+
+            for (var seed = 0; seed < 40; seed++)
+            {
+                var w = World.Create(t);
+                var zone = w.Zones["verge_springs"];
+                zone.Beasts.Clear();
+                zone.Beasts["beast_shard"] = 2;
+                zone.Beasts["beast_spark"] = 2;
+                zone.Forage = 1;
+                zone.Crystals = 0;
+
+                var party = Party("verge_springs", "brunni");
+                // Встреча «спросить», иначе бой идёт сразу и развилки для проверки не будет.
+                party.Orders = new StandingOrders
+                {
+                    Encounter = EncounterOrder.Ask,
+                    Wounded = WoundedOrder.Leave,
+                    Carcass = CarcassOrder.Leave,
+                    BagFull = BagOrder.Skip,
+                };
+                var run = new Expedition(w, t, party, new Rng(seed));
+
+                for (var i = 0; i < 120 && !run.Finished && !run.HasDecision; i++) run.Advance();
+                if (!run.HasDecision || run.Pending.Kind != DecisionKind.Encounter) continue;
+
+                encounters++;
+
+                // Стая из разных видов ломает карточку (одно имя), бой (самая быстрая) и дроп.
+                if (run.Pack.Count == 0) return false;
+                if (run.Pack.Distinct().Count() != 1) return false;
+                if (run.Pack[0] != run.Pending.BeastId) return false;
+                if (run.Pack.Count > 2) return false;
+            }
+
+            return encounters >= 20;
+        });
+
         checks.Check("battle spends minutes from the day", () =>
         {
             var t = DataLoader.Load(DataDir());

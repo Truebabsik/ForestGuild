@@ -133,6 +133,7 @@ namespace ForestGuild.Game
             Evening.Slept += GoToNight;
 
             Expedition = new ExpeditionScreen(root);
+            Expedition.Changed += () => _hud?.Update(_phase);
             Expedition.Finished += results =>
             {
                 if (_episode != null && _episode.EndsInMenu)
