@@ -970,17 +970,6 @@
     height: 70px;
 }
 
-.tray-role {
-    height: 22px;
-    font-size: 10px;
-    margin-top: 4px;
-    padding: 0;
-    color: rgb(226, 208, 170);
-    background-color: rgb(56, 58, 50);
-    border-width: 1px;
-    border-color: rgb(96, 88, 70);
-}
-
 .tray-remove {
     width: 74px;
     height: 22px;

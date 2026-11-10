@@ -233,7 +233,6 @@ namespace ForestGuild.Game
                     name.AddToClassList("person-name");
                     info.Add(name);
 
-                    var profession = _tables.Professions.Get(person.Profession);
                     var primarySkill = People.PrimarySkill(_tables, person);
                     var note = new Label(_tables.Skills.Get(primarySkill).Name + " "
                         + People.SkillLevel(_tables, person, primarySkill));
@@ -241,21 +240,6 @@ namespace ForestGuild.Game
                     info.Add(note);
 
                     info.Add(HpLabel(_tables, _world, personId));
-
-                    if (profession.Id == "hunter")
-                    {
-                        var role = new Button(() =>
-                        {
-                            var current = _squad.RoleOf(personId);
-                            _squad.SetRole(personId, current == HunterRole.Guard ? HunterRole.Gather
-                                : current == HunterRole.Gather ? HunterRole.Track
-                                : HunterRole.Guard);
-                            Rebuild();
-                        });
-                        role.text = RoleName(_squad.RoleOf(personId));
-                        role.AddToClassList("tray-role");
-                        info.Add(role);
-                    }
 
                     slot.Add(info);
 
@@ -431,16 +415,6 @@ namespace ForestGuild.Game
         }
 
         // ---- названия ----
-
-        private static string RoleName(HunterRole role)
-        {
-            switch (role)
-            {
-                case HunterRole.Gather: return "собираю";
-                case HunterRole.Track: return "иду по следу";
-                default: return "охраняю";
-            }
-        }
 
         private static EncounterOrder Next(EncounterOrder value)
         {

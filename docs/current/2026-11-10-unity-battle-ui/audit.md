@@ -59,7 +59,8 @@ come from the csv».
    `carry_out_speed_mult` лежат в CSV без читателей. Либо реализовать (не баланс, а правило), либо
    удалить ключи и убрать обещание из ADR-0043. Сейчас помечено как долг.
 2. **Роль охотника и черты в бою.** `HunterRole` — только подпись в Сборе; `fight_bonus` не читается.
-   Либо реализовать («охраняю» даёт +1 к бою и −20 % к засаде), либо убрать из `ui.md` §4.5/§5.
+   **Решено 2026-11-10:** роль «охраняю» убрана (ADR-0047); черты в бою остаются долгом прокачки.
+   Либо реализовать черты, либо убрать их из `ui.md` §4.5.
 3. **Мёртвые ключи/колонки CSV** (около 25): `pack_single_strike`, `gatherer_combat_factor`,
    `fight_stamina`, `carry_slots_per_person`, `beast_combat.damage_spread/level`, `beasts.strength/speed`,
    `zone_beasts.weight`, `xp_*`, `heart_influx_days`, `skills_combat.param/branch` и др. Решение:
