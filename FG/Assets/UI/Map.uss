@@ -370,6 +370,17 @@
     white-space: normal;
 }
 
+/* Состояние человека словами — тот же словарь, что в карточке боя. */
+.person-hp {
+    color: rgb(158, 150, 132);
+    font-size: 10px;
+    margin-top: 1px;
+}
+
+.person-hp-hurt {
+    color: rgb(220, 156, 92);
+}
+
 /* ---- работы в деревне ---- */
 
 .works {

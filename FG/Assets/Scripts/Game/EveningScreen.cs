@@ -91,7 +91,12 @@ namespace ForestGuild.Game
             }
             else
             {
-                _lines.Add(Line("Раненые: " + string.Join(", ", wounded)));
+                // Имена и слово о состоянии, а не id: «Раненые: Хильда — на ногах не стоит».
+                var parts = new List<string>();
+                foreach (var personId in wounded)
+                    parts.Add(_tables.Roster.Get(personId).Name + " — " + Ui.HpWord(_world, personId));
+
+                _lines.Add(Line("Раненые: " + string.Join(", ", parts)));
                 if (LeftWithoutBed() > 0)
                 {
                     _lines.Add(Line("Беспостельные не встанут утром. Постелей всего "

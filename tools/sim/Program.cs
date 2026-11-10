@@ -1149,6 +1149,17 @@ internal static class Program
             return encounters >= 20;
         });
 
+        checks.Check("hp is a word with exact steps", () =>
+        {
+            return Battle.HpWord(0, 36) == "на ногах не стоит"
+                && Battle.HpWord(8, 36) == "тяжело ранен"
+                && Battle.HpWord(9, 36) == "ранен"      // ровно 25% — уже не «тяжело»
+                && Battle.HpWord(17, 36) == "ранен"
+                && Battle.HpWord(18, 36) == "в ссадинах" // ровно 50% — уже не «ранен»
+                && Battle.HpWord(28, 36) == "в ссадинах"
+                && Battle.HpWord(29, 36) == "в порядке"; // ровно 80%
+        });
+
         checks.Check("battle spends minutes from the day", () =>
         {
             var t = DataLoader.Load(DataDir());

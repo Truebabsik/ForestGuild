@@ -87,6 +87,15 @@ namespace ForestGuild.Game
                             ? "дорога " + briefing.TravelMinutes + " мин · в лесу " + briefing.WorkMinutes + " мин"
                             : "дорога " + briefing.TravelMinutes + " мин · работы не будет"));
 
+                if (squad.Members.Count > 0)
+                {
+                    var words = new List<string>();
+                    foreach (var personId in squad.Members)
+                        words.Add(_tables.Roster.Get(personId).Name + " — " + Ui.HpWord(_world, personId));
+
+                    left.Add(Line("squad-line", string.Join(", ", words)));
+                }
+
                 var actions = new VisualElement();
                 actions.AddToClassList("squad-actions");
 
