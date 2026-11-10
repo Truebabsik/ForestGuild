@@ -1,3 +1,0 @@
-id;name;skills_allowed;requires_trait;start_skills
-gatherer;Сборщик;gathering|butchering;patient;gathering:2|butchering:1
-hunter;Охотник;hunting|butchering;brave;hunting:2|butchering:1

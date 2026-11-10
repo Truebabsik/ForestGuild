@@ -1,9 +1,0 @@
-id;name;profession;traits;skills_override
-brunni;Брунни;hunter;brave|strong;hunting:4|butchering:3
-skadi;Скади;hunter;brave;hunting:3|butchering:2
-hilda;Хильда;hunter;brave|keen;hunting:2|butchering:2
-orn;Орн;hunter;strong;hunting:2|butchering:1
-leya;Лея;gatherer;keen|patient;gathering:3|butchering:2
-tove;Тове;gatherer;patient;gathering:2|butchering:2
-run;Рун;gatherer;steady;gathering:2|butchering:1
-valda;Вальда;gatherer;patient;gathering:1|butchering:0

@@ -1,4 +1,0 @@
-id;title;seed;day;start_screen;on_finish;notes
-campaign;НАЧАТЬ ИГРУ;12345;1;campaign;continue;обычный цикл с первого дня
-muster;СБОР ОТРЯДА (ТЕСТИРОВАНИЕ);101;1;muster;menu;только экран Сбора, мир отдельный
-expedition;ПОХОД В ЛЕСУ (ТЕСТИРОВАНИЕ);4242;1;expedition;menu;два отряда сразу в лесу

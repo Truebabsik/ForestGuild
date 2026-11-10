@@ -1,6 +1,0 @@
-id;name;strength;speed;food_need;nest_capable;art
-beast_spark;Искромёт;2;3;1;1;spark
-beast_bone;Костяной бегун;3;2;1;1;bone
-beast_ash;Пепельный вор;1;4;1;0;ash
-beast_angler;Тинный удильщик;2;1;2;0;angler
-beast_climber;Теневой древолаз;2;3;1;0;climber

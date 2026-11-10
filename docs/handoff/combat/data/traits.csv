@@ -1,6 +1,0 @@
-id;name;fight_bonus;find_bonus;butcher_bonus;carry_bonus
-brave;Храбрый;1;0;0;0
-keen;Зоркий;0;0.05;0;0
-steady;Твёрдая рука;0;0;1;0
-strong;Крепкий;0;0;0;1
-patient;Терпеливый;0;0.03;1;0

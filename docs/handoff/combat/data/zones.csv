@@ -1,7 +1,0 @@
-id;name;depth;travel_minutes;distance_km;crystals_per_day;forage_per_day;neighbours;env_rule;map_x;map_y
-verge_meadow;Опушка;edge;30;1.5;1;2;verge_springs|verge_thicket;none;0.50;0.52
-verge_springs;Вулканические ключи;edge;60;3;1;2;verge_meadow|verge_marsh|belt_stone;heat;0.28;0.38
-verge_marsh;Серая Топь;edge;90;4.5;1;2;verge_springs|verge_thicket;mud;0.16;0.62
-verge_thicket;Стеклянная роща;edge;60;3;1;2;verge_meadow|verge_marsh|belt_stone;thicket;0.74;0.40
-belt_stone;Каменный лог;belt;150;7.5;2;2;verge_springs|verge_thicket|heart_root;none;0.58;0.20
-heart_root;Сердце леса;heart;240;12;4;4;belt_stone;none;0.86;0.08
