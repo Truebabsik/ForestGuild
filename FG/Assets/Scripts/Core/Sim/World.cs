@@ -156,13 +156,6 @@ namespace ForestGuild.Core.Sim
             }
         }
 
-        public int TotalCrystals()
-        {
-            var sum = 0;
-            foreach (var z in Zones.Values) sum += z.Crystals;
-            return sum;
-        }
-
         public int BeastCount(string zoneId)
         {
             var sum = 0;

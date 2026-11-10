@@ -346,19 +346,6 @@ namespace ForestGuild.Game
             }
         }
 
-        private string SkillLine(Person person)
-        {
-            var profession = _tables.Professions.Get(person.Profession);
-            var parts = new List<string>();
-
-            foreach (var skillId in profession.SkillsAllowed)
-            {
-                parts.Add(_tables.Skills.Get(skillId).Name + " " + People.SkillLevel(_tables, person, skillId));
-            }
-
-            return string.Join(" · ", parts);
-        }
-
         private string Traits(Person person)
         {
             if (person.Traits.Length == 0) return "без черт";

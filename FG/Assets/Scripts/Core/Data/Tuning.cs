@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 
 namespace ForestGuild.Core.Data
 {
@@ -31,19 +30,6 @@ namespace ForestGuild.Core.Data
         public float GetFloat(string key)
         {
             return float.Parse(Get(key), NumberStyles.Float, CultureInfo.InvariantCulture);
-        }
-
-        public int[] GetIntList(string key)
-        {
-            return Get(key)
-                .Split('|')
-                .Select(s => int.Parse(s.Trim(), CultureInfo.InvariantCulture))
-                .ToArray();
-        }
-
-        public bool Has(string key)
-        {
-            return _raw.ContainsKey(key);
         }
 
         /// <summary>

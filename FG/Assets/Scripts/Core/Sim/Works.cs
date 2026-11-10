@@ -79,9 +79,5 @@ namespace ForestGuild.Core.Sim
             state.Condition = PersonCondition.Dead;
         }
 
-        public static bool IsAvailable(World world, string personId)
-        {
-            return world.People.TryGetValue(personId, out var state) && state.Condition == PersonCondition.Healthy;
-        }
     }
 }

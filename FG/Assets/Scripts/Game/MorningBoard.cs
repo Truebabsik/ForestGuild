@@ -18,7 +18,6 @@ namespace ForestGuild.Game
         private readonly Label _warnings;
 
         public Squad Active;
-        public event Action Changed;
         public event Action<Squad> EditRequested;
 
         public MorningBoard(Tables tables, World world, VisualElement squads, Label warnings)
@@ -60,7 +59,6 @@ namespace ForestGuild.Game
                     Active = squad;
                     CycleZone(squad);
                     Rebuild();
-                    Changed?.Invoke();
                 });
                 zoneButton.text = string.IsNullOrEmpty(squad.ZoneId)
                     ? "зона: не выбрана ▾"
@@ -106,7 +104,6 @@ namespace ForestGuild.Game
                         : squad.Behavior == Behavior.Avoid ? Behavior.Clean
                         : Behavior.Gather;
                     Rebuild();
-                    Changed?.Invoke();
                 });
                 behavior.text = "намерение: " + BehaviorName(squad.Behavior);
                 behavior.AddToClassList("action");

@@ -33,6 +33,12 @@ internal static class Program
             return 2;
         }
 
+        return RunChecks();
+    }
+
+    /// <summary>Все проверки ядра: одна точка входа, чтобы `Main` не разрастался.</summary>
+    private static int RunChecks()
+    {
         var checks = new CheckRunner();
 
         checks.Check("rng is deterministic", () =>

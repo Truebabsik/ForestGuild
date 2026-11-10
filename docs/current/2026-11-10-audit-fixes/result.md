@@ -47,20 +47,31 @@
 - `EveningScreen` строки получили класс `pane-line`; мёртвый `.battle-body` из `Map.uss` удалён.
 - `Expedition.TakeDrops` без бессмысленного `bool`.
 
+### Ф4. Мёртвый слой — сделано
+
+Удалены без читателей: `Works.IsAvailable`, `DayPlan.IsBusy`, `DayPlan.WorkingCount`, `DayPlan.MaxParties`,
+`World.TotalCrystals`, `Tuning.GetIntList`, `Tuning.Has`, `MusterScreen.SkillLine`, `MorningBoard.Changed`,
+`DossierScreen.Closed`; `Program.Main` разгружен — проверки вынесены в `RunChecks()`, неизвестный
+аргумент даёт код 2.
+
+Оставлено намеренно: `IsOpen` у экранов (используется пробами `FG/AgentScripts`), `Expedition.Pack`
+(нужен карточке/пробам), `DayReport.Lines` / `NightReport.Lines` (на них висят три проверки ночи —
+свести к `Entries` можно отдельным проходом), CSS и арт `fang`/`mole` (задел пояса, видов в данных нет),
+`DataLoader.Load` 214 строк (разбить при следующем касании). Это записано, а не спрятано.
+
 ### Ф6. Проверка
 
 - `--selfcheck`: **81 проверка, код 0**; сборка без предупреждений; Unity компилируется.
 - `--days 21`: 14 тварей, **волна 12**, гнёзд 3, частокол 0/10 — точка сдвинулась из-за живого
   `food_need` (раньше кормление было по 1), записана в `design.md` и ждёт калибровки T7.
-- Play Mode: бой, карточка боя, встреча, доска — без регрессий; ноша даёт −3 слота.
+- Play Mode: бой, карточка боя, встреча, доска — без регрессий; ноша даёт −3 слота; досье показывает
+  «опушка · дорога 60 мин» вместо `edge`.
 
-## Осталось (Ф4 и хвосты)
+## Осталось (хвосты)
 
-- Мёртвый слой кода: `DayReport.Lines`, `NightReport.Lines`, `Expedition.Pack` (оставлен для UI/проб),
-  `IsOpen` ×6, `MorningBoard.Changed`, `DossierScreen.Closed`, `Works.IsAvailable`, `DayPlan.WorkingCount/IsBusy`,
-  `World.TotalCrystals`, `Tuning.GetIntList/Has`, `MusterScreen.SkillLine`, `DayPlan.MaxParties`.
-- Классы `fang`/`mole` в `Map.uss` и сами арты — сироты: виды в данные не заведены.
+- `DayReport.Lines` / `NightReport.Lines` — дубль `Entries`; свести при следующем касании ночи.
+- CSS и арт `fang`/`mole` — сироты: виды в данные не заведены (арт на будущий пояс).
 - Роль охотника (`HunterRole`) и черты в бою по-прежнему только подпись/план: нужно решение — реализовать
   «охраняю» или убрать из UI.
-- Длинные методы (`DataLoader.Load`, `Program.Main`) — разбить при следующем касании.
+- Длинные методы: `DataLoader.Load` (214 строк) — разбить по таблицам; `Program.Main` уже разгружен.
 - Баланс (h1/h3, болотник, точка 21 дня) — отдельная задача T6/T7.

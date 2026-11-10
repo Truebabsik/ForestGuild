@@ -22,7 +22,6 @@ namespace ForestGuild.Game
         private World _world;
         private string _zoneId;
 
-        public event Action Closed;
         public event Action<string> GatherRequested;
 
         public DossierScreen(VisualElement root)
@@ -59,7 +58,6 @@ namespace ForestGuild.Game
         public void Close()
         {
             _panel.AddToClassList("hidden");
-            Closed?.Invoke();
         }
 
         private void Build()
